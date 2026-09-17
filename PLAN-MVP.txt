@@ -1,0 +1,313 @@
+PLAN DE DEVELOPPEMENT - LANGUAGE PIPELINE
+==========================================
+
+Objectif
+--------
+Construire une application personnelle d'apprentissage des langues :
+texte japonais -> tokenization -> traduction contextuelle -> cartes de revision.
+
+Le MVP commence par japonais -> francais, mais les interfaces doivent permettre
+d'ajouter d'autres langues plus tard.
+
+Etat actuel
+-----------
+Le projet Next.js, TypeScript, Tailwind et Prisma est installe.
+Les commandes lint, build, prisma validate et prisma generate passent.
+La page d'accueil affiche encore le template Next.js.
+Le schema Prisma ne contient pas encore les modeles metier.
+
+Regle de travail
+----------------
+A chaque etape :
+1. Comprendre la notion avant de coder.
+2. Implementer le plus petit morceau utile.
+3. Tester manuellement et avec un test automatise quand c'est pertinent.
+4. Ne passer a l'etape suivante qu'une fois le jalon valide.
+
+Priorite 0 - Verifier l'environnement
+--------------------------------------
+Objectif : avoir un environnement de travail reproductible.
+
+A faire :
+- Creer ou verifier une base PostgreSQL accessible.
+- Renseigner DATABASE_URL dans .env.
+- Verifier que .env reste ignore par Git.
+- Lancer : npm run dev
+- Ouvrir http://localhost:3000.
+- Documenter dans README les commandes de demarrage.
+
+Validation :
+- La page Next.js s'affiche.
+- La base PostgreSQL est joignable avec Prisma.
+
+Priorite 1 - Construire le MVP tokenizer
+-----------------------------------------
+Objectif : coller un texte japonais et afficher ses mots analyses.
+
+Progression : ETAPE 1 TERMINEE - kuromoji.js et ses types sont installes et
+verifies avec npm ls kuromoji @types/kuromoji.
+
+Sous-etapes realisees : interface Tokenizer et implementation
+JapaneseTokenizer creees et validees avec npx tsc --noEmit.
+Route API et interface de saisie ajoutees et validees avec lint, build et un
+test runtime sur une phrase japonaise (10 tokens retournes).
+Tests unitaires du mapping ajoutes et valides avec npm test.
+Prochaine etape : persister les textes sources et leurs tokens avec PostgreSQL.
+
+Notion a comprendre :
+Un tokenizer transforme un texte en unites lexicales. Pour le japonais, les mots
+ne sont pas separes par des espaces ; kuromoji.js utilise un dictionnaire et une
+analyse morphologique pour trouver les mots, leur forme de base, leur lecture et
+leur categorie grammaticale.
+
+A faire :
+- [TERMINE] Installer kuromoji.js et ses types.
+- [TERMINE] Creer une interface Tokenizer generique dans src/lib/tokenizer/.
+- [TERMINE] Creer une implementation JapaneseTokenizer.
+- [TERMINE] Isoler le chargement du dictionnaire et le rendre reutilisable.
+- [TERMINE] Definir un type TokenResult sans dependance a kuromoji dans l'interface publique.
+- [TERMINE] Ajouter une route API pour analyser un texte.
+- [TERMINE] Remplacer le template de page.tsx par une interface de saisie.
+- [TERMINE] Afficher forme, forme de base, lecture, categorie grammaticale.
+- [TERMINE] Filtrer visuellement les particules tout en permettant de les afficher.
+
+Validation :
+- [TERMINE] Coller un texte japonais affiche une liste de tokens.
+- [TERMINE] Les lectures sont correctes sur plusieurs phrases.
+- [TERMINE] Un texte vide et une erreur d'analyse sont geres proprement.
+- [TERMINE] Ajouter quelques tests unitaires sur le mapping kuromoji -> TokenResult.
+
+Priorite 2 - Stabiliser l'interface utilisateur
+-----------------------------------------------
+Objectif : rendre l'analyse agreable avant d'ajouter la base.
+
+Progression : ETAPE 2 TERMINEE - interface interactive, etats de chargement,
+succes et erreur, selection de token, apercu du texte source, structure claire
+et metadonnees finalises et valides avec lint, TypeScript et build.
+
+A faire :
+- [TERMINE] Ajouter les etats chargement, succes et erreur.
+- [TERMINE] Permettre de selectionner un token.
+- [TERMINE] Afficher un apercu de la phrase source.
+- [TERMINE] Ajouter une structure de composants simple et lisible.
+- [TERMINE] Mettre a jour les metadonnees et le texte de l'application.
+
+Validation :
+- [TERMINE] Le parcours coller -> analyser -> selectionner un mot fonctionne sans reload.
+- [TERMINE] L'interface reste utilisable sur mobile et desktop.
+
+Priorite 3 - Ajouter PostgreSQL et la persistance du texte
+-----------------------------------------------------------
+Objectif : conserver les textes analyses.
+
+Progression : ETAPE 3 TERMINEE - modele SourceText, migration PostgreSQL,
+singleton Prisma, routes POST/GET et affichage des textes recents finalises.
+Validee avec TypeScript, lint, tests, build et tests runtime PostgreSQL.
+Prochaine etape : persister les tokens rattaches a chaque SourceText.
+
+Notions a comprendre :
+Prisma decrit les modeles et leurs relations. Une migration versionne les
+changements de schema ; elle est differente de db push, qui est surtout utile
+pour prototyper.
+
+A faire :
+- [TERMINE] Definir SourceText avec contenu, titre optionnel, provenance, categorie et dates.
+- [TERMINE] Ajouter sourceLanguage et targetLanguage pour preparer le multi-directionnel.
+- [TERMINE] Ajouter le client Prisma singleton dans src/lib/db/.
+- [TERMINE] Creer la premiere migration avec npm run db:migrate.
+- [TERMINE] Creer les routes ou Server Actions de creation et lecture des SourceText.
+- [TERMINE] Afficher les textes recents sur la page d'accueil.
+
+Validation :
+- [TERMINE] Un texte colle est sauvegarde puis relu apres rechargement.
+- [TERMINE] Une migration est presente dans prisma/migrations.
+- [TERMINE] Les erreurs de base sont affichees sans exposer de details sensibles.
+
+Priorite 4 - Persister et afficher les tokens
+---------------------------------------------
+Objectif : rattacher l'analyse a un SourceText.
+
+A faire :
+- Definir Token avec surface, lemma, reading optionnel, partOfSpeech et position.
+- Relier Token a SourceText.
+- Sauvegarder les tokens apres tokenization.
+- Eviter de recalculer inutilement une analyse deja disponible.
+- Conserver le tokenizer hors de la couche Prisma.
+
+Validation :
+- Un SourceText possede ses tokens en base.
+- Une nouvelle consultation affiche la meme analyse.
+- Les positions permettent de retrouver le contexte original.
+
+Priorite 5 - Ajouter la traduction contextuelle
+-----------------------------------------------
+Objectif : traduire un mot ou une phrase selectionnee.
+
+Notions a comprendre :
+Un structured output impose une forme de reponse stable au modele. Le code doit
+valider la reponse avant de l'utiliser et traiter les erreurs partielles.
+
+A faire :
+- Installer le SDK Anthropic.
+- Creer un prompt parametre par sourceLanguage et targetLanguage.
+- Definir le schema de sortie : word, reading, translation, grammarNote,
+  exampleSentence.
+- Valider la reponse avec un schema TypeScript/runtime, par exemple Zod.
+- Creer TranslationCache avec cle logique langue source + langue cible + mot +
+  contexte pertinent.
+- Implementer lecture du cache avant appel API.
+- Ajouter une action de traduction depuis un token selectionne.
+- Ne jamais exposer la cle API au navigateur.
+
+Validation :
+- Une traduction valide est affichee.
+- Une deuxieme demande equivalente utilise le cache.
+- Une reponse invalide ou un timeout donne une erreur exploitable.
+- Les secrets restent dans les variables d'environnement serveur.
+
+Priorite 6 - Creer decks et cartes
+----------------------------------
+Objectif : transformer un mot analyse en carte personnelle.
+
+A faire :
+- Definir Deck avec nom et paire de langues.
+- Definir Card avec mot, lecture optionnelle, traduction, notes et deck.
+- Ajouter une action "Ajouter au notebook".
+- Utiliser la traduction en cache si elle existe.
+- Ajouter un deck par defaut pour simplifier le premier parcours.
+- Prevoir une contrainte d'unicite compatible avec la paire de langues.
+
+Validation :
+- Un token peut devenir une carte.
+- La carte apparait dans son deck.
+- Les champs japonais specifiques restent optionnels pour les autres langues.
+
+Priorite 7 - Implementer SM-2 et le mode revision
+-------------------------------------------------
+Objectif : reviser les cartes dues.
+
+Notion a comprendre :
+SM-2 met a jour la facilite, l'intervalle et la prochaine date selon une note
+de qualite. La logique doit etre pure et independante de Next.js et Prisma.
+
+A faire :
+- Creer un module src/lib/srs/ avec une fonction pure reviewCard.
+- Definir les notes de reponse et leurs effets.
+- Stocker interval, easeFactor, repetitions, dueDate.
+- Ajouter ReviewLog pour chaque revision.
+- Ecrire des tests pour reponses difficiles, reussies et parfaites.
+- Construire une page de revision avec les cartes dues.
+
+Validation :
+- Les formules et dates sont couvertes par des tests.
+- Une revision met a jour la carte et cree un historique.
+- Une carte non due n'apparait pas dans la session normale.
+
+Priorite 8 - Ajouter la deduplication et les occurrences
+---------------------------------------------------------
+Objectif : ne pas creer deux cartes pour le meme mot et la meme paire de langues.
+
+A faire :
+- Definir WordOccurrence entre Card et SourceText, avec position et date si utile.
+- Chercher une carte existante avant toute creation.
+- Si elle existe, proposer d'ajouter une occurrence.
+- Afficher le badge "deja ajoute" dans l'analyse.
+- Definir clairement la normalisation utilisee : lemma + langues.
+
+Validation :
+- Le meme mot provenant de deux textes ne cree qu'une carte.
+- Les deux contextes sont consultables.
+- Deux paires de langues peuvent contenir le meme mot sans collision.
+
+Priorite 9 - Ajouter images et audio
+------------------------------------
+Objectif : enrichir les cartes sans bloquer leur creation.
+
+A faire pour les images :
+- Choisir une API libre et documenter ses limites.
+- Chercher l'image avec la traduction ou un terme anglais.
+- Stocker l'URL et les metadonnees en base.
+- Mettre cette etape dans un pipeline asynchrone separable.
+- Si la recherche echoue, conserver une carte fonctionnelle sans image.
+
+A faire pour l'audio :
+- Commencer par un fournisseur TTS simple et peu couteux.
+- Choisir la voix selon sourceLanguage.
+- Stocker l'URL ou le fichier et mettre en cache par texte + langue + voix.
+- Ajouter un bouton de lecture dans la revision.
+
+Validation :
+- Une carte reste creable si une API externe est indisponible.
+- Une image et un audio ne sont pas regeneres inutilement.
+- Les URLs et erreurs externes ne cassent pas la revision.
+
+Priorite 10 - Ajouter les niveaux de difficulte
+-----------------------------------------------
+Objectif : aider a prioriser le vocabulaire.
+
+A faire :
+- Ajouter difficultyLevel optionnel au resultat de tokenization et en base.
+- Charger un dataset JLPT pour le japonais.
+- Prevoir une strategie CEFR pour l'anglais.
+- Faire un lookup par forme de base et, si necessaire, par forme de surface.
+- Retourner "unknown" quand aucune correspondance fiable n'existe.
+- Afficher un badge N5 a N1 ou A1 a C2.
+
+Validation :
+- Les niveaux connus viennent uniquement du dataset.
+- Les mots absents ne sont pas devines.
+- Le niveau est coherent entre affichage et persistance.
+
+Priorite 11 - Ajouter les flux quotidiens
+-----------------------------------------
+Objectif : proposer du contenu frais sans scraping fragile ou abusif.
+
+A faire :
+- Commencer par une source RSS propre, par exemple NHK Easy si le flux est
+  disponible et autorise.
+- Verifier robots.txt, CGU et conditions de redistribution avant tout scraping.
+- Creer un adaptateur par source dans src/lib/feeds/.
+- Parser RSS, dedoublonner les URLs et creer des SourceText.
+- Ajouter une categorie news, gaming ou anime.
+- Creer une route cron protegee par un secret.
+- Configurer le scheduler du fournisseur de deploiement.
+- Laisser gaming et anime vides si aucune source propre n'est validee.
+
+Validation :
+- Le job peut etre relance sans creer de doublons.
+- Une source en erreur ne bloque pas les autres.
+- Les textes du jour apparaissent groupes par categorie.
+- Le job est protege et journalise sans secret.
+
+Priorite 12 - Statistiques et polish
+------------------------------------
+Objectif : ameliorer l'usage quotidien une fois le parcours complet stable.
+
+A faire :
+- Nombre de cartes dues.
+- Taux de reussite et historique de revision.
+- Filtres par deck et langue.
+- Recherche dans les SourceText et les cartes.
+- Import de fichiers .srt en extension ulterieure.
+- Amelioration responsive et accessibilite.
+- Ajouter des tests d'integration sur le parcours principal.
+
+Architecture cible
+------------------
+- src/app/ : pages, routes et actions Next.js.
+- src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
+- src/lib/translation/ : prompts, appel Claude et cache.
+- src/lib/db/ : Prisma Client et acces aux donnees.
+- src/lib/srs/ : logique SM-2 pure et testee.
+- src/lib/images/ : adaptateurs d'images.
+- src/lib/tts/ : adaptateurs audio.
+- src/lib/difficulty/ : datasets et lookup de niveaux.
+- src/lib/feeds/ : adaptateurs RSS et sources quotidiennes.
+- src/types/ : types partages.
+
+Premier jalon concret
+---------------------
+Commencer maintenant par la Priorite 1 : installer kuromoji.js, definir
+Tokenizer et construire la page coller -> analyser -> afficher les tokens.
+Le jalon est termine quand cette fonctionnalite fonctionne sans base de donnees
+et avec au moins quelques tests sur des phrases japonaises reelles.

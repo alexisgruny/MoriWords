@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoriWords
 
-## Getting Started
+Pipeline personnel d'apprentissage de langues : texte → tokenization → traduction contextuelle → notebook façon Anki (SM-2) avec image + audio par carte.
 
-First, run the development server:
+MVP : japonais → français. Architecture pensée pour être multi-directionnelle (voir `src/lib/tokenizer/`).
+
+## Stack
+
+- Next.js 16 (App Router) + TypeScript strict
+- PostgreSQL + Prisma 7
+- Tailwind CSS
+- API Claude (Anthropic) pour la traduction contextuelle
+
+## Démarrage
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Base de données
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Démarrer une instance PostgreSQL (options : `npx prisma dev` pour un Postgres local géré par Prisma, Docker, ou un service cloud comme Neon/Supabase).
+2. Renseigner `DATABASE_URL` dans `.env` (voir `.env` pour le format attendu).
+3. `npm run db:migrate` pour appliquer le schéma (à partir de l'étape 3 du projet, une fois `prisma/schema.prisma` rempli).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Scripts disponibles : `db:generate`, `db:migrate`, `db:studio`, `db:push`.
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/            routes Next.js (App Router)
+  lib/
+    tokenizer/    interface Tokenizer + implémentations par langue (étape 2)
+    db/           client Prisma singleton (étape 3)
+    translation/  appel API Claude + cache de traduction (étape 4)
+    srs/          algorithme SM-2 (étape 6)
+    images/       recherche d'image complémentaire (étape 7)
+    tts/          synthèse vocale (étape 8)
+    difficulty/   estimation JLPT/CEFR (étape 10)
+    feeds/        alimentation automatique quotidienne (étape 11)
+  types/          types partagés
+prisma/
+  schema.prisma
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Note Next.js 16
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ce projet utilise Next.js 16, qui introduit des changements par rapport aux versions précédentes (APIs async pour `params`/`searchParams`, Server Functions, Turbopack par défaut). Voir `node_modules/next/dist/docs/` pour la doc exacte de cette version avant de modifier les conventions de routing.
