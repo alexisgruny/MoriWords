@@ -1,8 +1,11 @@
+import type { JLPTLevel } from "@/lib/difficulty/classify";
+
 export type TokenResult = {
   surface: string;
   baseForm: string;
   reading?: string;
   partOfSpeech: string;
+  difficulty: JLPTLevel;
   position: number;
 };
 

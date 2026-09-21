@@ -127,17 +127,40 @@ Priorite 4 - Persister et afficher les tokens
 ---------------------------------------------
 Objectif : rattacher l'analyse a un SourceText.
 
+Progression : ETAPE 4 TERMINEE - modele Token, routes POST/GET, sauvegarde et
+rechargement des tokens depuis PostgreSQL, validation par build, lint et tests.
+
 A faire :
-- Definir Token avec surface, lemma, reading optionnel, partOfSpeech et position.
-- Relier Token a SourceText.
-- Sauvegarder les tokens apres tokenization.
-- Eviter de recalculer inutilement une analyse deja disponible.
-- Conserver le tokenizer hors de la couche Prisma.
+- [TERMINE] Definir Token avec surface, lemma, reading optionnel, partOfSpeech et position.
+- [TERMINE] Relier Token a SourceText.
+- [TERMINE] Sauvegarder les tokens apres tokenization.
+- [TERMINE] Eviter de recalculer inutilement une analyse deja disponible.
+- [TERMINE] Conserver le tokenizer hors de la couche Prisma.
 
 Validation :
-- Un SourceText possede ses tokens en base.
-- Une nouvelle consultation affiche la meme analyse.
-- Les positions permettent de retrouver le contexte original.
+- [TERMINE] Un SourceText possede ses tokens en base.
+- [TERMINE] Une nouvelle consultation affiche la meme analyse.
+- [TERMINE] Les positions permettent de retrouver le contexte original.
+- [TERMINE] npx tsc --noEmit ; npm run lint ; npm run build ; npm test passent.
+
+Priorite 4b - Dedoublonner le vocabulaire par lemme
+----------------------------------------------------
+Objectif : passer des tokens bruts a un vocabulaire exploitable.
+
+Progression : TERMINE - regroupement par lemme, compteur d'occurrences,
+section "Vocabulaire du texte" dans l'interface, et test unitaire sur le calcul.
+
+A faire :
+- [TERMINE] Agrger les tokens par baseForm/lemma.
+- [TERMINE] Compter les occurrences par mot.
+- [TERMINE] Afficher les mots les plus frequents dans l'UI.
+- [TERMINE] Isoler la logique dans src/lib/vocabulary/build-vocabulary.ts.
+- [TERMINE] Ajouter un test de regression sur la deduplication.
+
+Validation :
+- [TERMINE] Un mot repete n'apparait qu'une seule fois dans le vocabulaire.
+- [TERMINE] Le compteur d'occurrences est correct.
+- [TERMINE] La page affiche le top 10 par frequence.
 
 Priorite 5 - Ajouter la traduction contextuelle
 -----------------------------------------------

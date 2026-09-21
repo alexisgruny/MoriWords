@@ -1,10 +1,11 @@
 import path from "node:path";
-import * as kuromoji from "kuromoji";
+import kuromoji from "kuromoji";
 import type {
-    IpadicFeatures,
-    Tokenizer as KuromojiTokenizer,
+  IpadicFeatures,
+  Tokenizer as KuromojiTokenizer,
 } from "kuromoji";
 import type { TokenResult, Tokenizer } from "./types";
+import { classifyDifficulty } from "../difficulty/classify";
 
 type JapaneseTokenData = Pick<
   IpadicFeatures,
@@ -21,49 +22,68 @@ export function toHiragana(reading: string): string {
   });
 }
 
+export function isNonLexicalToken(
+  token: Pick<IpadicFeatures, "surface_form" | "pos">,
+): boolean {
+  return (
+    token.pos === "記号" ||
+    token.surface_form.trim().length === 0 ||
+    /^[\p{P}\p{S}]$/u.test(token.surface_form)
+  );
+}
+
 export function mapJapaneseToken(token: JapaneseTokenData): TokenResult {
+  const baseForm =
+    token.basic_form === "*" ? token.surface_form : token.basic_form;
+  const reading =
+    token.reading === undefined || token.reading === "*"
+      ? undefined
+      : toHiragana(token.reading);
+
   return {
     surface: token.surface_form,
-    baseForm:
-      token.basic_form === "*" ? token.surface_form : token.basic_form,
-    reading:
-      token.reading === undefined || token.reading === "*"
-        ? undefined
-        : toHiragana(token.reading),
+    baseForm,
+    reading,
     partOfSpeech: token.pos,
+    difficulty: classifyDifficulty(baseForm, reading, token.pos),
     position: token.word_position,
   };
 }
 
 export class JapaneseTokenizer implements Tokenizer {
-    readonly language = "ja";
+  readonly language = "ja";
 
-    private readonly tokenizerPromise: Promise<KuromojiTokenizer<IpadicFeatures>>;
+  private readonly tokenizerPromise: Promise<KuromojiTokenizer<IpadicFeatures>>;
 
+  constructor() {
+    this.tokenizerPromise = new Promise((resolve, reject) => {
+      const dictionaryPath = path.join(
+        process.cwd(),
+        "node_modules",
+        "kuromoji",
+        "dict",
+      );
 
-    constructor() {
-        this.tokenizerPromise = new Promise((resolve, reject) => {
-            const dictionaryPath = path.join(
-                process.cwd(),
-                "node_modules",
-                "kuromoji",
-                "dict",
-            );
+      const builder = kuromoji.builder;
 
-            kuromoji
-                .builder({ dicPath: dictionaryPath })
-                .build((error, tokenizer) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
+      if (!builder || typeof builder !== "function") {
+        reject(new Error("Kuromoji builder is not available."));
+        return;
+      }
 
-                    resolve(tokenizer);
-                });
+      builder.call(kuromoji, { dicPath: dictionaryPath })
+        .build((error: Error | null, tokenizer: KuromojiTokenizer<IpadicFeatures> | undefined) => {
+          if (error || !tokenizer) {
+            reject(error ?? new Error("Kuromoji tokenizer is unavailable."));
+            return;
+          }
+
+          resolve(tokenizer);
         });
-    }
+    });
+  }
 
-    async tokenize(text: string): Promise<TokenResult[]> {
+  async tokenize(text: string): Promise<TokenResult[]> {
     if (text.trim().length === 0) {
       return [];
     }
@@ -71,6 +91,8 @@ export class JapaneseTokenizer implements Tokenizer {
     const tokenizer = await this.tokenizerPromise;
     const tokens = tokenizer.tokenize(text);
 
-    return tokens.map(mapJapaneseToken);
+    return tokens
+      .filter((token) => !isNonLexicalToken(token))
+      .map(mapJapaneseToken);
   }
 }

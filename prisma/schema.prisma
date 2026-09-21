@@ -23,4 +23,87 @@ model SourceText {
   sourceUrl      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  tokens         Token[]
+}
+
+model Token {
+  id             String      @id @default(cuid())
+  sourceTextId   String
+  sourceText     SourceText  @relation(fields: [sourceTextId], references: [id], onDelete: Cascade)
+
+  surface        String
+  lemma          String?
+  reading        String?
+  partOfSpeech   String?
+  position       Int
+  isParticle     Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  @@index([sourceTextId, position])
+}
+
+model VocabularyEntry {
+  id             String   @id @default(cuid())
+  lemma          String
+  surface        String?
+  reading        String?
+  partOfSpeech   String?
+  difficulty     String   @default("N5")
+  sourceLanguage String   @default("ja")
+  targetLanguage String   @default("fr")
+  occurrenceCount Int     @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([lemma, sourceLanguage, targetLanguage])
+  @@index([sourceLanguage, targetLanguage, occurrenceCount])
+  @@index([difficulty, occurrenceCount])
+}
+
+model Deck {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cards Card[]
+}
+
+model Card {
+  id             String   @id @default(cuid())
+  deckId         String
+  deck           Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  lemma          String
+  surface        String?
+  reading        String?
+  meaning        String?
+  sourceLanguage String   @default("ja")
+  targetLanguage String   @default("fr")
+  repetitions    Int      @default(0)
+  interval       Int      @default(0)
+  easeFactor     Float    @default(2.5)
+  dueAt          DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@unique([deckId, lemma, sourceLanguage, targetLanguage])
+  @@index([deckId, lemma])
+  @@index([deckId, dueAt])
+}
+
+model TranslationCache {
+  id             String   @id @default(cuid())
+  lemma          String
+  sourceLanguage String   @default("ja")
+  targetLanguage String   @default("fr")
+  translation    String
+  explanation    String
+  difficulty     String   @default("N5")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([lemma, sourceLanguage, targetLanguage])
+  @@index([sourceLanguage, targetLanguage, lemma])
+  @@index([difficulty, lemma])
 }

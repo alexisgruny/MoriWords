@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
 
-import { mapJapaneseToken, toHiragana } from "./japanese-tokenizer";
+import {
+  isNonLexicalToken,
+  mapJapaneseToken,
+  toHiragana,
+} from "./japanese-tokenizer";
 
 describe("toHiragana", () => {
   it("convertit une lecture katakana en hiragana", () => {
     expect(toHiragana("タベマシタ")).toBe("たべました");
+  });
+});
+
+describe("isNonLexicalToken", () => {
+  it("rejetter les ponctuations et symboles isolés comme / ? ; !", () => {
+    expect(isNonLexicalToken({ surface_form: "/", pos: "記号" })).toBe(true);
+    expect(isNonLexicalToken({ surface_form: "?", pos: "名詞" })).toBe(true);
+    expect(isNonLexicalToken({ surface_form: ";", pos: "記号" })).toBe(true);
+    expect(isNonLexicalToken({ surface_form: "!", pos: "名詞" })).toBe(true);
+    expect(isNonLexicalToken({ surface_form: "日本語", pos: "名詞" })).toBe(false);
   });
 });
 
@@ -23,6 +37,7 @@ describe("mapJapaneseToken", () => {
       baseForm: "食べる",
       reading: "たべました",
       partOfSpeech: "動詞",
+      difficulty: "N5",
       position: 1,
     });
   });
@@ -41,7 +56,24 @@ describe("mapJapaneseToken", () => {
       baseForm: "！",
       reading: undefined,
       partOfSpeech: "記号",
+      difficulty: "unknown",
       position: 8,
     });
+  });
+
+  it("tokenise un texte japonais réel", async () => {
+    const { JapaneseTokenizer } = await import("./japanese-tokenizer");
+    const tokenizer = new JapaneseTokenizer();
+    const tokens = await tokenizer.tokenize("私は日本語を勉強します。");
+
+    expect(tokens[0]).toMatchObject({
+      surface: "私",
+      baseForm: "私",
+      partOfSpeech: "名詞",
+      difficulty: "N5",
+    });
+    expect(tokens.length).toBeGreaterThan(0);
+    expect(tokens.some((token) => token.partOfSpeech === "記号")).toBe(false);
+    expect(tokens.some((token) => token.surface === "。" || token.surface === "、")).toBe(false);
   });
 });
