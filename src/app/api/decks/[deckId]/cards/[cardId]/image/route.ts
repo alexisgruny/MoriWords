@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { toEnglishImageQuery } from "@/lib/images/gloss";
 import { ImageServiceError, searchCardImage } from "@/lib/images/search";
 
 export async function POST(
@@ -14,7 +15,11 @@ export async function POST(
       return Response.json({ error: "Carte introuvable pour ce deck." }, { status: 404 });
     }
 
-    const image = await searchCardImage(card.meaning || card.lemma);
+    const englishQuery = await toEnglishImageQuery(
+      card.meaning || card.lemma,
+      card.meaning ? card.targetLanguage : card.sourceLanguage,
+    );
+    const image = await searchCardImage(englishQuery);
 
     if (!image) {
       return Response.json(
