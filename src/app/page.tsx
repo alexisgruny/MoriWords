@@ -2,20 +2,31 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import { useToast } from "@/components/toast-provider";
 import type { TokenResult } from "@/lib/tokenizer/types";
 import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
 
 // Texte affiché par défaut dans la zone de saisie, au premier chargement.
 const starterText = "私は毎朝コーヒーを飲みながら、日本語を勉強しています。";
 
+// Sources de contenu généré disponibles en un clic, chacune backée par
+// POST /api/source-texts/<key> (voir src/lib/feeds/).
+const GENERATED_SOURCES = [
+  { key: "anime-quote", label: "Citation d'anime" },
+  { key: "news-summary", label: "Actualité simplifiée" },
+  { key: "daily-dialogue", label: "Dialogue quotidien" },
+  { key: "literary-excerpt", label: "Extrait littéraire" },
+] as const;
+
 // Page d'accueil : coller un texte japonais, l'analyser mot par mot, le
 // traduire et ajouter des mots à un deck. C'est le cœur du parcours d'apprentissage.
 export default function Home() {
+  const { showToast } = useToast();
   const [text, setText] = useState(starterText);
   const [tokens, setTokens] = useState<TokenResult[]>([]);
   const [selectedToken, setSelectedToken] = useState<TokenResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [loadingSourceKey, setLoadingSourceKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
   const [recentSourceTexts, setRecentSourceTexts] = useState<SourceTextSummary[]>([]);
@@ -175,6 +186,7 @@ export default function Home() {
       setSelectedDeckId(createdDeck.id);
       setIsCreatingNewDeck(false);
       setNewDeckName("");
+      showToast(`Deck « ${createdDeck.name} » créé.`);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -304,23 +316,25 @@ export default function Home() {
     }
   }
 
-  // Gère le clic sur "Citation d'anime" : demande une citation à Claude,
-  // la met dans la zone de texte, puis l'analyse mot par mot.
-  async function handleGenerateAnimeQuote() {
-    setIsLoadingQuote(true);
+  // Gère le clic sur un des boutons de source générée (citation d'anime,
+  // actualité, dialogue, extrait littéraire...) : demande un texte à
+  // Claude via /api/source-texts/<sourceKey>, le met dans la zone de
+  // texte, puis l'analyse mot par mot.
+  async function handleGenerateSource(sourceKey: string) {
+    setLoadingSourceKey(sourceKey);
     setError(null);
     setSelectedToken(null);
     setTranslation(null);
     setTextTranslation(null);
 
     try {
-      const response = await fetch("/api/source-texts/anime-quote", {
+      const response = await fetch(`/api/source-texts/${sourceKey}`, {
         method: "POST",
       });
       const data: unknown = await response.json();
 
       if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de générer une citation");
+        throw new Error("Impossible de générer le contenu");
       }
 
       if ("error" in data && typeof data.error === "string") {
@@ -346,10 +360,10 @@ export default function Home() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Une erreur est survenue pendant la génération de la citation.",
+          : "Une erreur est survenue pendant la génération du contenu.",
       );
     } finally {
-      setIsLoadingQuote(false);
+      setLoadingSourceKey(null);
     }
   }
 
@@ -503,6 +517,7 @@ export default function Home() {
 
       await fetchDecks();
       setError(null);
+      showToast(`« ${selectedToken.baseForm || selectedToken.surface} » ajouté au deck.`);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -559,14 +574,17 @@ export default function Home() {
                 {text.length} caractères
               </span>
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => void handleGenerateAnimeQuote()}
-                  disabled={isLoadingQuote || isLoading}
-                  className="secondary-button"
-                >
-                  {isLoadingQuote ? "Génération..." : "Citation d'anime"}
-                </button>
+                {GENERATED_SOURCES.map((source) => (
+                  <button
+                    key={source.key}
+                    type="button"
+                    onClick={() => void handleGenerateSource(source.key)}
+                    disabled={loadingSourceKey !== null || isLoading}
+                    className="secondary-button"
+                  >
+                    {loadingSourceKey === source.key ? "Génération..." : source.label}
+                  </button>
+                ))}
                 <button
                   type="submit"
                   disabled={isLoading || text.trim().length === 0}
