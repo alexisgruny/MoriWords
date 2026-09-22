@@ -379,31 +379,53 @@ Priorite 11 - Ajouter les flux quotidiens
 -----------------------------------------
 Objectif : proposer du contenu frais sans scraping fragile ou abusif.
 
-Progression : BLOQUEE sur la source NHK Easy. Verification faite le
-2026-09-22 : NHK ne publie aucun flux RSS officiel pour NHK Easy News (seul un
-scraper communautaire non officiel existe sur GitHub), et le robots.txt de
-www3.nhk.or.jp interdit explicitement les crawlers IA (ClaudeBot, anthropic-ai,
-GPTBot, etc. avec "Disallow: /"). Recuperer ce contenu irait donc a l'encontre
-des conditions du site. Il faut choisir une autre source avant de continuer
-cette priorite (flux RSS officiel d'un autre media, ou API dediee).
+Progression : BLOQUEE sur la source news/NHK Easy (voir plus bas), mais la
+categorie "anime" est TERMINEE via une approche differente : plutot que de
+scraper un site (RSS ou HTML), src/lib/feeds/anime-quote.ts demande
+directement a Claude une citation japonaise celebre et verifiable issue d'un
+anime/film/serie. Ca contourne entierement le probleme robots.txt/CGU
+puisqu'aucun site externe n'est requete. Bouton "Citation d'anime" ajoute
+dans l'UI (cree un SourceText avec origin="anime-quote", category="anime",
+analyse aussitot). Dedup best-effort : les 15 dernieres citations generees
+sont passees en exclusion dans le prompt. Valide manuellement le 2026-09-22 :
+3 generations consecutives ont donne 3 citations differentes et verifiables
+(半沢直樹, Slam Dunk, 進撃の巨人), tokenizees sans probleme.
+
+Verification faite le 2026-09-22 pour la categorie news : NHK ne publie aucun
+flux RSS officiel pour NHK Easy News (seul un scraper communautaire non
+officiel existe sur GitHub), et le robots.txt de www3.nhk.or.jp interdit
+explicitement les crawlers IA (ClaudeBot, anthropic-ai, GPTBot, etc. avec
+"Disallow: /"). Recuperer ce contenu irait donc a l'encontre des conditions
+du site. Il faut choisir une autre source avant de continuer sur ce point
+(flux RSS officiel d'un autre media, ou API dediee).
 
 A faire :
-- [BLOQUE] Utiliser NHK Easy comme source (pas de flux RSS officiel, robots.txt
-  interdit les crawlers IA - voir Progression). Choisir une source alternative.
+- [BLOQUE] Utiliser NHK Easy comme source news (pas de flux RSS officiel,
+  robots.txt interdit les crawlers IA - voir Progression). Choisir une
+  source alternative.
 - [A FAIRE] Verifier robots.txt, CGU et conditions de redistribution de la
   source alternative retenue avant tout scraping.
-- Creer un adaptateur par source dans src/lib/feeds/.
-- Parser RSS, dedoublonner les URLs et creer des SourceText.
-- Ajouter une categorie news, gaming ou anime.
-- Creer une route cron protegee par un secret.
+- [TERMINE] Categorie anime : citations generees par Claude, sans scraping
+  (src/lib/feeds/anime-quote.ts + route /api/source-texts/anime-quote).
+- Creer un adaptateur par source dans src/lib/feeds/ (pour une future
+  categorie news basee sur du RSS/scraping reel).
+- Parser RSS, dedoublonner les URLs et creer des SourceText (pour la source
+  news, une fois choisie).
+- Creer une route cron protegee par un secret (pour automatiser au-dela du
+  bouton manuel actuel).
 - Configurer le scheduler du fournisseur de deploiement.
-- Laisser gaming et anime vides si aucune source propre n'est validee.
+- [BLOQUE] Categorie gaming : laissee vide, aucune source propre validee.
 
 Validation :
-- Le job peut etre relance sans creer de doublons.
+- [TERMINE] Le job (bouton "Citation d'anime") peut etre relance plusieurs
+  fois sans repeter la meme citation (exclusion des 15 dernieres).
+- Le job peut etre relance sans creer de doublons (pour la source news, une
+  fois implementee).
 - Une source en erreur ne bloque pas les autres.
-- Les textes du jour apparaissent groupes par categorie.
-- Le job est protege et journalise sans secret.
+- [TERMINE] Les citations d'anime sont groupees par categorie ("anime") via
+  SourceText.category, coherent avec le reste du modele.
+- Le job est protege et journalise sans secret (pour un cron automatise,
+  le bouton manuel actuel n'en a pas besoin).
 
 Priorite 12 - Statistiques et polish
 Objectif : ameliorer l'usage quotidien une fois le parcours complet stable.
@@ -433,15 +455,19 @@ A faire :
   secrets (ANTHROPIC_API_KEY etc.) dans les tests si mal configuree.
 
 Prochaines priorites recommandees
-1. Ajouter UNSPLASH_ACCESS_KEY sur Vercel (deja valide en local) pour activer
-   les images en production.
-2. Audio ElevenLabs laisse de cote pour l'instant (bloque sur le plan
-   gratuit, voir Priorite 9) - a reprendre si besoin en essayant une autre
-   voix de bibliotheque ou l'Instant Voice Cloning.
-3. Choisir une source RSS alternative a NHK Easy (bloquee, voir Priorite 11)
-   puis construire l'adaptateur, la deduplication et le cron securise.
-4. Faire un passage manuel reel sur mobile/navigateur et avec un lecteur
+1. Choisir une source RSS alternative a NHK Easy pour la categorie news
+   (bloquee, voir Priorite 11) puis construire l'adaptateur, la
+   deduplication et le cron securise. La categorie anime est deja couverte
+   sans RSS via les citations generees par Claude.
+2. Faire un passage manuel reel sur mobile/navigateur et avec un lecteur
    d'ecran pour valider l'audit d'accessibilite fait a la lecture du code.
+3. Reactiver l'UI audio/images quand le moment est venu : le code est pret
+   (src/lib/tts, src/lib/images, routes API) mais masque de l'interface
+   depuis le 2026-09-22 a la demande de l'utilisateur ; l'audio reste bloque
+   sur le plan ElevenLabs gratuit (voir Priorite 9).
+4. Envisager le SDK Anthropic officiel a la place de l'appel HTTP direct
+   (optionnel, l'appel direct fonctionne et est durci).
+5. Prevoir une strategie CEFR pour l'anglais si une deuxieme langue est ajoutee.
 5. Envisager le SDK Anthropic officiel a la place de l'appel HTTP direct
    (optionnel, l'appel direct fonctionne et est durci).
 

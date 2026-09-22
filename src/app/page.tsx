@@ -37,6 +37,7 @@ export default function Home() {
   const [tokens, setTokens] = useState<TokenResult[]>([]);
   const [selectedToken, setSelectedToken] = useState<TokenResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
   const [recentSourceTexts, setRecentSourceTexts] = useState<SourceTextSummary[]>([]);
@@ -659,6 +660,90 @@ export default function Home() {
     }
   }
 
+  // Tokenise un texte déjà sauvegardé, lie les tokens au SourceText et
+  // rafraîchit le vocabulaire. Partagé entre la saisie manuelle et la
+  // citation d'anime générée, qui créent toutes deux un SourceText avant
+  // d'appeler cette fonction.
+  async function analyzeSourceText(sourceTextId: string, content: string) {
+    const tokenizeResponse = await fetch("/api/tokenize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: content }),
+    });
+    const tokenizeData: unknown = await tokenizeResponse.json();
+
+    if (
+      !tokenizeResponse.ok ||
+      typeof tokenizeData !== "object" ||
+      tokenizeData === null
+    ) {
+      throw new Error("Analyse impossible");
+    }
+
+    if ("error" in tokenizeData && typeof tokenizeData.error === "string") {
+      throw new Error(tokenizeData.error);
+    }
+
+    if (!("tokens" in tokenizeData) || !Array.isArray(tokenizeData.tokens)) {
+      throw new Error("Réponse inattendue du serveur");
+    }
+
+    const analyzedTokens = tokenizeData.tokens as TokenResult[];
+    setTokens(analyzedTokens);
+
+    const tokenSaveResponse = await fetch("/api/tokens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceTextId,
+        tokens: analyzedTokens,
+      }),
+    });
+    const tokenSaveData: unknown = await tokenSaveResponse.json();
+
+    if (!tokenSaveResponse.ok || typeof tokenSaveData !== "object" || tokenSaveData === null) {
+      throw new Error("Impossible de sauvegarder les tokens");
+    }
+
+    if ("error" in tokenSaveData && typeof tokenSaveData.error === "string") {
+      throw new Error(tokenSaveData.error);
+    }
+
+    const vocabularyResponse = await fetch("/api/vocabulary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tokens: analyzedTokens,
+        sourceLanguage: "ja",
+        targetLanguage: "fr",
+      }),
+    });
+    const vocabularyData: unknown = await vocabularyResponse.json();
+
+    if (!vocabularyResponse.ok || typeof vocabularyData !== "object" || vocabularyData === null) {
+      throw new Error("Impossible de sauvegarder le vocabulaire");
+    }
+
+    if ("error" in vocabularyData && typeof vocabularyData.error === "string") {
+      throw new Error(vocabularyData.error);
+    }
+
+    const refreshedVocabularyResponse = await fetch("/api/vocabulary");
+    const refreshedVocabularyData: unknown = await refreshedVocabularyResponse.json();
+
+    if (
+      refreshedVocabularyResponse.ok &&
+      typeof refreshedVocabularyData === "object" &&
+      refreshedVocabularyData !== null &&
+      "entries" in refreshedVocabularyData &&
+      Array.isArray(refreshedVocabularyData.entries)
+    ) {
+      setVocabularyEntries(refreshedVocabularyData.entries as Array<{ lemma: string; occurrenceCount: number; reading?: string | null; partOfSpeech?: string | null }>);
+    }
+
+    await loadTokensForText(sourceTextId);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
@@ -700,85 +785,7 @@ export default function Home() {
       ].slice(0, 20));
       setSelectedSourceTextId(createdSourceText.id);
 
-      // 2) Tokenise le texte pour obtenir les mots et leurs métadonnées.
-      const tokenizeResponse = await fetch("/api/tokenize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const tokenizeData: unknown = await tokenizeResponse.json();
-
-      if (
-        !tokenizeResponse.ok ||
-        typeof tokenizeData !== "object" ||
-        tokenizeData === null
-      ) {
-        throw new Error("Analyse impossible");
-      }
-
-      if ("error" in tokenizeData && typeof tokenizeData.error === "string") {
-        throw new Error(tokenizeData.error);
-      }
-
-      if (!("tokens" in tokenizeData) || !Array.isArray(tokenizeData.tokens)) {
-        throw new Error("Réponse inattendue du serveur");
-      }
-
-      const analyzedTokens = tokenizeData.tokens as TokenResult[];
-      setTokens(analyzedTokens);
-
-      // 3) Lie chaque token au SourceText pour pouvoir le retrouver plus tard.
-      const tokenSaveResponse = await fetch("/api/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourceTextId: createdSourceText.id,
-          tokens: analyzedTokens,
-        }),
-      });
-      const tokenSaveData: unknown = await tokenSaveResponse.json();
-
-      if (!tokenSaveResponse.ok || typeof tokenSaveData !== "object" || tokenSaveData === null) {
-        throw new Error("Impossible de sauvegarder les tokens");
-      }
-
-      if ("error" in tokenSaveData && typeof tokenSaveData.error === "string") {
-        throw new Error(tokenSaveData.error);
-      }
-
-      const vocabularyResponse = await fetch("/api/vocabulary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tokens: analyzedTokens,
-          sourceLanguage: "ja",
-          targetLanguage: "fr",
-        }),
-      });
-      const vocabularyData: unknown = await vocabularyResponse.json();
-
-      if (!vocabularyResponse.ok || typeof vocabularyData !== "object" || vocabularyData === null) {
-        throw new Error("Impossible de sauvegarder le vocabulaire");
-      }
-
-      if ("error" in vocabularyData && typeof vocabularyData.error === "string") {
-        throw new Error(vocabularyData.error);
-      }
-
-      const refreshedVocabularyResponse = await fetch("/api/vocabulary");
-      const refreshedVocabularyData: unknown = await refreshedVocabularyResponse.json();
-
-      if (
-        refreshedVocabularyResponse.ok &&
-        typeof refreshedVocabularyData === "object" &&
-        refreshedVocabularyData !== null &&
-        "entries" in refreshedVocabularyData &&
-        Array.isArray(refreshedVocabularyData.entries)
-      ) {
-        setVocabularyEntries(refreshedVocabularyData.entries as Array<{ lemma: string; occurrenceCount: number; reading?: string | null; partOfSpeech?: string | null }>);
-      }
-
-      await loadTokensForText(createdSourceText.id);
+      await analyzeSourceText(createdSourceText.id, text);
     } catch (requestError) {
       setTokens([]);
       setError(
@@ -788,6 +795,53 @@ export default function Home() {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleGenerateAnimeQuote() {
+    setIsLoadingQuote(true);
+    setError(null);
+    setSelectedToken(null);
+    setTranslation(null);
+    setTextTranslation(null);
+
+    try {
+      const response = await fetch("/api/source-texts/anime-quote", {
+        method: "POST",
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible de générer une citation");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      if (!("sourceText" in data) || typeof data.sourceText !== "object" || data.sourceText === null) {
+        throw new Error("Réponse inattendue lors de la génération");
+      }
+
+      const generatedSourceText = data.sourceText as SourceTextSummary;
+
+      setText(generatedSourceText.content);
+      setRecentSourceTexts((current) => [
+        generatedSourceText,
+        ...current.filter((sourceText) => sourceText.id !== generatedSourceText.id),
+      ].slice(0, 20));
+      setSelectedSourceTextId(generatedSourceText.id);
+
+      await analyzeSourceText(generatedSourceText.id, generatedSourceText.content);
+    } catch (requestError) {
+      setTokens([]);
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la génération de la citation.",
+      );
+    } finally {
+      setIsLoadingQuote(false);
     }
   }
 
@@ -835,13 +889,23 @@ export default function Home() {
               <span className="text-sm text-[var(--muted)]">
                 {text.length} caractères
               </span>
-              <button
-                type="submit"
-                disabled={isLoading || text.trim().length === 0}
-                className="primary-button"
-              >
-                {isLoading ? "Analyse en cours..." : "Analyser le texte"}
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleGenerateAnimeQuote()}
+                  disabled={isLoadingQuote || isLoading}
+                  className="secondary-button"
+                >
+                  {isLoadingQuote ? "Génération..." : "Citation d'anime"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || text.trim().length === 0}
+                  className="primary-button"
+                >
+                  {isLoading ? "Analyse en cours..." : "Analyser le texte"}
+                </button>
+              </div>
             </div>
 
             {error ? (
@@ -1273,6 +1337,9 @@ export default function Home() {
                   <time className="eyebrow" dateTime={sourceText.createdAt}>
                     {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
                   </time>
+                  {sourceText.title ? (
+                    <p className="mt-1 text-xs font-medium text-[var(--accent)]">{sourceText.title}</p>
+                  ) : null}
                   <p className="mt-2 line-clamp-2 text-base leading-7 text-[var(--ink)]" lang="ja">
                     {sourceText.content}
                   </p>
