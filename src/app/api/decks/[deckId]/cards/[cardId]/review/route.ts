@@ -46,18 +46,30 @@ export async function POST(
       quality,
     );
 
-    const updatedCard = await prisma.card.update({
-      where: { id: cardId },
-      data: {
-        repetitions: nextState.repetitions,
-        interval: nextState.interval,
-        easeFactor: nextState.easeFactor,
-        dueAt: nextState.dueAt,
-      },
-    });
+    const [updatedCard] = await prisma.$transaction([
+      prisma.card.update({
+        where: { id: cardId },
+        data: {
+          repetitions: nextState.repetitions,
+          interval: nextState.interval,
+          easeFactor: nextState.easeFactor,
+          dueAt: nextState.dueAt,
+        },
+      }),
+      prisma.reviewLog.create({
+        data: {
+          cardId,
+          quality,
+          interval: nextState.interval,
+          easeFactor: nextState.easeFactor,
+          repetitions: nextState.repetitions,
+        },
+      }),
+    ]);
 
     return Response.json({ card: updatedCard });
-  } catch {
+  } catch (error) {
+    console.error("Failed to record review:", error);
     return Response.json(
       { error: "Impossible de mettre à jour la révision." },
       { status: 500 },

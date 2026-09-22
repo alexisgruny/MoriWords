@@ -11,10 +11,31 @@ d'ajouter d'autres langues plus tard.
 
 Etat actuel
 -----------
-Le projet Next.js, TypeScript, Tailwind et Prisma est installe.
-Les commandes lint, build, prisma validate et prisma generate passent.
-La page d'accueil affiche encore le template Next.js.
-Le schema Prisma ne contient pas encore les modeles metier.
+Le MVP est deploye sur Vercel : https://moriwords.vercel.app.
+Le projet utilise Next.js 16, TypeScript, Tailwind, Prisma 7 et PostgreSQL.
+Le parcours principal fonctionne : texte japonais -> tokenization -> detection
+des mots -> JLPT -> traduction mot ou phrase -> deck -> revision SM-2.
+Les migrations Prisma sont presentes et le dataset JLPT compact contient
+18 459 entrees normalisees. Les mots absents du dataset retournent unknown.
+La traduction (mot et phrase) est validee avec un schema Zod, un timeout de
+20s et des erreurs claires sans fuite de details internes ; le cache est
+verifie en local et en production.
+La deduplication des cartes (WordOccurrence), la recherche/suppression de
+cartes, l'historique des revisions (ReviewLog) et les statistiques de deck
+(cartes dues, taux de reussite) sont implementees.
+Les images de cartes (Unsplash) sont operationnelles et validees en reel.
+L'audio (ElevenLabs) est code-complet mais bloque : le plan gratuit refuse les
+voix de bibliotheque via l'API (402 "paid_plan_required"), meme ajoutees a
+My Voices ; mis de cote pour l'instant (voir Priorite 9).
+Le flux RSS NHK Easy est bloque : pas de flux officiel et robots.txt interdit
+les crawlers IA (voir Priorite 11) ; une source alternative reste a choisir.
+Un audit d'accessibilite/responsive a ete fait (labels, focus-visible, un bug
+de style manquant corrige) et un test d'integration bout en bout sur la vraie
+base a ete ajoute (Priorite 12) ; il manque encore un test manuel reel sur
+navigateur/mobile et lecteur d'ecran.
+Tests et build passent ; la prochaine etape concerne surtout le choix d'une
+source RSS alternative et l'activation reelle d'ElevenLabs/Unsplash avec de
+vraies cles API.
 
 Regle de travail
 ----------------
@@ -52,7 +73,7 @@ JapaneseTokenizer creees et validees avec npx tsc --noEmit.
 Route API et interface de saisie ajoutees et validees avec lint, build et un
 test runtime sur une phrase japonaise (10 tokens retournes).
 Tests unitaires du mapping ajoutes et valides avec npm test.
-Prochaine etape : persister les textes sources et leurs tokens avec PostgreSQL.
+Cette etape est terminee.
 
 Notion a comprendre :
 Un tokenizer transforme un texte en unites lexicales. Pour le japonais, les mots
@@ -103,7 +124,7 @@ Objectif : conserver les textes analyses.
 Progression : ETAPE 3 TERMINEE - modele SourceText, migration PostgreSQL,
 singleton Prisma, routes POST/GET et affichage des textes recents finalises.
 Validee avec TypeScript, lint, tests, build et tests runtime PostgreSQL.
-Prochaine etape : persister les tokens rattaches a chaque SourceText.
+Cette etape est terminee.
 
 Notions a comprendre :
 Prisma decrit les modeles et leurs relations. Une migration versionne les
@@ -147,8 +168,9 @@ Priorite 4b - Dedoublonner le vocabulaire par lemme
 ----------------------------------------------------
 Objectif : passer des tokens bruts a un vocabulaire exploitable.
 
-Progression : TERMINE - regroupement par lemme, compteur d'occurrences,
-section "Vocabulaire du texte" dans l'interface, et test unitaire sur le calcul.
+Progression : TERMINE - regroupement par lemme, compteur d'occurrences et test
+unitaire sur le calcul. La section redondante "Vocabulaire du texte" a ete
+retiree de l'interface ; la detection des tokens reste la vue principale.
 
 A faire :
 - [TERMINE] Agrger les tokens par baseForm/lemma.
@@ -160,135 +182,216 @@ A faire :
 Validation :
 - [TERMINE] Un mot repete n'apparait qu'une seule fois dans le vocabulaire.
 - [TERMINE] Le compteur d'occurrences est correct.
-- [TERMINE] La page affiche le top 10 par frequence.
+- [TERMINE] Le calcul du vocabulaire est couvert par un test de regression.
 
 Priorite 5 - Ajouter la traduction contextuelle
 -----------------------------------------------
 Objectif : traduire un mot ou une phrase selectionnee.
+
+Progression : QUASI TERMINEE - traduction d'un mot ou d'une phrase, cache
+Prisma (verifie en production), validation runtime Zod, timeout explicite sur
+l'appel Anthropic et erreurs claires sans fuite de details internes sont
+implementes. Il reste seulement a envisager le SDK Anthropic officiel a la
+place de l'appel HTTP direct, qui fonctionne correctement.
 
 Notions a comprendre :
 Un structured output impose une forme de reponse stable au modele. Le code doit
 valider la reponse avant de l'utiliser et traiter les erreurs partielles.
 
 A faire :
-- Installer le SDK Anthropic.
-- Creer un prompt parametre par sourceLanguage et targetLanguage.
-- Definir le schema de sortie : word, reading, translation, grammarNote,
-  exampleSentence.
-- Valider la reponse avec un schema TypeScript/runtime, par exemple Zod.
-- Creer TranslationCache avec cle logique langue source + langue cible + mot +
+- [PARTIEL] Installer le SDK Anthropic (l'appel HTTP direct fonctionne actuellement).
+- [TERMINE] Creer un prompt parametre par sourceLanguage et targetLanguage.
+- [TERMINE] Definir le schema de sortie : translation, explanation et difficulty.
+- [TERMINE] Valider la reponse avec un schema runtime (Zod).
+- [TERMINE] Creer TranslationCache avec cle logique langue source + langue cible + mot +
   contexte pertinent.
-- Implementer lecture du cache avant appel API.
-- Ajouter une action de traduction depuis un token selectionne.
-- Ne jamais exposer la cle API au navigateur.
+- [TERMINE] Implementer lecture du cache avant appel API.
+- [TERMINE] Ajouter une action de traduction depuis un token selectionne.
+- [TERMINE] Ajouter une action de traduction de la phrase complete.
+- [TERMINE] Ne jamais exposer la cle API au navigateur.
 
 Validation :
-- Une traduction valide est affichee.
-- Une deuxieme demande equivalente utilise le cache.
-- Une reponse invalide ou un timeout donne une erreur exploitable.
-- Les secrets restent dans les variables d'environnement serveur.
+- [TERMINE] Une traduction valide est affichee.
+- [TERMINE] Une deuxieme demande equivalente utilise le cache (verifie en local et en
+  production sur https://moriwords.vercel.app : ~4.7s a froid puis ~0.38s en cache).
+- [TERMINE] Une reponse invalide, un echec API ou un timeout (20s) donnent une erreur
+  claire au client sans exposer les details bruts de l'API Anthropic.
+- [TERMINE] Les secrets restent dans les variables d'environnement serveur.
 
 Priorite 6 - Creer decks et cartes
 ----------------------------------
 Objectif : transformer un mot analyse en carte personnelle.
 
+Progression : TERMINEE pour le parcours de base. Deck, Card, ajout depuis un
+token, traduction associee, creation automatique d'un deck et contrainte
+d'unicite sont implementes.
+
 A faire :
-- Definir Deck avec nom et paire de langues.
-- Definir Card avec mot, lecture optionnelle, traduction, notes et deck.
-- Ajouter une action "Ajouter au notebook".
-- Utiliser la traduction en cache si elle existe.
-- Ajouter un deck par defaut pour simplifier le premier parcours.
-- Prevoir une contrainte d'unicite compatible avec la paire de langues.
+- [TERMINE] Definir Deck avec nom et paire de langues.
+- [TERMINE] Definir Card avec mot, lecture optionnelle, traduction, notes et deck.
+- [TERMINE] Ajouter une action "Ajouter au notebook".
+- [TERMINE] Utiliser la traduction disponible pour la carte.
+- [TERMINE] Creer automatiquement un deck lors du premier ajout.
+- [TERMINE] Prevoir une contrainte d'unicite compatible avec la paire de langues.
 
 Validation :
-- Un token peut devenir une carte.
-- La carte apparait dans son deck.
-- Les champs japonais specifiques restent optionnels pour les autres langues.
+- [TERMINE] Un token peut devenir une carte.
+- [TERMINE] La carte apparait dans son deck.
+- [TERMINE] Les champs japonais specifiques restent optionnels pour les autres langues.
 
 Priorite 7 - Implementer SM-2 et le mode revision
 -------------------------------------------------
 Objectif : reviser les cartes dues.
+
+Progression : PARTIELLEMENT TERMINEE - scheduler SM-2 pur, route de revision,
+cartes dues, boutons de qualite, historique ReviewLog et statistiques (cartes
+dues, revisions totales, taux de reussite, historique recent) sont
+implementes dans la page principale. Il manque encore une page de revision
+separee de la page principale.
 
 Notion a comprendre :
 SM-2 met a jour la facilite, l'intervalle et la prochaine date selon une note
 de qualite. La logique doit etre pure et independante de Next.js et Prisma.
 
 A faire :
-- Creer un module src/lib/srs/ avec une fonction pure reviewCard.
-- Definir les notes de reponse et leurs effets.
-- Stocker interval, easeFactor, repetitions, dueDate.
-- Ajouter ReviewLog pour chaque revision.
-- Ecrire des tests pour reponses difficiles, reussies et parfaites.
-- Construire une page de revision avec les cartes dues.
+- [TERMINE] Creer un module src/lib/srs/ avec une fonction pure reviewCard.
+- [TERMINE] Definir les notes de reponse et leurs effets.
+- [TERMINE] Stocker interval, easeFactor, repetitions, dueDate.
+- [TERMINE] Ajouter ReviewLog pour chaque revision (modele Prisma + ecriture
+  transactionnelle avec la mise a jour de la carte).
+- [TERMINE] Ecrire des tests pour reponses difficiles, reussies et parfaites.
+- [PARTIEL] Construire le mode revision dans la page principale (toujours pas
+  de page /revision dediee).
+- [TERMINE] Afficher le nombre de cartes dues et les statistiques de reussite
+  par deck (route /api/decks/[deckId]/stats).
 
 Validation :
-- Les formules et dates sont couvertes par des tests.
-- Une revision met a jour la carte et cree un historique.
-- Une carte non due n'apparait pas dans la session normale.
+- [TERMINE] Les formules et dates sont couvertes par des tests.
+- [TERMINE] Une revision met a jour la carte et cree une entree ReviewLog ;
+  l'historique est affiche dans l'UI (verifie localement : succession de
+  revisions correctement journalisee et taux de reussite recalcule).
+- [TERMINE] Une carte non due n'apparait pas dans la session normale.
 
 Priorite 8 - Ajouter la deduplication et les occurrences
 ---------------------------------------------------------
 Objectif : ne pas creer deux cartes pour le meme mot et la meme paire de langues.
 
+Progression : TERMINEE - modele WordOccurrence, dedup a la creation de carte,
+badge "deja ajoute" dans l'analyse et le vocabulaire global, et gestion des
+cartes (recherche, suppression) sont implementes et valides par un test
+d'integration manuel (deux textes, meme mot -> une seule carte avec deux
+occurrences ; suppression en cascade des occurrences et des ReviewLog).
+
 A faire :
-- Definir WordOccurrence entre Card et SourceText, avec position et date si utile.
-- Chercher une carte existante avant toute creation.
-- Si elle existe, proposer d'ajouter une occurrence.
-- Afficher le badge "deja ajoute" dans l'analyse.
-- Definir clairement la normalisation utilisee : lemma + langues.
+- [TERMINE] Definir WordOccurrence entre Card et SourceText, avec position et date.
+- [TERMINE] Chercher une carte existante avant toute creation (upsert par
+  deckId + lemma + langues).
+- [TERMINE] Si elle existe, ajouter une occurrence plutot qu'une nouvelle carte.
+- [TERMINE] Afficher le badge "deja ajoute" dans l'analyse et le vocabulaire global.
+- [TERMINE] Definir clairement la normalisation utilisee : lemma + langues
+  (contrainte d'unicite deckId+lemma+sourceLanguage+targetLanguage).
+- [TERMINE] Ajouter la recherche de cartes dans un deck (par mot, lecture, sens).
+- [TERMINE] Ajouter la suppression d'une carte (avec suppression en cascade de
+  ses occurrences et de son historique de revision).
 
 Validation :
-- Le meme mot provenant de deux textes ne cree qu'une carte.
-- Les deux contextes sont consultables.
-- Deux paires de langues peuvent contenir le meme mot sans collision.
+- [TERMINE] Le meme mot provenant de deux textes ne cree qu'une carte (verifie
+  manuellement : occurrenceCount passe de 1 a 2 sans creer de deuxieme carte).
+- [TERMINE] Les deux contextes sont consultables (occurrences avec le texte
+  source associe, exposees par GET /api/decks/[deckId]/cards).
+- [TERMINE] Deux paires de langues peuvent contenir le meme mot sans collision
+  (garanti par la contrainte d'unicite scoped par sourceLanguage/targetLanguage ;
+  non teste manuellement puisque seul ja->fr est utilise pour l'instant).
 
 Priorite 9 - Ajouter images et audio
 ------------------------------------
 Objectif : enrichir les cartes sans bloquer leur creation.
 
+Progression : IMAGES TERMINEES et validees en reel (Unsplash : cle ajoutee,
+recherche + attribution + URL fonctionnels sur une vraie carte, teste le
+2026-09-22). AUDIO code-complet mais BLOQUE en pratique : ElevenLabs refuse
+les voix de sa bibliotheque partagee aux comptes gratuits via l'API (erreur
+402 "paid_plan_required"), y compris apres avoir ajoute une voix a "My
+Voices" - la restriction est posee par le proprietaire de la voix et n'est
+pas documentee a l'avance par ElevenLabs. Deux options non testees restent
+possibles : essayer une autre voix de la bibliotheque (sans garantie), ou
+cloner une voix personnelle (Instant Voice Cloning, hors bibliotheque
+partagee). Mis de cote pour l'instant a la demande de l'utilisateur ; les
+images suffisent pour enrichir les cartes en attendant.
+
 A faire pour les images :
-- Choisir une API libre et documenter ses limites.
-- Chercher l'image avec la traduction ou un terme anglais.
-- Stocker l'URL et les metadonnees en base.
-- Mettre cette etape dans un pipeline asynchrone separable.
-- Si la recherche echoue, conserver une carte fonctionnelle sans image.
+- [TERMINE] Choisir une API libre et documenter ses limites (Unsplash Search
+  Photos : 50 requetes/heure en dev, attribution obligatoire, ping de
+  l'endpoint download_location a l'usage - implemente).
+- [TERMINE] Chercher l'image avec la traduction ou le lemme (src/lib/images/search.ts).
+- [TERMINE] Stocker l'URL et les metadonnees en base (Card.imageUrl,
+  Card.imageAttribution, cache ImageCache par requete).
+- [TERMINE] Etape declenchee a la demande depuis la revision (bouton
+  "Generer une image"), separable de la creation de carte.
+- [TERMINE] Si la recherche echoue ou si la cle est absente, la carte reste
+  fonctionnelle sans image (verifie : reponse 503 propre).
 
 A faire pour l'audio :
-- Commencer par un fournisseur TTS simple et peu couteux.
-- Choisir la voix selon sourceLanguage.
-- Stocker l'URL ou le fichier et mettre en cache par texte + langue + voix.
-- Ajouter un bouton de lecture dans la revision.
+- [TERMINE] Fournisseur TTS choisi : ElevenLabs (src/lib/tts/synthesize.ts),
+  timeout 20s et erreurs claires sans fuite de details internes.
+- [TERMINE] Choisir la voix selon sourceLanguage (voix japonaise dediee,
+  configurable via ELEVENLABS_JAPANESE_VOICE_ID/ELEVENLABS_VOICE_ID).
+- [TERMINE] Stocker le fichier audio (Bytes en base via AudioCache, servi par
+  GET /api/audio/[cacheId]) et mettre en cache par texte + langue + voix.
+- [TERMINE] Ajouter un bouton de lecture/generation dans la revision.
 
 Validation :
-- Une carte reste creable si une API externe est indisponible.
-- Une image et un audio ne sont pas regeneres inutilement.
-- Les URLs et erreurs externes ne cassent pas la revision.
+- [TERMINE] Une carte reste creable si une API externe est indisponible
+  (verifie manuellement : creation de carte OK, generation audio/image en 503
+  sans cle configuree).
+- [TERMINE] Une image et un audio ne sont pas regeneres inutilement (cache
+  ImageCache par requete, AudioCache par texte+langue+voix, verifie par tests
+  unitaires : le mock fetch n'est pas appele en cas de cache).
+- [TERMINE] Les URLs et erreurs externes ne cassent pas la revision (erreurs
+  capturees et affichees proprement, testees unitairement).
+- [TERMINE] Test de bout en bout avec une vraie cle Unsplash (image reelle
+  recuperee et affichee sur une carte).
+- [BLOQUE] Test de bout en bout avec une vraie cle ElevenLabs : echoue avec
+  402 "paid_plan_required" sur la voix de bibliotheque ajoutee a My Voices.
+  Mis de cote a la demande de l'utilisateur (voir Progression).
 
 Priorite 10 - Ajouter les niveaux de difficulte
 -----------------------------------------------
 Objectif : aider a prioriser le vocabulaire.
 
+Progression : TERMINEE pour le japonais avec un dataset JLPT compact de
+18 459 entrees. Les mots absents retournent unknown au lieu d'etre devines.
+
 A faire :
-- Ajouter difficultyLevel optionnel au resultat de tokenization et en base.
-- Charger un dataset JLPT pour le japonais.
-- Prevoir une strategie CEFR pour l'anglais.
-- Faire un lookup par forme de base et, si necessaire, par forme de surface.
-- Retourner "unknown" quand aucune correspondance fiable n'existe.
-- Afficher un badge N5 a N1 ou A1 a C2.
+- [TERMINE] Ajouter difficulty au resultat de tokenization et dans les flux metier.
+- [TERMINE] Charger un dataset JLPT pour le japonais.
+- [A FAIRE] Prevoir une strategie CEFR pour l'anglais.
+- [TERMINE] Faire un lookup par forme de base et par lecture.
+- [TERMINE] Retourner "unknown" quand aucune correspondance fiable n'existe.
+- [TERMINE] Afficher un badge N5 a N1 ou unknown.
 
 Validation :
-- Les niveaux connus viennent uniquement du dataset.
-- Les mots absents ne sont pas devines.
-- Le niveau est coherent entre affichage et persistance.
+- [TERMINE] Les niveaux connus viennent uniquement du dataset.
+- [TERMINE] Les mots absents ne sont pas devines.
+- [TERMINE] Le niveau est coherent entre affichage et traduction.
 
 Priorite 11 - Ajouter les flux quotidiens
 -----------------------------------------
 Objectif : proposer du contenu frais sans scraping fragile ou abusif.
 
+Progression : BLOQUEE sur la source NHK Easy. Verification faite le
+2026-09-22 : NHK ne publie aucun flux RSS officiel pour NHK Easy News (seul un
+scraper communautaire non officiel existe sur GitHub), et le robots.txt de
+www3.nhk.or.jp interdit explicitement les crawlers IA (ClaudeBot, anthropic-ai,
+GPTBot, etc. avec "Disallow: /"). Recuperer ce contenu irait donc a l'encontre
+des conditions du site. Il faut choisir une autre source avant de continuer
+cette priorite (flux RSS officiel d'un autre media, ou API dediee).
+
 A faire :
-- Commencer par une source RSS propre, par exemple NHK Easy si le flux est
-  disponible et autorise.
-- Verifier robots.txt, CGU et conditions de redistribution avant tout scraping.
+- [BLOQUE] Utiliser NHK Easy comme source (pas de flux RSS officiel, robots.txt
+  interdit les crawlers IA - voir Progression). Choisir une source alternative.
+- [A FAIRE] Verifier robots.txt, CGU et conditions de redistribution de la
+  source alternative retenue avant tout scraping.
 - Creer un adaptateur par source dans src/lib/feeds/.
 - Parser RSS, dedoublonner les URLs et creer des SourceText.
 - Ajouter une categorie news, gaming ou anime.
@@ -303,20 +406,46 @@ Validation :
 - Le job est protege et journalise sans secret.
 
 Priorite 12 - Statistiques et polish
-------------------------------------
 Objectif : ameliorer l'usage quotidien une fois le parcours complet stable.
 
+Progression : TERMINEE pour ce qui etait a la portee d'un audit sans
+navigateur pilote. Les statistiques de deck (cartes dues, revisions totales,
+taux de reussite, historique recent) sont disponibles dans la page principale
+(voir Priorite 7). Un bug reel a ete corrige au passage : la classe
+.secondary-button etait utilisee dans l'UI (bouton "Traduire la phrase" et les
+boutons audio/image) sans jamais avoir ete definie dans globals.css - ces
+boutons s'affichaient donc sans aucun style.
+
 A faire :
-- Nombre de cartes dues.
-- Taux de reussite et historique de revision.
-- Filtres par deck et langue.
-- Recherche dans les SourceText et les cartes.
-- Import de fichiers .srt en extension ulterieure.
-- Amelioration responsive et accessibilite.
-- Ajouter des tests d'integration sur le parcours principal.
+- [TERMINE] Verifier l'accessibilite : labels manquants ajoutes (aria-label
+  sur la recherche de cartes et le nom du deck), focus-visible ajoute sur
+  boutons et token-card, contraste texte secondaire verifie (~4.6:1, conforme
+  AA). Non teste avec un lecteur d'ecran reel.
+- [TERMINE] Verifier le responsive mobile : audit du code confirme l'usage
+  coherent des breakpoints Tailwind deja en place (grid/flex-wrap) sur les
+  nouvelles sections (stats, cartes, revision) ; pas de test visuel reel sur
+  appareil/emulateur.
+- [TERMINE] Ajouter un test d'integration bout en bout sur la vraie base
+  Postgres locale (src/app/api/decks/cards-flow.integration.test.ts) :
+  dedup carte + occurrences + revision + stats + suppression en cascade.
+  A necessite la creation de vitest.config.ts (alias @/ pour Vitest, absent
+  jusque-la) ; a permis de detecter et corriger une fuite potentielle de
+  secrets (ANTHROPIC_API_KEY etc.) dans les tests si mal configuree.
+
+Prochaines priorites recommandees
+1. Ajouter UNSPLASH_ACCESS_KEY sur Vercel (deja valide en local) pour activer
+   les images en production.
+2. Audio ElevenLabs laisse de cote pour l'instant (bloque sur le plan
+   gratuit, voir Priorite 9) - a reprendre si besoin en essayant une autre
+   voix de bibliotheque ou l'Instant Voice Cloning.
+3. Choisir une source RSS alternative a NHK Easy (bloquee, voir Priorite 11)
+   puis construire l'adaptateur, la deduplication et le cron securise.
+4. Faire un passage manuel reel sur mobile/navigateur et avec un lecteur
+   d'ecran pour valider l'audit d'accessibilite fait a la lecture du code.
+5. Envisager le SDK Anthropic officiel a la place de l'appel HTTP direct
+   (optionnel, l'appel direct fonctionne et est durci).
 
 Architecture cible
-------------------
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
 - src/lib/translation/ : prompts, appel Claude et cache.

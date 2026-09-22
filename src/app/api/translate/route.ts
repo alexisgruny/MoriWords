@@ -1,4 +1,4 @@
-import { translateText } from "@/lib/translation/translate";
+import { TranslationServiceError, translateText } from "@/lib/translation/translate";
 
 type TranslateRequest = {
   text: string;
@@ -36,13 +36,13 @@ export async function POST(request: Request) {
     return Response.json({ result });
   } catch (error) {
     console.error("Translation request failed:", error);
+
+    if (error instanceof TranslationServiceError) {
+      return Response.json({ error: error.message }, { status: 502 });
+    }
+
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Impossible de traduire le texte pour le moment.",
-      },
+      { error: "Impossible de traduire le texte pour le moment." },
       { status: 500 },
     );
   }

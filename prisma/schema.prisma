@@ -24,7 +24,8 @@ model SourceText {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tokens         Token[]
+  tokens          Token[]
+  wordOccurrences WordOccurrence[]
 }
 
 model Token {
@@ -87,9 +88,66 @@ model Card {
   dueAt          DateTime @default(now())
   createdAt      DateTime @default(now())
 
+  imageUrl         String?
+  imageAttribution String?
+  audioCacheId     String?
+  audioCache       AudioCache? @relation(fields: [audioCacheId], references: [id], onDelete: SetNull)
+
+  occurrences WordOccurrence[]
+  reviewLogs  ReviewLog[]
+
   @@unique([deckId, lemma, sourceLanguage, targetLanguage])
   @@index([deckId, lemma])
   @@index([deckId, dueAt])
+}
+
+model AudioCache {
+  id        String   @id @default(cuid())
+  text      String
+  language  String
+  voice     String
+  audioData Bytes
+  mimeType  String   @default("audio/mpeg")
+  createdAt DateTime @default(now())
+
+  cards Card[]
+
+  @@unique([text, language, voice])
+}
+
+model ImageCache {
+  id          String   @id @default(cuid())
+  query       String   @unique
+  imageUrl    String
+  attribution String?
+  createdAt   DateTime @default(now())
+}
+
+model WordOccurrence {
+  id           String      @id @default(cuid())
+  cardId       String
+  card         Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  sourceTextId String?
+  sourceText   SourceText? @relation(fields: [sourceTextId], references: [id], onDelete: SetNull)
+  position     Int?
+  createdAt    DateTime    @default(now())
+
+  @@unique([cardId, sourceTextId])
+  @@index([cardId])
+  @@index([sourceTextId])
+}
+
+model ReviewLog {
+  id           String   @id @default(cuid())
+  cardId       String
+  card         Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  quality      Int
+  interval     Int
+  easeFactor   Float
+  repetitions  Int
+  reviewedAt   DateTime @default(now())
+
+  @@index([cardId, reviewedAt])
 }
 
 model TranslationCache {

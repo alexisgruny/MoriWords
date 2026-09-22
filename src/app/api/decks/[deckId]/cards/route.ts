@@ -26,6 +26,11 @@ export async function POST(
       );
     }
 
+    const sourceTextId = typeof candidate.sourceTextId === "string" ? candidate.sourceTextId : null;
+    const position = typeof candidate.position === "number" && Number.isInteger(candidate.position)
+      ? candidate.position
+      : null;
+
     const normalized = normalizeCardPayload({
       lemma,
       surface: typeof candidate.surface === "string" ? candidate.surface : null,
@@ -43,6 +48,17 @@ export async function POST(
         { status: 404 },
       );
     }
+
+    const existingCard = await prisma.card.findUnique({
+      where: {
+        deckId_lemma_sourceLanguage_targetLanguage: {
+          deckId,
+          lemma: normalized.lemma,
+          sourceLanguage: "ja",
+          targetLanguage: "fr",
+        },
+      },
+    });
 
     const card = await prisma.card.upsert({
       where: {
@@ -69,10 +85,63 @@ export async function POST(
       },
     });
 
-    return Response.json({ card }, { status: 201 });
-  } catch {
+    if (sourceTextId) {
+      await prisma.wordOccurrence.upsert({
+        where: {
+          cardId_sourceTextId: {
+            cardId: card.id,
+            sourceTextId,
+          },
+        },
+        update: {},
+        create: {
+          cardId: card.id,
+          sourceTextId,
+          position,
+        },
+      });
+    }
+
+    const occurrenceCount = await prisma.wordOccurrence.count({
+      where: { cardId: card.id },
+    });
+
+    return Response.json(
+      { card, alreadyExisted: existingCard !== null, occurrenceCount },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("Failed to add card to deck:", error);
     return Response.json(
       { error: "Impossible d’ajouter la carte au deck." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ deckId: string }> },
+) {
+  try {
+    const { deckId } = await params;
+
+    const cards = await prisma.card.findMany({
+      where: { deckId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        occurrences: {
+          include: { sourceText: { select: { id: true, title: true, content: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    return Response.json({ cards });
+  } catch (error) {
+    console.error("Failed to fetch deck cards:", error);
+    return Response.json(
+      { error: "Impossible de récupérer les cartes du deck." },
       { status: 500 },
     );
   }

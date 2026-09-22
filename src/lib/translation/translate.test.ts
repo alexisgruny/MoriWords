@@ -10,7 +10,7 @@ vi.mock("@/lib/db/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/db/prisma";
-import { translateText } from "./translate";
+import { TranslationServiceError, translateText } from "./translate";
 
 afterEach(() => {
   delete process.env.ANTHROPIC_API_KEY;
@@ -216,5 +216,56 @@ describe("translateText", () => {
       explanation: "Le mot 私 signifie moi.",
       difficulty: "N5",
     });
+  });
+
+  it("throws a clear timeout error when Anthropic does not respond in time", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    vi.mocked(prisma.translationCache.findUnique).mockResolvedValue(null);
+
+    const abortError = new Error("The operation was aborted");
+    abortError.name = "AbortError";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(abortError));
+
+    await expect(translateText("私", "ja", "fr")).rejects.toThrow(TranslationServiceError);
+    await expect(translateText("私", "ja", "fr")).rejects.toThrow(
+      "Le service de traduction met trop de temps à répondre. Réessaie dans un instant.",
+    );
+  });
+
+  it("throws a generic error without leaking the raw Anthropic error body", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    vi.mocked(prisma.translationCache.findUnique).mockResolvedValue(null);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        text: async () => "sensitive upstream detail",
+      }),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(translateText("私", "ja", "fr")).rejects.toThrow(TranslationServiceError);
+    await expect(translateText("私", "ja", "fr")).rejects.toThrow(
+      "Le service de traduction est momentanément indisponible. Réessaie plus tard.",
+    );
+  });
+
+  it("throws a clear error when Anthropic replies without a usable payload", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    vi.mocked(prisma.translationCache.findUnique).mockResolvedValue(null);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ content: [{ type: "text", text: "pas de JSON ici" }] }),
+      }),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(translateText("私", "ja", "fr")).rejects.toThrow(TranslationServiceError);
   });
 });
