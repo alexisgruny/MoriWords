@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Image from "next/image";
 
 import type { TokenResult } from "@/lib/tokenizer/types";
 import type { JLPTLevel } from "@/lib/difficulty/classify";
@@ -54,8 +53,6 @@ export default function Home() {
   const [reviewCardId, setReviewCardId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [deckCards, setDeckCards] = useState<Array<{
     id: string;
     lemma: string;
@@ -140,23 +137,6 @@ export default function Home() {
             {activeCard ? (
               <>
                 <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
-                  {activeCard.imageUrl ? (
-                    <div className="relative mb-4 h-40 w-full overflow-hidden rounded-lg">
-                      <Image
-                        src={activeCard.imageUrl}
-                        alt={activeCard.meaning ?? activeCard.lemma}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, 480px"
-                      />
-                      {activeCard.imageAttribution ? (
-                        <p className="absolute bottom-0 left-0 right-0 bg-black/40 px-2 py-0.5 text-[10px] text-white">
-                          {activeCard.imageAttribution}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-
                   <p className="text-sm text-[var(--muted)]">Mot à revoir</p>
                   <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
                     {activeCard.lemma}
@@ -172,28 +152,6 @@ export default function Home() {
                         {activeCard.meaning ?? "Sens à compléter"}
                       </p>
                     </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void handlePlayOrGenerateAudio(activeCard)}
-                    disabled={isGeneratingAudio}
-                    className="secondary-button"
-                  >
-                    {isGeneratingAudio ? "Chargement..." : activeCard.audioCacheId ? "Écouter" : "Générer l'audio"}
-                  </button>
-
-                  {!activeCard.imageUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleGenerateImage(activeCard.id)}
-                      disabled={isGeneratingImage}
-                      className="secondary-button"
-                    >
-                      {isGeneratingImage ? "Recherche..." : "Générer une image"}
-                    </button>
                   ) : null}
                 </div>
 
@@ -437,87 +395,6 @@ export default function Home() {
   function selectDeck(deckId: string) {
     setSelectedDeckId(deckId);
     setShowAnswer(false);
-  }
-
-  async function handlePlayOrGenerateAudio(card: DeckCard) {
-    if (!selectedDeckId) {
-      return;
-    }
-
-    if (card.audioCacheId) {
-      new Audio(`/api/audio/${card.audioCacheId}`).play().catch(() => {
-        setError("Impossible de lire l'audio.");
-      });
-      return;
-    }
-
-    setIsGeneratingAudio(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/decks/${selectedDeckId}/cards/${card.id}/audio`, {
-        method: "POST",
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de générer l'audio");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      if ("audioUrl" in data && typeof data.audioUrl === "string") {
-        new Audio(data.audioUrl).play().catch(() => {
-          // Playback can fail silently on some browsers without user interaction context.
-        });
-      }
-
-      await Promise.all([fetchDecks(), loadDeckCards(selectedDeckId)]);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la génération de l'audio.",
-      );
-    } finally {
-      setIsGeneratingAudio(false);
-    }
-  }
-
-  async function handleGenerateImage(cardId: string) {
-    if (!selectedDeckId) {
-      return;
-    }
-
-    setIsGeneratingImage(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/decks/${selectedDeckId}/cards/${cardId}/image`, {
-        method: "POST",
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de récupérer une image");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await Promise.all([fetchDecks(), loadDeckCards(selectedDeckId)]);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la recherche d'image.",
-      );
-    } finally {
-      setIsGeneratingImage(false);
-    }
   }
 
   async function handleTranslateToken(token: TokenResult) {
