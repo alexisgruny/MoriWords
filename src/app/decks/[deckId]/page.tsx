@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useToast } from "@/components/toast-provider";
 import type { DeckCardWithOccurrences, DeckStats, DeckSummary } from "@/types/shared";
 
 // Les trois façons de présenter une carte pendant la révision : le mode
@@ -43,6 +45,7 @@ function highlightLemma(sentence: string, lemma: string): ReactNode {
 export default function DeckDetailPage() {
   const params = useParams<{ deckId: string }>();
   const deckId = params.deckId;
+  const { showToast } = useToast();
 
   const [deck, setDeck] = useState<DeckSummary | null>(null);
   const [deckCards, setDeckCards] = useState<DeckCardWithOccurrences[]>([]);
@@ -54,6 +57,7 @@ export default function DeckDetailPage() {
   const [reviewMode, setReviewMode] = useState<ReviewMode>("standard");
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [cardPendingDeletion, setCardPendingDeletion] = useState<DeckCardWithOccurrences | null>(null);
 
   // Filtre les cartes affichées selon la recherche (mot, lecture ou sens).
   const normalizedCardSearch = cardSearchQuery.trim().toLowerCase();
@@ -153,12 +157,14 @@ export default function DeckDetailPage() {
       }
 
       await Promise.all([loadDeck(), loadDeckCards(), loadDeckStats()]);
+      showToast("Carte supprimée.");
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
           : "Une erreur est survenue pendant la suppression de la carte.",
       );
+      showToast("La suppression de la carte a échoué.", "error");
     }
   }
 
@@ -188,6 +194,7 @@ export default function DeckDetailPage() {
       await Promise.all([loadDeck(), loadDeckStats()]);
       setReviewCardId(null);
       setShowAnswer(false);
+      showToast("Révision enregistrée.");
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -367,7 +374,7 @@ export default function DeckDetailPage() {
                     Afficher la réponse
                   </button>
                 ) : (
-                  <>
+                  <div className="grid w-full grid-cols-3 gap-2">
                     {[0, 1, 2, 3, 4, 5].map((quality) => {
                       const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
                       return (
@@ -382,7 +389,7 @@ export default function DeckDetailPage() {
                         </button>
                       );
                     })}
-                  </>
+                  </div>
                 )}
               </div>
             </>
@@ -486,7 +493,7 @@ export default function DeckDetailPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => void handleDeleteCard(card.id)}
+                      onClick={() => setCardPendingDeletion(card)}
                       className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       Supprimer
@@ -512,6 +519,25 @@ export default function DeckDetailPage() {
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={cardPendingDeletion !== null}
+        title="Supprimer cette carte ?"
+        description={
+          cardPendingDeletion
+            ? `« ${cardPendingDeletion.lemma} » sera définitivement supprimée de ce deck, avec son historique de révision.`
+            : undefined
+        }
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={() => {
+          if (cardPendingDeletion) {
+            void handleDeleteCard(cardPendingDeletion.id);
+          }
+          setCardPendingDeletion(null);
+        }}
+        onCancel={() => setCardPendingDeletion(null)}
+      />
     </main>
   );
 }

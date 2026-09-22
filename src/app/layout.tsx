@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Nav from "@/components/nav";
+import { ToastProvider } from "@/components/toast-provider";
 import "./globals.css";
 
 // Police de texte principale du site.
@@ -30,8 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Nav />
-        {children}
+        <ToastProvider>
+          <Nav />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

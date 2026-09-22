@@ -151,3 +151,74 @@ textarea {
   padding: 0.25rem 0.5rem;
   white-space: nowrap;
 }
+
+.toast-stack {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 60;
+  display: flex;
+  max-width: calc(100vw - 2.5rem);
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.toast {
+  border-radius: 0.9rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgb(66 54 42 / 0.18);
+  animation: toast-in 180ms ease;
+}
+
+.toast-success {
+  background: var(--accent);
+  color: white;
+}
+
+.toast-error {
+  background: #b91c1c;
+  color: white;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(36 34 31 / 0.45);
+  padding: 1.25rem;
+  animation: toast-in 120ms ease;
+}
+
+.confirm-panel {
+  width: 100%;
+  max-width: 24rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgb(66 54 42 / 0.25);
+}
+
+.confirm-danger-button {
+  background: #b91c1c;
+}
+
+.confirm-danger-button:hover:not(:disabled) {
+  background: #991b1b;
+}

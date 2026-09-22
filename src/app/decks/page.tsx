@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
+import { useToast } from "@/components/toast-provider";
 import type { DeckSummary } from "@/types/shared";
 
 // Page qui liste tous les decks de l'utilisateur et permet d'en créer un nouveau.
 export default function DecksPage() {
+  const { showToast } = useToast();
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckName, setDeckName] = useState("Mon deck japonais");
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 
   // Va chercher la liste de tous les decks sur le serveur.
   async function fetchDecks() {
@@ -41,13 +44,17 @@ export default function DecksPage() {
   }, []);
 
   // Crée un nouveau deck avec le nom saisi et l'ajoute à la liste affichée.
-  async function handleCreateDeck() {
+  async function handleCreateDeck(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     const trimmedName = deckName.trim();
 
     if (!trimmedName) {
       setError("Le nom du deck est requis.");
       return;
     }
+
+    setIsCreatingDeck(true);
 
     try {
       const response = await fetch("/api/decks", {
@@ -72,12 +79,15 @@ export default function DecksPage() {
       const nextDeck = data.deck as DeckSummary;
       setDecks((current) => [nextDeck, ...current.filter((deck) => deck.id !== nextDeck.id)]);
       setError(null);
+      showToast(`Deck « ${nextDeck.name} » créé.`);
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
           : "Une erreur est survenue pendant la création du deck.",
       );
+    } finally {
+      setIsCreatingDeck(false);
     }
   }
 
@@ -102,7 +112,7 @@ export default function DecksPage() {
             <span className="text-sm text-[var(--muted)]">{decks.length} deck(s)</span>
           </div>
 
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+          <form onSubmit={(event) => void handleCreateDeck(event)} className="mb-6 flex flex-col gap-3 sm:flex-row">
             <input
               value={deckName}
               onChange={(event) => setDeckName(event.target.value)}
@@ -110,10 +120,10 @@ export default function DecksPage() {
               aria-label="Nom du deck"
               className="min-h-12 flex-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
             />
-            <button type="button" onClick={() => void handleCreateDeck()} className="primary-button">
-              Créer le deck
+            <button type="submit" disabled={isCreatingDeck} className="primary-button">
+              {isCreatingDeck ? "Création..." : "Créer le deck"}
             </button>
-          </div>
+          </form>
 
           {error ? (
             <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
