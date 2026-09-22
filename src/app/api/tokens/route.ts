@@ -2,11 +2,13 @@ import { prisma } from "@/lib/db/prisma";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
 import type { TokenResult } from "@/lib/tokenizer/types";
 
+// Forme attendue du corps de la requête pour enregistrer des tokens.
 type SaveTokensBody = {
   sourceTextId: string;
   tokens: TokenResult[];
 };
 
+// Vérifie que le corps de la requête a bien un sourceTextId et une liste de tokens.
 function isSaveTokensBody(value: unknown): value is SaveTokensBody {
   if (typeof value !== "object" || value === null) {
     return false;

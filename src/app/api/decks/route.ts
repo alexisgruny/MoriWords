@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Renvoie tous les decks avec leurs cartes, du plus récent au plus ancien.
 export async function GET() {
   try {
     const decks = await prisma.deck.findMany({
@@ -24,6 +25,7 @@ export async function GET() {
   }
 }
 
+// Crée un nouveau deck vide avec un nom (et une description optionnelle).
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();

@@ -6,8 +6,12 @@ import { ReactNode, useEffect, useState } from "react";
 
 import type { DeckCardWithOccurrences, DeckStats, DeckSummary } from "@/types/shared";
 
+// Les trois façons de présenter une carte pendant la révision : le mode
+// standard montre le kanji et sa lecture, le mode kanji ne montre que le
+// kanji, et le mode contexte montre une phrase où le mot est apparu.
 type ReviewMode = "standard" | "kanji" | "context";
 
+// La liste des modes affichés dans le sélecteur, avec leur libellé.
 const reviewModes: Array<{ id: ReviewMode; label: string }> = [
   { id: "standard", label: "Standard" },
   { id: "kanji", label: "Kanji" },
@@ -34,6 +38,8 @@ function highlightLemma(sentence: string, lemma: string): ReactNode {
   );
 }
 
+// Page de détail d'un deck : révision des cartes dues (avec 3 modes
+// d'entraînement), statistiques et gestion des cartes (recherche, suppression).
 export default function DeckDetailPage() {
   const params = useParams<{ deckId: string }>();
   const deckId = params.deckId;
@@ -49,6 +55,7 @@ export default function DeckDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
 
+  // Filtre les cartes affichées selon la recherche (mot, lecture ou sens).
   const normalizedCardSearch = cardSearchQuery.trim().toLowerCase();
   const filteredDeckCards = normalizedCardSearch
     ? deckCards.filter((card) =>
@@ -58,6 +65,7 @@ export default function DeckDetailPage() {
       )
     : deckCards;
 
+  // Charge le deck, ses cartes et ses statistiques à chaque changement de deck.
   useEffect(() => {
     void loadDeck();
     void loadDeckCards();
@@ -67,6 +75,7 @@ export default function DeckDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId]);
 
+  // Va chercher les informations du deck (nom, cartes) sur le serveur.
   async function loadDeck() {
     try {
       const response = await fetch(`/api/decks/${deckId}`);
@@ -92,6 +101,8 @@ export default function DeckDetailPage() {
     }
   }
 
+  // Va chercher les cartes du deck avec leurs occurrences (textes source), pour
+  // la gestion des cartes et le mode d'entraînement "Contexte".
   async function loadDeckCards() {
     try {
       const response = await fetch(`/api/decks/${deckId}/cards`);
@@ -111,6 +122,7 @@ export default function DeckDetailPage() {
     }
   }
 
+  // Va chercher les statistiques de révision du deck.
   async function loadDeckStats() {
     try {
       const response = await fetch(`/api/decks/${deckId}/stats`);
@@ -124,6 +136,7 @@ export default function DeckDetailPage() {
     }
   }
 
+  // Supprime une carte du deck et rafraîchit l'affichage.
   async function handleDeleteCard(cardId: string) {
     try {
       const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
@@ -149,6 +162,8 @@ export default function DeckDetailPage() {
     }
   }
 
+  // Envoie la note de révision (0 à 5) choisie par l'utilisateur pour une
+  // carte, puis passe à la carte due suivante.
   async function submitReviewCard(cardId: string, quality: number) {
     setReviewCardId(cardId);
     setIsReviewing(true);
@@ -199,6 +214,7 @@ export default function DeckDetailPage() {
     );
   }
 
+  // Trie les cartes par date d'échéance, les plus en retard en premier.
   const sortedCards = deck
     ? [...deck.cards].sort((a, b) => {
         const timeA = a.dueAt ? new Date(a.dueAt).getTime() : Number.MAX_SAFE_INTEGER;
@@ -207,6 +223,7 @@ export default function DeckDetailPage() {
       })
     : [];
 
+  // Ne garde que les cartes dont la date de révision est passée (ou jamais révisées).
   const dueCards = sortedCards.filter((card) => {
     if (!card.dueAt) {
       return true;
@@ -215,8 +232,10 @@ export default function DeckDetailPage() {
     return new Date(card.dueAt).getTime() <= Date.now();
   });
 
+  // La carte actuellement proposée en révision (la plus urgente).
   const activeCard = dueCards[0];
 
+  // Cherche une phrase où la carte active est apparue, pour le mode "Contexte".
   const activeCardOccurrences = activeCard
     ? deckCards.find((card) => card.id === activeCard.id)?.occurrences ?? []
     : [];

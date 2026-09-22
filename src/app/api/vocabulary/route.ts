@@ -3,12 +3,14 @@ import { classifyDifficulty } from "@/lib/difficulty/classify";
 import type { TokenResult } from "@/lib/tokenizer/types";
 import { buildVocabularySummary } from "@/lib/vocabulary/build-vocabulary";
 
+// Forme attendue du corps de la requête.
 type SaveVocabularyBody = {
   tokens: TokenResult[];
   sourceLanguage?: string;
   targetLanguage?: string;
 };
 
+// Vérifie que le corps de la requête a bien une liste de tokens.
 function isSaveVocabularyBody(value: unknown): value is SaveVocabularyBody {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -19,6 +21,7 @@ function isSaveVocabularyBody(value: unknown): value is SaveVocabularyBody {
   return Array.isArray(candidate.tokens);
 }
 
+// Renvoie les 20 mots les plus fréquents du vocabulaire global.
 export async function GET() {
   try {
     const entries = await prisma.vocabularyEntry.findMany({
@@ -28,6 +31,7 @@ export async function GET() {
       take: 20,
     });
 
+    // Calcule le niveau JLPT à la volée pour les entrées qui n'en ont pas encore un.
     const normalizedEntries = entries.map((entry) => ({
       ...entry,
       difficulty:
@@ -43,6 +47,8 @@ export async function GET() {
   }
 }
 
+// Regroupe une liste de tokens par mot et met à jour le vocabulaire global :
+// crée les mots nouveaux, incrémente le compteur des mots déjà connus.
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();

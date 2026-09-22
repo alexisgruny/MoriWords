@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Forme attendue du corps de la requête pour créer un texte source.
 type CreateSourceTextBody = {
   content: string;
   title?: string;
@@ -10,12 +11,14 @@ type CreateSourceTextBody = {
   sourceUrl?: string;
 };
 
+// Vérifie que le corps de la requête a au moins un champ "content".
 function isCreateSourceTextBody(
   value: unknown,
 ): value is CreateSourceTextBody {
   return typeof value === "object" && value !== null && "content" in value;
 }
 
+// Enregistre un nouveau texte source (collé manuellement ou généré) en base.
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
@@ -52,6 +55,7 @@ export async function POST(request: Request) {
   }
 }
 
+// Renvoie les 6 derniers textes analysés, pour l'historique de la page d'accueil.
 export async function GET() {
   try {
     const sourceTexts = await prisma.sourceText.findMany({

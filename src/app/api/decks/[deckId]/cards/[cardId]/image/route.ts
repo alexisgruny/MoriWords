@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { toEnglishImageQuery } from "@/lib/images/gloss";
 import { ImageServiceError, searchCardImage } from "@/lib/images/search";
 
+// Cherche une image pour illustrer une carte (traduite en anglais d'abord,
+// car Unsplash fonctionne mal en français ou en japonais) et l'associe à la carte.
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
@@ -47,6 +49,7 @@ export async function POST(
   }
 }
 
+// Retire l'image d'une carte sans supprimer la carte elle-même.
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },

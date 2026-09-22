@@ -7,13 +7,16 @@ import type {
 import type { TokenResult, Tokenizer } from "./types";
 import { classifyDifficulty } from "../difficulty/classify";
 
+// Les champs de kuromoji dont on a besoin pour construire un TokenResult.
 type JapaneseTokenData = Pick<
   IpadicFeatures,
   "surface_form" | "basic_form" | "reading" | "pos" | "word_position"
 >;
 
+// Convertit une lecture en katakana (format de kuromoji) en hiragana, plus
+// naturel à lire pour un texte japonais courant.
 export function toHiragana(reading: string): string {
-  return reading.replace(/[\u30a1-\u30f6]/g, (character) => {
+  return reading.replace(/[ァ-ヶ]/g, (character) => {
     const codePoint = character.codePointAt(0);
 
     return codePoint === undefined
@@ -22,6 +25,8 @@ export function toHiragana(reading: string): string {
   });
 }
 
+// Repère les tokens qui ne sont pas de vrais mots (ponctuation, symboles,
+// texte vide) pour pouvoir les filtrer de l'analyse.
 export function isNonLexicalToken(
   token: Pick<IpadicFeatures, "surface_form" | "pos">,
 ): boolean {
@@ -32,6 +37,8 @@ export function isNonLexicalToken(
   );
 }
 
+// Transforme un token brut de kuromoji en TokenResult utilisable par le
+// reste de l'application, en ajoutant le niveau JLPT.
 export function mapJapaneseToken(token: JapaneseTokenData): TokenResult {
   const baseForm =
     token.basic_form === "*" ? token.surface_form : token.basic_form;
@@ -50,13 +57,18 @@ export function mapJapaneseToken(token: JapaneseTokenData): TokenResult {
   };
 }
 
+// Implémentation du Tokenizer pour le japonais, basée sur kuromoji (analyse
+// morphologique par dictionnaire).
 export class JapaneseTokenizer implements Tokenizer {
   readonly language = "ja";
 
+  // Le dictionnaire kuromoji met du temps à charger : on ne le charge
+  // qu'une seule fois et on réutilise cette promesse pour tous les appels.
   private readonly tokenizerPromise: Promise<KuromojiTokenizer<IpadicFeatures>>;
 
   constructor() {
     this.tokenizerPromise = new Promise((resolve, reject) => {
+      // Le dictionnaire est fourni par le paquet kuromoji lui-même.
       const dictionaryPath = path.join(
         process.cwd(),
         "node_modules",
@@ -71,6 +83,7 @@ export class JapaneseTokenizer implements Tokenizer {
         return;
       }
 
+      // Construit le tokenizer en chargeant le dictionnaire depuis le disque.
       builder.call(kuromoji, { dicPath: dictionaryPath })
         .build((error: Error | null, tokenizer: KuromojiTokenizer<IpadicFeatures> | undefined) => {
           if (error || !tokenizer) {
@@ -83,6 +96,8 @@ export class JapaneseTokenizer implements Tokenizer {
     });
   }
 
+  // Découpe un texte japonais en mots, filtre la ponctuation et convertit
+  // chaque token dans le format commun TokenResult.
   async tokenize(text: string): Promise<TokenResult[]> {
     if (text.trim().length === 0) {
       return [];

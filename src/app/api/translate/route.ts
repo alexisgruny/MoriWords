@@ -1,11 +1,13 @@
 import { TranslationServiceError, translateText } from "@/lib/translation/translate";
 
+// Forme attendue du corps de la requête.
 type TranslateRequest = {
   text: string;
   sourceLanguage?: string;
   targetLanguage?: string;
 };
 
+// Vérifie que le corps de la requête a bien un champ "text" de type chaîne.
 function isTranslateRequest(value: unknown): value is TranslateRequest {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -16,6 +18,7 @@ function isTranslateRequest(value: unknown): value is TranslateRequest {
   return typeof candidate.text === "string";
 }
 
+// Traduit un mot ou une phrase (japonais vers français par défaut).
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();

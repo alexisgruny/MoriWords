@@ -5,19 +5,25 @@ import { prisma } from "@/lib/db/prisma";
 import { classifyDifficulty } from "../difficulty/classify";
 import type { JLPTLevel } from "../difficulty/classify";
 
+// Le résultat d'une traduction : le texte traduit, une courte explication et
+// le niveau JLPT du mot ou de la phrase.
 export type TranslationResult = {
   translation: string;
   explanation: string;
   difficulty: JLPTLevel;
 };
 
+// Forme attendue de la réponse JSON de Claude.
 const translationPayloadSchema = z.object({
   translation: z.string().min(1),
   explanation: z.string().min(1),
 });
 
+// Délai maximum d'attente de la réponse de Claude avant d'abandonner.
 const ANTHROPIC_TIMEOUT_MS = 20_000;
 
+// Erreur levée quand la traduction échoue, avec un message compréhensible
+// pour l'utilisateur (jamais le détail technique brut de l'API).
 export class TranslationServiceError extends Error {
   constructor(message: string) {
     super(message);
@@ -25,6 +31,9 @@ export class TranslationServiceError extends Error {
   }
 }
 
+// Essaie d'interpréter une chaîne comme le JSON attendu {translation, explanation}.
+// Si le JSON est mal formé, tente un repêchage par expression régulière avant
+// d'abandonner.
 function parseJsonObject(value: string): Omit<TranslationResult, "difficulty"> | null {
   try {
     const parsed = z.unknown().parse(JSON.parse(value));
@@ -52,6 +61,9 @@ function parseJsonObject(value: string): Omit<TranslationResult, "difficulty"> |
   return null;
 }
 
+// Extrait l'objet JSON de la traduction depuis le texte brut renvoyé par
+// Claude, même s'il est entouré de texte ou d'un bloc de code markdown.
+// Essaie plusieurs candidats (texte entier, sous-blocs {...}) avant d'abandonner.
 function extractTranslationPayload(rawText: string): Omit<TranslationResult, "difficulty"> | null {
   const normalized = rawText
     .trim()
@@ -82,6 +94,8 @@ function extractTranslationPayload(rawText: string): Omit<TranslationResult, "di
   return null;
 }
 
+// Transforme la réponse brute de l'API Anthropic en TranslationResult, en y
+// ajoutant le niveau JLPT calculé localement (Claude ne le fournit pas).
 function parseAnthropicResponse(payload: unknown, fallbackLemma: string): TranslationResult {
   if (typeof payload !== "object" || payload === null) {
     throw new TranslationServiceError("Réponse de traduction invalide. Réessaie dans un instant.");
@@ -116,6 +130,8 @@ function parseAnthropicResponse(payload: unknown, fallbackLemma: string): Transl
   throw new TranslationServiceError("Le service de traduction n'a pas renvoyé de résultat exploitable.");
 }
 
+// Cherche une traduction déjà calculée en base pour éviter d'appeler
+// l'API à chaque fois pour le même mot ou la même phrase.
 async function getCachedTranslation(
   lemma: string,
   sourceLanguage: string,
@@ -144,6 +160,7 @@ async function getCachedTranslation(
   };
 }
 
+// Enregistre une traduction en base pour pouvoir la réutiliser la prochaine fois.
 async function saveTranslation(
   lemma: string,
   sourceLanguage: string,
@@ -174,6 +191,10 @@ async function saveTranslation(
   });
 }
 
+// Traduit un mot ou une phrase du japonais vers le français (ou toute autre
+// paire de langues). Vérifie d'abord le cache, puis appelle Claude si
+// nécessaire, et enregistre le résultat pour la prochaine fois. Sans clé API
+// configurée, renvoie un texte de remplacement plutôt que d'échouer.
 export async function translateText(
   text: string,
   sourceLanguage: string,
@@ -206,12 +227,14 @@ export async function translateText(
     };
   }
 
+  // Prépare l'annulation automatique si la requête prend trop de temps.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
 
   let response: Response;
 
   try {
+    // Demande à Claude de traduire le texte et d'expliquer brièvement son sens.
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -232,6 +255,7 @@ export async function translateText(
       signal: controller.signal,
     });
   } catch (fetchError) {
+    // Distingue un simple délai dépassé d'une vraie panne réseau.
     if (fetchError instanceof Error && fetchError.name === "AbortError") {
       throw new TranslationServiceError(
         "Le service de traduction met trop de temps à répondre. Réessaie dans un instant.",
@@ -244,6 +268,8 @@ export async function translateText(
     clearTimeout(timeoutId);
   }
 
+  // Si Anthropic répond avec une erreur, on logue le détail côté serveur et
+  // on renvoie un message générique côté client (jamais le détail brut).
   if (!response.ok) {
     const errorPayload = await response.text();
     console.error(`Anthropic API error (${response.status}):`, errorPayload || response.statusText);
@@ -255,6 +281,7 @@ export async function translateText(
   const payload = await response.json();
   const result = parseAnthropicResponse(payload, cleanedText);
 
+  // Mémorise le résultat pour ne pas refaire le même appel plus tard.
   await saveTranslation(cacheKey, sourceLanguage, targetLanguage, result);
 
   return result;

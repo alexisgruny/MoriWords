@@ -1,5 +1,8 @@
+// Types partagés entre les différentes pages du site (front-end), pour ne
+// pas redéfinir la même forme de données plusieurs fois.
 import type { JLPTLevel } from "@/lib/difficulty/classify";
 
+// Un texte source déjà analysé, tel qu'affiché dans l'historique.
 export type SourceTextSummary = {
   id: string;
   content: string;
@@ -7,6 +10,7 @@ export type SourceTextSummary = {
   createdAt: string;
 };
 
+// Une carte telle que renvoyée avec la liste des decks (sans le détail des occurrences).
 export type DeckCard = {
   id: string;
   lemma: string;
@@ -18,6 +22,7 @@ export type DeckCard = {
   audioCacheId?: string | null;
 };
 
+// Un deck avec toutes ses cartes.
 export type DeckSummary = {
   id: string;
   name: string;
@@ -25,6 +30,8 @@ export type DeckSummary = {
   cards: DeckCard[];
 };
 
+// Une carte avec la liste des textes où le mot a été rencontré (pour le
+// mode d'entraînement "Contexte" et la gestion des cartes d'un deck).
 export type DeckCardWithOccurrences = {
   id: string;
   lemma: string;
@@ -33,6 +40,7 @@ export type DeckCardWithOccurrences = {
   occurrences: Array<{ id: string; sourceText: { id: string; title: string | null; content: string } | null }>;
 };
 
+// Les statistiques de révision d'un deck.
 export type DeckStats = {
   totalCards: number;
   dueCards: number;
@@ -41,6 +49,7 @@ export type DeckStats = {
   recentReviews: Array<{ id: string; lemma: string; quality: number; reviewedAt: string }>;
 };
 
+// Un mot du vocabulaire global, avec son nombre d'occurrences.
 export type VocabularyEntry = {
   lemma: string;
   occurrenceCount: number;
@@ -49,6 +58,7 @@ export type VocabularyEntry = {
   difficulty?: JLPTLevel;
 };
 
+// Le résultat d'une traduction renvoyé par l'API.
 export type TranslationResult = {
   translation: string;
   explanation: string;

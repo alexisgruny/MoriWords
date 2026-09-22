@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
 
+// Ajoute un mot au deck sous forme de carte. Si une carte existe déjà pour ce
+// mot dans ce deck, on ne crée pas de doublon : on ajoute simplement une
+// nouvelle occurrence (le texte où le mot a été rencontré) à la carte existante.
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
@@ -49,6 +52,8 @@ export async function POST(
       );
     }
 
+    // Vérifie si la carte existe déjà, pour savoir si on vient d'en créer une
+    // nouvelle ou si on ajoute juste une occurrence à une carte existante.
     const existingCard = await prisma.card.findUnique({
       where: {
         deckId_lemma_sourceLanguage_targetLanguage: {
@@ -60,6 +65,7 @@ export async function POST(
       },
     });
 
+    // Crée la carte si elle n'existe pas encore, sinon met à jour ses champs.
     const card = await prisma.card.upsert({
       where: {
         deckId_lemma_sourceLanguage_targetLanguage: {
@@ -85,6 +91,8 @@ export async function POST(
       },
     });
 
+    // Enregistre le texte source comme occurrence de ce mot (sans doublon
+    // si ce texte a déjà été enregistré pour cette carte).
     if (sourceTextId) {
       await prisma.wordOccurrence.upsert({
         where: {
@@ -119,6 +127,8 @@ export async function POST(
   }
 }
 
+// Renvoie toutes les cartes d'un deck, avec les textes où chaque mot est
+// apparu (utilisé pour la gestion des cartes et le mode d'entraînement "Contexte").
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },

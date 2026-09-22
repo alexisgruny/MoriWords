@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { TtsServiceError, synthesizeSpeech } from "@/lib/tts/synthesize";
 
+// Génère (ou réutilise) l'audio de la lecture d'une carte et l'associe à la carte.
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },

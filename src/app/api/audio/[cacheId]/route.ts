@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Sert un fichier audio stocké en base, avec un cache navigateur longue
+// durée puisque le contenu ne change jamais pour un même identifiant.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ cacheId: string }> },

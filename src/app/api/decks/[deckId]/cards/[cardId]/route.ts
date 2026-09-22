@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Supprime définitivement une carte (et ses occurrences/révisions liées) d'un deck.
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },

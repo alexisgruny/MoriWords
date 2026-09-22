@@ -4,17 +4,21 @@ import { useEffect, useState } from "react";
 
 import type { DeckSummary, VocabularyEntry } from "@/types/shared";
 
+// Page qui affiche tout le vocabulaire rencontré, avec un filtre par niveau JLPT.
 export default function VocabularyPage() {
   const [vocabularyEntries, setVocabularyEntries] = useState<VocabularyEntry[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"all" | "N5" | "N4" | "N3" | "N2" | "N1">("all");
   const [decks, setDecks] = useState<DeckSummary[]>([]);
 
+  // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
 
+  // N'affiche que les mots du niveau JLPT sélectionné (ou tous si "all").
   const filteredVocabularyEntries = selectedDifficulty === "all"
     ? vocabularyEntries
     : vocabularyEntries.filter((entry) => (entry.difficulty ?? "N5") === selectedDifficulty);
 
+  // Charge le vocabulaire et les decks (pour le badge) dès l'affichage de la page.
   useEffect(() => {
     async function loadVocabulary() {
       try {

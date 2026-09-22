@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { scheduleReview } from "@/lib/srs/scheduler";
 
+// Enregistre le résultat d'une révision (note de 0 à 5) : calcule le
+// nouvel état SM-2 de la carte, met à jour la carte et ajoute une entrée
+// dans l'historique des révisions, en une seule transaction.
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
@@ -36,6 +39,8 @@ export async function POST(
       );
     }
 
+    // Calcule le nouvel état de la carte (répétitions, intervalle, date
+    // d'échéance) à partir de son état actuel et de la note donnée.
     const nextState = scheduleReview(
       {
         repetitions: card.repetitions,
@@ -46,6 +51,8 @@ export async function POST(
       quality,
     );
 
+    // Met à jour la carte et enregistre l'historique en une seule opération
+    // atomique, pour ne jamais avoir l'un sans l'autre en cas d'erreur.
     const [updatedCard] = await prisma.$transaction([
       prisma.card.update({
         where: { id: cardId },

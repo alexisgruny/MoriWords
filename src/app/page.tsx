@@ -5,8 +5,11 @@ import { FormEvent, useEffect, useState } from "react";
 import type { TokenResult } from "@/lib/tokenizer/types";
 import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
 
+// Texte affiché par défaut dans la zone de saisie, au premier chargement.
 const starterText = "私は毎朝コーヒーを飲みながら、日本語を勉強しています。";
 
+// Page d'accueil : coller un texte japonais, l'analyser mot par mot, le
+// traduire et ajouter des mots à un deck. C'est le cœur du parcours d'apprentissage.
 export default function Home() {
   const [text, setText] = useState(starterText);
   const [tokens, setTokens] = useState<TokenResult[]>([]);
@@ -27,12 +30,16 @@ export default function Home() {
   const [newDeckName, setNewDeckName] = useState("");
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 
+  // Cache les particules grammaticales par défaut (moins intéressantes à
+  // apprendre), sauf si l'utilisateur coche la case pour les voir.
   const visibleTokens = showParticles
     ? tokens
     : tokens.filter((token) => token.partOfSpeech !== "助詞");
 
+  // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
 
+  // Charge l'historique des textes et la liste des decks dès l'affichage de la page.
   useEffect(() => {
     async function loadRecentSourceTexts() {
       try {
@@ -110,6 +117,7 @@ export default function Home() {
     }
   }
 
+  // Rafraîchit la liste des decks (par exemple après l'ajout d'une carte).
   async function fetchDecks() {
     try {
       const response = await fetch("/api/decks");
@@ -129,6 +137,8 @@ export default function Home() {
     }
   }
 
+  // Crée un nouveau deck depuis le sélecteur "+ Nouveau deck" et le
+  // sélectionne aussitôt comme destination pour l'ajout de carte en cours.
   async function handleCreateDeckInline() {
     const trimmedName = newDeckName.trim();
 
@@ -238,6 +248,8 @@ export default function Home() {
     await loadTokensForText(sourceTextId);
   }
 
+  // Gère le clic sur "Analyser le texte" : sauvegarde le texte collé puis
+  // l'analyse mot par mot.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
@@ -292,6 +304,8 @@ export default function Home() {
     }
   }
 
+  // Gère le clic sur "Citation d'anime" : demande une citation à Claude,
+  // la met dans la zone de texte, puis l'analyse mot par mot.
   async function handleGenerateAnimeQuote() {
     setIsLoadingQuote(true);
     setError(null);
@@ -339,6 +353,7 @@ export default function Home() {
     }
   }
 
+  // Traduit le mot actuellement sélectionné.
   async function handleTranslateToken(token: TokenResult) {
     setIsTranslating(true);
     setError(null);
@@ -380,6 +395,7 @@ export default function Home() {
     }
   }
 
+  // Traduit la phrase entière collée dans la zone de texte.
   async function handleTranslateText() {
     if (text.trim().length === 0) {
       return;
@@ -425,6 +441,8 @@ export default function Home() {
     }
   }
 
+  // Ajoute le mot sélectionné comme carte dans le deck choisi. Si aucun
+  // deck n'existe encore, en crée un par défaut avant d'ajouter la carte.
   async function handleAddCardToDeck() {
     if (!selectedToken) {
       setError("Sélectionne d’abord un mot.");
@@ -434,6 +452,7 @@ export default function Home() {
     try {
       let currentDeckId = selectedDeckId;
 
+      // Filet de sécurité : crée un deck par défaut si aucun n'est sélectionné.
       if (!currentDeckId) {
         const response = await fetch("/api/decks", {
           method: "POST",

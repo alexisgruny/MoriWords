@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Renvoie un seul deck avec ses cartes, pour la page de détail d'un deck.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },

@@ -1,12 +1,16 @@
 import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
 import type { TokenResult } from "@/lib/tokenizer/types";
 
+// Un seul tokenizer partagé par toutes les requêtes, pour ne charger le
+// dictionnaire kuromoji qu'une seule fois.
 const tokenizer = new JapaneseTokenizer();
 
+// Forme attendue du corps de la requête.
 type TokenizeRequest = {
   text: string;
 };
 
+// Vérifie que le corps de la requête a bien un champ "text" de type chaîne.
 function isTokenizeRequest(value: unknown): value is TokenizeRequest {
   if (typeof value !== "object" || value === null || !("text" in value)) {
     return false;
@@ -15,6 +19,7 @@ function isTokenizeRequest(value: unknown): value is TokenizeRequest {
   return typeof value.text === "string";
 }
 
+// Découpe un texte japonais en mots analysés (tokens), sans le sauvegarder.
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();

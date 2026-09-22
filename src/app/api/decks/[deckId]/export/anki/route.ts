@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import { cardsToAnkiTsv } from "@/lib/export/anki";
 
+// Transforme le nom d'un deck en nom de fichier sûr (sans accents ni
+// caractères spéciaux), pour le fichier téléchargé.
 function slugify(value: string): string {
   const slug = value
     .normalize("NFKD")
@@ -12,6 +14,8 @@ function slugify(value: string): string {
   return slug || "deck";
 }
 
+// Génère et renvoie en téléchargement un fichier texte au format d'import
+// d'Anki, contenant toutes les cartes du deck.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },

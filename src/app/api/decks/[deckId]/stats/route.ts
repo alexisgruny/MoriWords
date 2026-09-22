@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 
+// Calcule les statistiques d'un deck : nombre total de cartes, cartes dues,
+// nombre de révisions, taux de réussite et les 20 dernières révisions.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
@@ -13,6 +15,7 @@ export async function GET(
       return Response.json({ error: "Deck introuvable." }, { status: 404 });
     }
 
+    // Lance tous les calculs en parallèle pour aller plus vite.
     const [totalCards, dueCards, totalReviews, successfulReviews, recentLogs] = await Promise.all([
       prisma.card.count({ where: { deckId } }),
       prisma.card.count({ where: { deckId, dueAt: { lte: new Date() } } }),

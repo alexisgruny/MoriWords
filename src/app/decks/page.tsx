@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 
 import type { DeckSummary } from "@/types/shared";
 
+// Page qui liste tous les decks de l'utilisateur et permet d'en créer un nouveau.
 export default function DecksPage() {
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckName, setDeckName] = useState("Mon deck japonais");
   const [error, setError] = useState<string | null>(null);
 
+  // Va chercher la liste de tous les decks sur le serveur.
   async function fetchDecks() {
     try {
       const response = await fetch("/api/decks");
@@ -29,6 +31,7 @@ export default function DecksPage() {
     }
   }
 
+  // Charge la liste des decks dès l'affichage de la page.
   useEffect(() => {
     async function loadInitialDecks() {
       await fetchDecks();
@@ -37,6 +40,7 @@ export default function DecksPage() {
     void loadInitialDecks();
   }, []);
 
+  // Crée un nouveau deck avec le nom saisi et l'ajoute à la liste affichée.
   async function handleCreateDeck() {
     const trimmedName = deckName.trim();
 
