@@ -3,34 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import type { TokenResult } from "@/lib/tokenizer/types";
-import type { JLPTLevel } from "@/lib/difficulty/classify";
+import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
 
 const starterText = "私は毎朝コーヒーを飲みながら、日本語を勉強しています。";
-
-type SourceTextSummary = {
-  id: string;
-  content: string;
-  title: string | null;
-  createdAt: string;
-};
-
-type DeckCard = {
-  id: string;
-  lemma: string;
-  reading?: string | null;
-  meaning?: string | null;
-  dueAt?: string | null;
-  imageUrl?: string | null;
-  imageAttribution?: string | null;
-  audioCacheId?: string | null;
-};
-
-type DeckSummary = {
-  id: string;
-  name: string;
-  description?: string | null;
-  cards: DeckCard[];
-};
 
 export default function Home() {
   const [text, setText] = useState(starterText);
@@ -42,33 +17,15 @@ export default function Home() {
   const [showParticles, setShowParticles] = useState(false);
   const [recentSourceTexts, setRecentSourceTexts] = useState<SourceTextSummary[]>([]);
   const [selectedSourceTextId, setSelectedSourceTextId] = useState<string | null>(null);
-  const [vocabularyEntries, setVocabularyEntries] = useState<Array<{ lemma: string; occurrenceCount: number; reading?: string | null; partOfSpeech?: string | null; difficulty?: JLPTLevel }>>([]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"all" | "N5" | "N4" | "N3" | "N2" | "N1">("all");
-  const [translation, setTranslation] = useState<{ translation: string; explanation: string; difficulty: JLPTLevel } | null>(null);
-  const [textTranslation, setTextTranslation] = useState<{ translation: string; explanation: string; difficulty: JLPTLevel } | null>(null);
+  const [translation, setTranslation] = useState<TranslationResult | null>(null);
+  const [textTranslation, setTextTranslation] = useState<TranslationResult | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
-  const [deckName, setDeckName] = useState("Mon deck japonais");
   const [isSavingCard, setIsSavingCard] = useState(false);
-  const [reviewCardId, setReviewCardId] = useState<string | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [deckCards, setDeckCards] = useState<Array<{
-    id: string;
-    lemma: string;
-    reading?: string | null;
-    meaning?: string | null;
-    occurrences: Array<{ id: string; sourceText: { id: string; title: string | null; content: string } | null }>;
-  }>>([]);
-  const [cardSearchQuery, setCardSearchQuery] = useState("");
-  const [deckStats, setDeckStats] = useState<{
-    totalCards: number;
-    dueCards: number;
-    totalReviews: number;
-    successRate: number | null;
-    recentReviews: Array<{ id: string; lemma: string; quality: number; reviewedAt: string }>;
-  } | null>(null);
+  const [isCreatingNewDeck, setIsCreatingNewDeck] = useState(false);
+  const [newDeckName, setNewDeckName] = useState("");
+  const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 
   const visibleTokens = showParticles
     ? tokens
@@ -76,130 +33,53 @@ export default function Home() {
 
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
 
-  const normalizedCardSearch = cardSearchQuery.trim().toLowerCase();
-  const filteredDeckCards = normalizedCardSearch
-    ? deckCards.filter((card) =>
-        [card.lemma, card.reading, card.meaning]
-          .filter((value): value is string => typeof value === "string")
-          .some((value) => value.toLowerCase().includes(normalizedCardSearch)),
-      )
-    : deckCards;
+  useEffect(() => {
+    async function loadRecentSourceTexts() {
+      try {
+        const response = await fetch("/api/source-texts");
+        const data: unknown = await response.json();
 
-  const filteredVocabularyEntries = selectedDifficulty === "all"
-    ? vocabularyEntries
-    : vocabularyEntries.filter((entry) => (entry.difficulty ?? "N5") === selectedDifficulty);
-
-  const selectedDeckReview = selectedDeckId
-    ? (() => {
-        const selectedDeck = decks.find((deck) => deck.id === selectedDeckId);
-
-        if (!selectedDeck) {
-          return null;
+        if (
+          response.ok &&
+          typeof data === "object" &&
+          data !== null &&
+          "sourceTexts" in data &&
+          Array.isArray(data.sourceTexts)
+        ) {
+          setRecentSourceTexts(data.sourceTexts as SourceTextSummary[]);
         }
+      } catch {
+        // The analysis remains usable if loading the history fails.
+      }
+    }
 
-        const sortedCards = [...selectedDeck.cards].sort((a, b) => {
-          const timeA = a.dueAt ? new Date(a.dueAt).getTime() : Number.MAX_SAFE_INTEGER;
-          const timeB = b.dueAt ? new Date(b.dueAt).getTime() : Number.MAX_SAFE_INTEGER;
-          return timeA - timeB;
-        });
+    async function loadDecks() {
+      try {
+        const response = await fetch("/api/decks");
+        const data: unknown = await response.json();
 
-        const dueCards = sortedCards.filter((card) => {
-          if (!card.dueAt) {
-            return true;
+        if (
+          response.ok &&
+          typeof data === "object" &&
+          data !== null &&
+          "decks" in data &&
+          Array.isArray(data.decks)
+        ) {
+          const loadedDecks = data.decks as DeckSummary[];
+          setDecks(loadedDecks);
+
+          if (loadedDecks.length > 0) {
+            setSelectedDeckId((current) => current ?? loadedDecks[0].id);
           }
+        }
+      } catch {
+        // Decks are optional until the first "add to deck" action.
+      }
+    }
 
-          return new Date(card.dueAt).getTime() <= Date.now();
-        });
-
-        const activeCard = dueCards[0];
-
-        return (
-          <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--background)] p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="eyebrow">Daily review</p>
-                <h3 className="mt-2 text-xl font-semibold text-[var(--ink)]">Révision du deck</h3>
-              </div>
-              <span className="count-badge">{dueCards.length}</span>
-            </div>
-
-            <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Total: {selectedDeck.cards.length}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Due today: {dueCards.length}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Nouveau: {Math.max(0, selectedDeck.cards.length - dueCards.length)}
-              </span>
-            </div>
-
-            {activeCard ? (
-              <>
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
-                  <p className="text-sm text-[var(--muted)]">Mot à revoir</p>
-                  <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
-                    {activeCard.lemma}
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    {activeCard.reading ?? "lecture inconnue"}
-                  </p>
-
-                  {showAnswer ? (
-                    <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-3">
-                      <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent)]">Réponse</p>
-                      <p className="mt-2 text-lg font-medium text-[var(--ink)]">
-                        {activeCard.meaning ?? "Sens à compléter"}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {!showAnswer ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAnswer(true)}
-                      className="primary-button"
-                    >
-                      Afficher la réponse
-                    </button>
-                  ) : (
-                    <>
-                      {[0, 1, 2, 3, 4, 5].map((quality) => {
-                        const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
-                        return (
-                          <button
-                            key={quality}
-                            type="button"
-                            onClick={() => {
-                              setReviewCardId(activeCard.id);
-                              void submitReviewCard(quality);
-                            }}
-                            disabled={isReviewing}
-                            className="primary-button"
-                          >
-                            {labels[quality]}
-                          </button>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="empty-state min-h-48">
-                <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd’hui.</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Tu peux ajouter de nouveaux mots ou revenir plus tard.
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })()
-    : null;
+    void loadRecentSourceTexts();
+    void loadDecks();
+  }, []);
 
   // Charge les tokens déjà enregistrés pour un texte existant dans la DB.
   async function loadTokensForText(sourceTextId: string) {
@@ -230,268 +110,35 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
-    async function loadRecentSourceTexts() {
-      try {
-        const response = await fetch("/api/source-texts");
-        const data: unknown = await response.json();
-
-        if (
-          response.ok &&
-          typeof data === "object" &&
-          data !== null &&
-          "sourceTexts" in data &&
-          Array.isArray(data.sourceTexts)
-        ) {
-          setRecentSourceTexts(data.sourceTexts as SourceTextSummary[]);
-        }
-      } catch {
-        // The analysis remains usable if loading the history fails.
-      }
-    }
-
-    async function loadVocabulary() {
-      try {
-        const response = await fetch("/api/vocabulary");
-        const data: unknown = await response.json();
-
-        if (
-          response.ok &&
-          typeof data === "object" &&
-          data !== null &&
-          "entries" in data &&
-          Array.isArray(data.entries)
-        ) {
-          setVocabularyEntries(data.entries as Array<{ lemma: string; occurrenceCount: number; reading?: string | null; partOfSpeech?: string | null }>);
-        }
-      } catch {
-        // The vocabulary remains optional in the first iteration.
-      }
-    }
-
-    async function loadDecks() {
-      try {
-        const response = await fetch("/api/decks");
-        const data: unknown = await response.json();
-
-        if (
-          response.ok &&
-          typeof data === "object" &&
-          data !== null &&
-          "decks" in data &&
-          Array.isArray(data.decks)
-        ) {
-          const loadedDecks = data.decks as DeckSummary[];
-          setDecks(loadedDecks);
-
-          if (loadedDecks.length > 0 && !selectedDeckId) {
-            setSelectedDeckId(loadedDecks[0].id);
-          }
-        }
-      } catch {
-        // Decks are optional until the first user action.
-      }
-    }
-
-    void loadRecentSourceTexts();
-    void loadVocabulary();
-    void loadDecks();
-  }, [selectedDeckId]);
-
-  useEffect(() => {
-    async function loadDeckDetails() {
-      if (!selectedDeckId) {
-        setDeckCards([]);
-        setDeckStats(null);
-        return;
-      }
-
-      await Promise.all([loadDeckCards(selectedDeckId), loadDeckStats(selectedDeckId)]);
-    }
-
-    void loadDeckDetails();
-  }, [selectedDeckId]);
-
-  async function loadDeckCards(deckId: string) {
+  async function fetchDecks() {
     try {
-      const response = await fetch(`/api/decks/${deckId}/cards`);
+      const response = await fetch("/api/decks");
       const data: unknown = await response.json();
 
       if (
         response.ok &&
         typeof data === "object" &&
         data !== null &&
-        "cards" in data &&
-        Array.isArray(data.cards)
+        "decks" in data &&
+        Array.isArray(data.decks)
       ) {
-        setDeckCards(
-          data.cards as Array<{
-            id: string;
-            lemma: string;
-            reading?: string | null;
-            meaning?: string | null;
-            occurrences: Array<{ id: string; sourceText: { id: string; title: string | null; content: string } | null }>;
-          }>,
-        );
+        setDecks(data.decks as DeckSummary[]);
       }
     } catch {
-      // The card list can be refreshed again later.
+      // The deck list can be refreshed again later.
     }
   }
 
-  async function loadDeckStats(deckId: string) {
-    try {
-      const response = await fetch(`/api/decks/${deckId}/stats`);
-      const data: unknown = await response.json();
-
-      if (response.ok && typeof data === "object" && data !== null && !("error" in data)) {
-        setDeckStats(
-          data as {
-            totalCards: number;
-            dueCards: number;
-            totalReviews: number;
-            successRate: number | null;
-            recentReviews: Array<{ id: string; lemma: string; quality: number; reviewedAt: string }>;
-          },
-        );
-      }
-    } catch {
-      // Stats are optional and can be refreshed again later.
-    }
-  }
-
-  async function handleDeleteCard(cardId: string) {
-    if (!selectedDeckId) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/decks/${selectedDeckId}/cards/${cardId}`, {
-        method: "DELETE",
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de supprimer la carte");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await Promise.all([
-        fetchDecks(),
-        loadDeckCards(selectedDeckId),
-        loadDeckStats(selectedDeckId),
-      ]);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la suppression de la carte.",
-      );
-    }
-  }
-
-  function selectDeck(deckId: string) {
-    setSelectedDeckId(deckId);
-    setShowAnswer(false);
-  }
-
-  async function handleTranslateToken(token: TokenResult) {
-    setIsTranslating(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: token.baseForm || token.surface,
-          sourceLanguage: "ja",
-          targetLanguage: "fr",
-        }),
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de traduire le mot");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      if (!("result" in data) || typeof data.result !== "object" || data.result === null) {
-        throw new Error("Réponse inattendue de la traduction");
-      }
-
-      const result = data.result as { translation: string; explanation: string; difficulty: JLPTLevel };
-      setTranslation(result);
-    } catch (requestError) {
-      setTranslation(null);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la traduction.",
-      );
-    } finally {
-      setIsTranslating(false);
-    }
-  }
-
-  async function handleTranslateText() {
-    if (text.trim().length === 0) {
-      return;
-    }
-
-    setIsTranslating(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          sourceLanguage: "ja",
-          targetLanguage: "fr",
-        }),
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de traduire la phrase");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      if (!("result" in data) || typeof data.result !== "object" || data.result === null) {
-        throw new Error("Réponse inattendue de la traduction");
-      }
-
-      setTextTranslation(data.result as { translation: string; explanation: string; difficulty: JLPTLevel });
-    } catch (requestError) {
-      setTextTranslation(null);
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la traduction de la phrase.",
-      );
-    } finally {
-      setIsTranslating(false);
-    }
-  }
-
-  async function handleCreateDeck() {
-    const trimmedName = deckName.trim();
+  async function handleCreateDeckInline() {
+    const trimmedName = newDeckName.trim();
 
     if (!trimmedName) {
       setError("Le nom du deck est requis.");
       return;
     }
+
+    setIsCreatingDeck(true);
+    setError(null);
 
     try {
       const response = await fetch("/api/decks", {
@@ -513,150 +160,19 @@ export default function Home() {
         throw new Error("Réponse inattendue lors de la création du deck");
       }
 
-      const nextDeck = data.deck as DeckSummary;
-      setDecks((current) => [nextDeck, ...current.filter((deck) => deck.id !== nextDeck.id)]);
-      setSelectedDeckId(nextDeck.id);
-      setError(null);
+      const createdDeck = data.deck as DeckSummary;
+      setDecks((current) => [createdDeck, ...current.filter((deck) => deck.id !== createdDeck.id)]);
+      setSelectedDeckId(createdDeck.id);
+      setIsCreatingNewDeck(false);
+      setNewDeckName("");
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
           : "Une erreur est survenue pendant la création du deck.",
       );
-    }
-  }
-
-  async function submitReviewCard(quality: number) {
-    if (!selectedDeckId || !reviewCardId) {
-      return;
-    }
-
-    setIsReviewing(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/decks/${selectedDeckId}/cards/${reviewCardId}/review`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quality }),
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de mettre à jour la révision");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await Promise.all([
-        fetchDecks(),
-        loadDeckStats(selectedDeckId),
-      ]);
-      setReviewCardId(null);
-      setShowAnswer(false);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la révision.",
-      );
     } finally {
-      setIsReviewing(false);
-    }
-  }
-
-  async function handleAddCardToDeck() {
-    if (!selectedToken) {
-      setError("Sélectionne d’abord un mot.");
-      return;
-    }
-
-    try {
-      let currentDeckId = selectedDeckId;
-
-      if (!currentDeckId) {
-        const response = await fetch("/api/decks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: deckName.trim() || "Mon deck japonais" }),
-        });
-        const data: unknown = await response.json();
-
-        if (!response.ok || typeof data !== "object" || data === null) {
-          throw new Error("Impossible de créer le deck avant d’ajouter la carte");
-        }
-
-        if ("error" in data && typeof data.error === "string") {
-          throw new Error(data.error);
-        }
-
-        if (!("deck" in data) || typeof data.deck !== "object" || data.deck === null) {
-          throw new Error("Réponse inattendue lors de la création du deck");
-        }
-
-        const createdDeck = data.deck as DeckSummary;
-        setDecks((current) => [createdDeck, ...current.filter((deck) => deck.id !== createdDeck.id)]);
-        currentDeckId = createdDeck.id;
-        setSelectedDeckId(createdDeck.id);
-      }
-
-      const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lemma: selectedToken.baseForm || selectedToken.surface,
-          surface: selectedToken.surface,
-          reading: selectedToken.reading,
-          meaning: translation?.translation ?? null,
-          sourceTextId: selectedSourceTextId,
-          position: selectedToken.position,
-        }),
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible d’ajouter la carte au deck");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await Promise.all([
-        fetchDecks(),
-        loadDeckCards(currentDeckId),
-        loadDeckStats(currentDeckId),
-      ]);
-      setError(null);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant l’ajout au deck.",
-      );
-    } finally {
-      setIsSavingCard(false);
-    }
-  }
-
-  async function fetchDecks() {
-    try {
-      const response = await fetch("/api/decks");
-      const data: unknown = await response.json();
-
-      if (
-        response.ok &&
-        typeof data === "object" &&
-        data !== null &&
-        "decks" in data &&
-        Array.isArray(data.decks)
-      ) {
-        setDecks(data.decks as DeckSummary[]);
-      }
-    } catch {
-      // The deck list can be refreshed again later.
+      setIsCreatingDeck(false);
     }
   }
 
@@ -709,7 +225,7 @@ export default function Home() {
       throw new Error(tokenSaveData.error);
     }
 
-    const vocabularyResponse = await fetch("/api/vocabulary", {
+    await fetch("/api/vocabulary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -718,28 +234,6 @@ export default function Home() {
         targetLanguage: "fr",
       }),
     });
-    const vocabularyData: unknown = await vocabularyResponse.json();
-
-    if (!vocabularyResponse.ok || typeof vocabularyData !== "object" || vocabularyData === null) {
-      throw new Error("Impossible de sauvegarder le vocabulaire");
-    }
-
-    if ("error" in vocabularyData && typeof vocabularyData.error === "string") {
-      throw new Error(vocabularyData.error);
-    }
-
-    const refreshedVocabularyResponse = await fetch("/api/vocabulary");
-    const refreshedVocabularyData: unknown = await refreshedVocabularyResponse.json();
-
-    if (
-      refreshedVocabularyResponse.ok &&
-      typeof refreshedVocabularyData === "object" &&
-      refreshedVocabularyData !== null &&
-      "entries" in refreshedVocabularyData &&
-      Array.isArray(refreshedVocabularyData.entries)
-    ) {
-      setVocabularyEntries(refreshedVocabularyData.entries as Array<{ lemma: string; occurrenceCount: number; reading?: string | null; partOfSpeech?: string | null }>);
-    }
 
     await loadTokensForText(sourceTextId);
   }
@@ -782,7 +276,7 @@ export default function Home() {
       setRecentSourceTexts((current) => [
         createdSourceText,
         ...current.filter((sourceText) => sourceText.id !== createdSourceText.id),
-      ].slice(0, 20));
+      ].slice(0, 6));
       setSelectedSourceTextId(createdSourceText.id);
 
       await analyzeSourceText(createdSourceText.id, text);
@@ -829,7 +323,7 @@ export default function Home() {
       setRecentSourceTexts((current) => [
         generatedSourceText,
         ...current.filter((sourceText) => sourceText.id !== generatedSourceText.id),
-      ].slice(0, 20));
+      ].slice(0, 6));
       setSelectedSourceTextId(generatedSourceText.id);
 
       await analyzeSourceText(generatedSourceText.id, generatedSourceText.content);
@@ -842,6 +336,162 @@ export default function Home() {
       );
     } finally {
       setIsLoadingQuote(false);
+    }
+  }
+
+  async function handleTranslateToken(token: TokenResult) {
+    setIsTranslating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: token.baseForm || token.surface,
+          sourceLanguage: "ja",
+          targetLanguage: "fr",
+        }),
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible de traduire le mot");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      if (!("result" in data) || typeof data.result !== "object" || data.result === null) {
+        throw new Error("Réponse inattendue de la traduction");
+      }
+
+      setTranslation(data.result as TranslationResult);
+    } catch (requestError) {
+      setTranslation(null);
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la traduction.",
+      );
+    } finally {
+      setIsTranslating(false);
+    }
+  }
+
+  async function handleTranslateText() {
+    if (text.trim().length === 0) {
+      return;
+    }
+
+    setIsTranslating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          sourceLanguage: "ja",
+          targetLanguage: "fr",
+        }),
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible de traduire la phrase");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      if (!("result" in data) || typeof data.result !== "object" || data.result === null) {
+        throw new Error("Réponse inattendue de la traduction");
+      }
+
+      setTextTranslation(data.result as TranslationResult);
+    } catch (requestError) {
+      setTextTranslation(null);
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la traduction de la phrase.",
+      );
+    } finally {
+      setIsTranslating(false);
+    }
+  }
+
+  async function handleAddCardToDeck() {
+    if (!selectedToken) {
+      setError("Sélectionne d’abord un mot.");
+      return;
+    }
+
+    try {
+      let currentDeckId = selectedDeckId;
+
+      if (!currentDeckId) {
+        const response = await fetch("/api/decks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "Mon deck japonais" }),
+        });
+        const data: unknown = await response.json();
+
+        if (!response.ok || typeof data !== "object" || data === null) {
+          throw new Error("Impossible de créer le deck avant d’ajouter la carte");
+        }
+
+        if ("error" in data && typeof data.error === "string") {
+          throw new Error(data.error);
+        }
+
+        if (!("deck" in data) || typeof data.deck !== "object" || data.deck === null) {
+          throw new Error("Réponse inattendue lors de la création du deck");
+        }
+
+        const createdDeck = data.deck as DeckSummary;
+        setDecks((current) => [createdDeck, ...current.filter((deck) => deck.id !== createdDeck.id)]);
+        currentDeckId = createdDeck.id;
+        setSelectedDeckId(createdDeck.id);
+      }
+
+      const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lemma: selectedToken.baseForm || selectedToken.surface,
+          surface: selectedToken.surface,
+          reading: selectedToken.reading,
+          meaning: translation?.translation ?? null,
+          sourceTextId: selectedSourceTextId,
+          position: selectedToken.position,
+        }),
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible d’ajouter la carte au deck");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      await fetchDecks();
+      setError(null);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant l’ajout au deck.",
+      );
+    } finally {
+      setIsSavingCard(false);
     }
   }
 
@@ -1034,6 +684,60 @@ export default function Home() {
                   ) : null}
                 </div>
 
+                <div className="mt-3">
+                  <p className="mb-1 text-xs text-[var(--muted)]">Ajouter dans</p>
+                  {isCreatingNewDeck ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        value={newDeckName}
+                        onChange={(event) => setNewDeckName(event.target.value)}
+                        placeholder="Nom du nouveau deck"
+                        aria-label="Nom du nouveau deck"
+                        autoFocus
+                        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateDeckInline()}
+                        disabled={isCreatingDeck}
+                        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+                      >
+                        {isCreatingDeck ? "Création..." : "Créer"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingNewDeck(false);
+                          setNewDeckName("");
+                        }}
+                        className="text-xs text-[var(--muted)] underline"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedDeckId ?? ""}
+                      onChange={(event) => {
+                        if (event.target.value === "__new__") {
+                          setIsCreatingNewDeck(true);
+                          return;
+                        }
+                        setSelectedDeckId(event.target.value);
+                      }}
+                      className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+                    >
+                      {decks.length === 0 ? <option value="">Aucun deck</option> : null}
+                      {decks.map((deck) => (
+                        <option key={deck.id} value={deck.id}>
+                          {deck.name}
+                        </option>
+                      ))}
+                      <option value="__new__">+ Nouveau deck</option>
+                    </select>
+                  )}
+                </div>
+
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     type="button"
@@ -1081,237 +785,6 @@ export default function Home() {
             ) : null}
           </section>
         </section>
-
-        <section className="mt-8 panel p-6 sm:p-8">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Decks</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                Cartes de vocabulaire
-              </h2>
-            </div>
-            <span className="text-sm text-[var(--muted)]">{decks.length} deck(s)</span>
-          </div>
-
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-            <input
-              value={deckName}
-              onChange={(event) => setDeckName(event.target.value)}
-              placeholder="Nom du deck"
-              aria-label="Nom du deck"
-              className="min-h-12 flex-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-            />
-            <button type="button" onClick={() => void handleCreateDeck()} className="primary-button">
-              Créer le deck
-            </button>
-          </div>
-
-          {decks.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {decks.map((deck) => (
-                <button
-                  key={deck.id}
-                  type="button"
-                  onClick={() => selectDeck(deck.id)}
-                  className={`token-card text-left ${selectedDeckId === deck.id ? "token-card-selected" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold text-[var(--ink)]">{deck.name}</span>
-                    <span className="count-badge">{deck.cards.length}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-[var(--muted)]">
-                    {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
-                  </p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <p className="font-medium text-[var(--ink)]">Aucun deck pour le moment.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Crée un deck puis ajoute-y quelques mots sélectionnés.
-              </p>
-            </div>
-          )}
-
-          {selectedDeckReview}
-        </section>
-
-        {selectedDeckId && deckStats ? (
-          <section className="mt-8 panel p-6 sm:p-8">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Progress</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Statistiques du deck
-                </h2>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Total cartes : {deckStats.totalCards}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Cartes dues : {deckStats.dueCards}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Révisions totales : {deckStats.totalReviews}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Taux de réussite :{" "}
-                {deckStats.successRate === null
-                  ? "—"
-                  : `${Math.round(deckStats.successRate * 100)}%`}
-              </span>
-            </div>
-
-            {deckStats.recentReviews.length > 0 ? (
-              <div className="mt-5">
-                <p className="eyebrow">Historique</p>
-                <ul className="mt-3 flex flex-col gap-2">
-                  {deckStats.recentReviews.map((review) => (
-                    <li
-                      key={review.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2 text-sm"
-                    >
-                      <span className="text-[var(--ink)]" lang="ja">{review.lemma}</span>
-                      <span className="text-xs text-[var(--muted)]">
-                        {new Date(review.reviewedAt).toLocaleString("fr-FR")}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          review.quality >= 3
-                            ? "bg-[var(--accent-soft)] text-[var(--ink)]"
-                            : "bg-red-50 text-red-700"
-                        }`}
-                      >
-                        {review.quality}/5
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mt-5 text-sm text-[var(--muted)]">
-                Aucune révision enregistrée pour ce deck pour le moment.
-              </p>
-            )}
-          </section>
-        ) : null}
-
-        {selectedDeckId ? (
-          <section className="mt-8 panel p-6 sm:p-8">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Manage</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Cartes du deck
-                </h2>
-              </div>
-              <span className="text-sm text-[var(--muted)]">{filteredDeckCards.length} carte(s)</span>
-            </div>
-
-            <input
-              value={cardSearchQuery}
-              onChange={(event) => setCardSearchQuery(event.target.value)}
-              placeholder="Rechercher une carte (mot, lecture, sens)"
-              aria-label="Rechercher une carte"
-              className="mb-5 min-h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-            />
-
-            {filteredDeckCards.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {filteredDeckCards.map((card) => (
-                  <div key={card.id} className="token-card">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-lg font-semibold text-[var(--ink)]" lang="ja">
-                        {card.lemma}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteCard(card.id)}
-                        className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      {card.reading ?? "lecture inconnue"} · {card.meaning ?? "sens à compléter"}
-                    </p>
-                    {card.occurrences.length > 0 ? (
-                      <p className="mt-2 text-xs text-[var(--muted)]">
-                        Vu dans {card.occurrences.length} texte(s)
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <p className="font-medium text-[var(--ink)]">
-                  {cardSearchQuery ? "Aucune carte ne correspond à la recherche." : "Aucune carte dans ce deck pour le moment."}
-                </p>
-              </div>
-            )}
-          </section>
-        ) : null}
-
-        {vocabularyEntries.length > 0 ? (
-          <section className="mt-8 panel p-6 sm:p-8">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Saved vocabulary</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Vocabulaire global
-                </h2>
-              </div>
-              <span className="text-sm text-[var(--muted)]">{filteredVocabularyEntries.length} mots</span>
-            </div>
-
-            <div className="mb-5 flex flex-wrap gap-2">
-              {(["all", "N5", "N4", "N3", "N2", "N1"] as const).map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setSelectedDifficulty(level)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    selectedDifficulty === level
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                      : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
-                  }`}
-                >
-                  {level === "all" ? "Tous" : level}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredVocabularyEntries.map((entry) => (
-                <div key={`${entry.lemma}-${entry.occurrenceCount}`} className="token-card">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold text-[var(--ink)]" lang="ja">
-                      {entry.lemma}
-                    </span>
-                    <span className="count-badge">{entry.occurrenceCount}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 text-sm text-[var(--muted)]">
-                    <span>{entry.reading ?? "lecture inconnue"}</span>
-                    <span>{entry.difficulty ?? "N5"}</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
-                    <span>{entry.partOfSpeech || "—"}</span>
-                    {addedLemmas.has(entry.lemma) ? (
-                      <span className="rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--ink)]">
-                        Déjà ajouté
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         {recentSourceTexts.length > 0 ? (
           <section className="mt-8 panel p-6 sm:p-8">

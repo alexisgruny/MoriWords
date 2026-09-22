@@ -33,6 +33,18 @@ Un audit d'accessibilite/responsive a ete fait (labels, focus-visible, un bug
 de style manquant corrige) et un test d'integration bout en bout sur la vraie
 base a ete ajoute (Priorite 12) ; il manque encore un test manuel reel sur
 navigateur/mobile et lecteur d'ecran.
+Une source de contenu "citation d'anime" a ete ajoutee (Priorite 11) :
+Claude genere une citation japonaise celebre plutot que de scraper un site,
+ce qui evite le probleme robots.txt rencontre avec NHK.
+Le 2026-09-22, l'interface a ete restructuree en plusieurs pages avec
+navigation (auparavant tout tenait sur une seule page) : / (analyse de
+texte, traduction, citation d'anime, historique des 6 derniers textes),
+/decks (liste), /decks/[deckId] (revision, statistiques, gestion des
+cartes, export Anki), /vocabulaire (vocabulaire global). Nouvelle route
+GET /api/decks/[deckId] pour charger un deck seul ; types partages dans
+src/types/shared.ts ; navigation dans src/components/nav.tsx.
+Un export Anki a ete ajoute (voir Priorite 6) : transformer pur en TSV,
+telechargeable depuis la page d'un deck.
 Tests et build passent ; la prochaine etape concerne surtout le choix d'une
 source RSS alternative et l'activation reelle d'ElevenLabs/Unsplash avec de
 vraies cles API.
@@ -224,7 +236,7 @@ Objectif : transformer un mot analyse en carte personnelle.
 
 Progression : TERMINEE pour le parcours de base. Deck, Card, ajout depuis un
 token, traduction associee, creation automatique d'un deck et contrainte
-d'unicite sont implementes.
+d'unicite sont implementes. Export Anki ajoute le 2026-09-22 (voir ci-dessous).
 
 A faire :
 - [TERMINE] Definir Deck avec nom et paire de langues.
@@ -233,6 +245,14 @@ A faire :
 - [TERMINE] Utiliser la traduction disponible pour la carte.
 - [TERMINE] Creer automatiquement un deck lors du premier ajout.
 - [TERMINE] Prevoir une contrainte d'unicite compatible avec la paire de langues.
+- [TERMINE] Export Anki : transformer pur (src/lib/export/anki.ts) qui
+  convertit les cartes d'un deck en fichier texte au format d'import Anki
+  (TSV avec directives #separator/#html/#columns, Front = lemme + lecture,
+  Back = sens). Route GET /api/decks/[deckId]/export/anki qui sert le
+  fichier en telechargement (Content-Disposition: attachment). Bouton
+  "Exporter vers Anki" sur la page /decks/[deckId]. Valide manuellement :
+  fichier telecharge avec le bon nom et les bons en-tetes, importable tel
+  quel dans Anki (File > Import).
 
 Validation :
 - [TERMINE] Un token peut devenir une carte.
@@ -243,11 +263,20 @@ Priorite 7 - Implementer SM-2 et le mode revision
 -------------------------------------------------
 Objectif : reviser les cartes dues.
 
-Progression : PARTIELLEMENT TERMINEE - scheduler SM-2 pur, route de revision,
-cartes dues, boutons de qualite, historique ReviewLog et statistiques (cartes
-dues, revisions totales, taux de reussite, historique recent) sont
-implementes dans la page principale. Il manque encore une page de revision
-separee de la page principale.
+Progression : TERMINEE. Scheduler SM-2 pur, route de revision, cartes dues,
+boutons de qualite, historique ReviewLog et statistiques (cartes dues,
+revisions totales, taux de reussite, historique recent) sont implementes.
+Depuis la restructuration du 2026-09-22 en plusieurs pages (voir Etat
+actuel), la revision vit sur sa propre page /decks/[deckId], separee de la
+page d'analyse. Le meme jour, 3 modes de presentation ont ete ajoutes sur
+cette page (meme file d'attente SM-2 et meme notation, seule la question
+change) :
+- Standard : kanji + lecture affiches, sens a deviner (comportement d'origine).
+- Kanji : kanji seul affiche, lecture ET sens a deviner (plus exigeant).
+- Contexte : une phrase reelle contenant le mot (tiree de WordOccurrence) est
+  affichee avec le mot en surbrillance ; l'utilisateur doit deviner le sens
+  du mot dans ce contexte. Repli automatique sur le mode kanji si la carte
+  n'a aucune occurrence enregistree.
 
 Notion a comprendre :
 SM-2 met a jour la facilite, l'intervalle et la prochaine date selon une note
@@ -260,10 +289,12 @@ A faire :
 - [TERMINE] Ajouter ReviewLog pour chaque revision (modele Prisma + ecriture
   transactionnelle avec la mise a jour de la carte).
 - [TERMINE] Ecrire des tests pour reponses difficiles, reussies et parfaites.
-- [PARTIEL] Construire le mode revision dans la page principale (toujours pas
-  de page /revision dediee).
+- [TERMINE] Construire le mode revision sur sa propre page (/decks/[deckId]).
 - [TERMINE] Afficher le nombre de cartes dues et les statistiques de reussite
   par deck (route /api/decks/[deckId]/stats).
+- [TERMINE] Ajouter les modes d'entrainement "Kanji" et "Contexte" en plus du
+  mode standard (selecteur sur la page /decks/[deckId], meme file de cartes
+  dues et meme notation SM-2 pour les trois modes).
 
 Validation :
 - [TERMINE] Les formules et dates sont couvertes par des tests.
