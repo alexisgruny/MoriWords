@@ -68,6 +68,9 @@ export default function DeckDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [cardPendingDeletion, setCardPendingDeletion] = useState<DeckCardWithOccurrences | null>(null);
+  const [editingMeaningCardId, setEditingMeaningCardId] = useState<string | null>(null);
+  const [editingMeaningValue, setEditingMeaningValue] = useState("");
+  const [isSavingMeaning, setIsSavingMeaning] = useState(false);
   const [isDeckDeletionPending, setIsDeckDeletionPending] = useState(false);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
   const [quizChoices, setQuizChoices] = useState<string[]>([]);
@@ -180,6 +183,54 @@ export default function DeckDetailPage() {
           : "Une erreur est survenue pendant la suppression de la carte.",
       );
       showToast("La suppression de la carte a échoué.", "error");
+    }
+  }
+
+  // Enregistre le sens saisi à la main pour une carte (complète un "sens à
+  // compléter" laissé par l'ajout en masse, ou corrige une traduction).
+  // Réutilise la route d'ajout : comme le lemme existe déjà dans ce deck,
+  // elle met simplement à jour la carte au lieu d'en créer une nouvelle.
+  async function handleSaveMeaning(card: DeckCardWithOccurrences) {
+    const trimmedMeaning = editingMeaningValue.trim();
+
+    if (!trimmedMeaning) {
+      return;
+    }
+
+    setIsSavingMeaning(true);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lemma: card.lemma,
+          reading: card.reading,
+          meaning: trimmedMeaning,
+        }),
+      });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible d’enregistrer le sens");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      await loadDeckCards();
+      setEditingMeaningCardId(null);
+      showToast("Sens mis à jour.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la mise à jour du sens.",
+      );
+      showToast("La mise à jour du sens a échoué.", "error");
+    } finally {
+      setIsSavingMeaning(false);
     }
   }
 
@@ -661,17 +712,69 @@ export default function DeckDetailPage() {
                     <span className="text-lg font-semibold text-[var(--ink)]" lang="ja">
                       {card.lemma}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setCardPendingDeletion(card)}
-                      className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                    >
-                      Supprimer
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {editingMeaningCardId !== card.id ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMeaningCardId(card.id);
+                            setEditingMeaningValue(card.meaning ?? "");
+                          }}
+                          className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                        >
+                          Éditer
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setCardPendingDeletion(card)}
+                        className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    {card.reading ?? "lecture inconnue"} · {card.meaning ?? "sens à compléter"}
-                  </p>
+
+                  {editingMeaningCardId === card.id ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-[var(--muted)]">
+                        {card.reading ?? "lecture inconnue"} ·
+                      </span>
+                      <input
+                        value={editingMeaningValue}
+                        onChange={(event) => setEditingMeaningValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            void handleSaveMeaning(card);
+                          }
+                        }}
+                        placeholder="Sens en français"
+                        aria-label={`Sens de « ${card.lemma} »`}
+                        autoFocus
+                        className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveMeaning(card)}
+                        disabled={isSavingMeaning || editingMeaningValue.trim().length === 0}
+                        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+                      >
+                        {isSavingMeaning ? "..." : "Enregistrer"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingMeaningCardId(null)}
+                        className="text-xs text-[var(--muted)] underline"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      {card.reading ?? "lecture inconnue"} · {card.meaning ?? "sens à compléter"}
+                    </p>
+                  )}
+
                   {card.occurrences.length > 0 ? (
                     <p className="mt-2 text-xs text-[var(--muted)]">
                       Vu dans {card.occurrences.length} texte(s)

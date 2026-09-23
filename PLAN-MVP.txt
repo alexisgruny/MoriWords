@@ -668,6 +668,59 @@ Validation :
   et 4 sur getDistractorTranslations (cache vide, count<=0, dedoublonnage,
   clause d'exclusion).
 
+Priorite 15 - Edition du sens, vue "a reviser" globale, historique complet,
+filtrage du bruit dans la detection de mots
+-----------------------------------------------------------------------------
+Objectif : combler des trous d'usage remontes par l'utilisateur, dont un que
+la Priorite 14 venait de creer (ajout en masse -> cartes sans sens, aucun
+moyen de les completer).
+
+A faire :
+- [TERMINE] Editer le sens d'une carte directement dans "Cartes du deck"
+  (src/app/decks/[deckId]/page.tsx) : bouton "Editer" -> champ inline ->
+  "Enregistrer". Reutilise la route POST existante (le lemme existe deja
+  dans le deck, donc c'est un upsert qui met juste a jour la carte) plutot
+  que d'ajouter une route PATCH dediee.
+- [TERMINE] Resume "A reviser aujourd'hui" sur /decks : total de cartes dues
+  tous decks confondus + liste des decks concernes avec leur compte, chacun
+  cliquable. Calcule cote client a partir de /api/decks (dueAt deja present
+  par carte), pas de nouvelle route. Pas de session de revision fusionnee
+  entre decks (scope volontairement limite au resume + navigation rapide).
+- [TERMINE] Page /historique : liste paginee ("Charger plus") et recherche
+  (titre + contenu, insensible a la casse) sur tout l'historique des textes
+  analyses, pas seulement les 6 derniers affiches sur la page d'accueil.
+  GET /api/source-texts etendu avec q/limit/offset (retro-compatible, le
+  comportement par defaut sans parametres est inchange). Cliquer un
+  resultat renvoie vers /?sourceTextId=... qui rouvre le texte.
+  Au passage, corrige un vrai trou : rouvrir un texte (depuis l'accueil ou
+  l'historique) ne rechargeait que les tokens, jamais le texte source
+  lui-meme dans le textarea/apercu (nouvelle route
+  GET /api/source-texts/[id]).
+- [TERMINE] Nav a 4 liens (Analyser/Decks/Vocabulaire/Historique) : a fait
+  redeborder la barre de navigation sur mobile (375px), meme bug que la
+  Priorite 13 mais avec un lien de plus. Corrige differemment cette fois :
+  defilement horizontal sur la barre de nav elle-meme (overflow-x-auto +
+  min-w-0, verifie necessaire sinon overflow-x-auto n'a aucun effet dans un
+  parent flex) plutot que de re-resserrer le padding, pour rester robuste
+  si d'autres liens sont ajoutes plus tard. Pas d'indice visuel (fondu) que
+  la barre defile ; a ameliorer si besoin.
+- [TERMINE] Filtrage du "bruit" dans les mots detectes (page d'accueil) :
+  romaji pur (ex. "PC"), chiffres arabes purs (ex. "2027") et
+  symboles/ponctuation (categorie kuromoji 記号) caches par defaut, sans
+  case a cocher pour les reafficher (contrairement aux particules).
+  src/lib/tokenizer/token-filters.ts::isNoiseToken, pur et teste (6 tests).
+  Verifie en navigateur reel sur "私はPCで2027年のニュースを読みました。
+  とても面白いです！" : PC/2027/。/！ correctement absents, le reste
+  correctement present.
+
+Validation :
+- [TERMINE] Tout verifie en navigateur reel (Playwright), pas seulement par
+  les tests automatises : edition de sens (toast "Sens mis a jour", carte
+  mise a jour), resume "a reviser" (compte correct), recherche + reouverture
+  depuis l'historique (texte source recharge dans le textarea), 0
+  debordement horizontal sur mobile avec 4 liens de nav apres correctif.
+- [TERMINE] 91 tests automatises passent (6 nouveaux sur isNoiseToken).
+
 Prochaines priorites recommandees
 1. [TERMINE] Choisir une source RSS alternative a NHK Easy pour la categorie
    news (bloquee, voir Priorite 11) puis construire l'adaptateur, la

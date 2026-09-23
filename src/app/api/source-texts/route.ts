@@ -55,17 +55,49 @@ export async function POST(request: Request) {
   }
 }
 
-// Renvoie les 6 derniers textes analysés, pour l'historique de la page d'accueil.
-export async function GET() {
-  try {
-    const sourceTexts = await prisma.sourceText.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 6,
-    });
+// Nombre de textes renvoyés par défaut (historique de la page d'accueil) et
+// maximum autorisé par page (pour la page /historique, qui peut demander plus).
+const DEFAULT_LIMIT = 6;
+const MAX_LIMIT = 50;
 
-    return Response.json({ sourceTexts });
+// Renvoie les derniers textes analysés. Sans paramètres, se comporte comme
+// avant (les 6 derniers, pour l'historique de la page d'accueil). Avec q,
+// filtre sur le titre ou le contenu (recherche insensible à la casse) ;
+// avec limit/offset, permet de parcourir tout l'historique par pages
+// (utilisé par /historique).
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q")?.trim() ?? "";
+
+    const limitParam = Number(searchParams.get("limit"));
+    const limit = Number.isInteger(limitParam) && limitParam > 0
+      ? Math.min(limitParam, MAX_LIMIT)
+      : DEFAULT_LIMIT;
+
+    const offsetParam = Number(searchParams.get("offset"));
+    const offset = Number.isInteger(offsetParam) && offsetParam > 0 ? offsetParam : 0;
+
+    const where = query
+      ? {
+          OR: [
+            { title: { contains: query, mode: "insensitive" as const } },
+            { content: { contains: query, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
+
+    const [sourceTexts, total] = await Promise.all([
+      prisma.sourceText.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.sourceText.count({ where }),
+    ]);
+
+    return Response.json({ sourceTexts, total, hasMore: offset + sourceTexts.length < total });
   } catch {
     return Response.json(
       { error: "Impossible de récupérer les textes." },

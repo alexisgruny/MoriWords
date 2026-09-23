@@ -7,6 +7,12 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import type { DeckSummary } from "@/types/shared";
 
+// Une carte est due si elle n'a jamais été révisée, ou si sa date
+// d'échéance est passée (même logique que la page de détail d'un deck).
+function isCardDue(dueAt?: string | null): boolean {
+  return !dueAt || new Date(dueAt).getTime() <= Date.now();
+}
+
 // Page qui liste tous les decks de l'utilisateur et permet d'en créer un nouveau.
 export default function DecksPage() {
   const { showToast } = useToast();
@@ -119,6 +125,18 @@ export default function DecksPage() {
     }
   }
 
+  // Nombre de cartes dues par deck, et total tous decks confondus, pour le
+  // résumé du jour : éviter d'avoir à rentrer dans chaque deck pour savoir
+  // ce qu'il y a à réviser.
+  const decksWithDueCount = decks
+    .map((deck) => ({
+      deck,
+      dueCount: deck.cards.filter((card) => isCardDue(card.dueAt)).length,
+    }))
+    .filter((entry) => entry.dueCount > 0)
+    .sort((a, b) => b.dueCount - a.dueCount);
+  const totalDueCount = decksWithDueCount.reduce((sum, entry) => sum + entry.dueCount, 0);
+
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
@@ -128,6 +146,38 @@ export default function DecksPage() {
             Tes decks de vocabulaire
           </h1>
         </header>
+
+        {decks.length > 0 ? (
+          <section className="mb-8 panel p-6 sm:p-8">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow">Today</p>
+                <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">
+                  À réviser aujourd’hui
+                </h2>
+              </div>
+              <span className="count-badge">{totalDueCount}</span>
+            </div>
+
+            {decksWithDueCount.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {decksWithDueCount.map(({ deck, dueCount }) => (
+                  <Link
+                    key={deck.id}
+                    href={`/decks/${deck.id}`}
+                    className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] transition hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                  >
+                    {deck.name} <span className="text-[var(--accent-dark)]">· {dueCount}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">
+                Rien à réviser pour le moment dans tes {decks.length} deck(s).
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <section className="panel p-6 sm:p-8">
           <div className="mb-5 flex items-end justify-between gap-4">

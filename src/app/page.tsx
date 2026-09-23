@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { useToast } from "@/components/toast-provider";
+import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
 import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
 
@@ -44,10 +45,11 @@ export default function Home() {
   const [isBulkAdding, setIsBulkAdding] = useState(false);
 
   // Cache les particules grammaticales par défaut (moins intéressantes à
-  // apprendre), sauf si l'utilisateur coche la case pour les voir.
-  const visibleTokens = showParticles
-    ? tokens
-    : tokens.filter((token) => token.partOfSpeech !== "助詞");
+  // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
+  // aussi toujours le romaji et les chiffres arabes purs (pas du vocabulaire
+  // japonais à proprement parler), sans case à cocher pour les réafficher.
+  const visibleTokens = (showParticles ? tokens : tokens.filter((token) => token.partOfSpeech !== "助詞"))
+    .filter((token) => !isNoiseToken(token));
 
   // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
@@ -99,28 +101,54 @@ export default function Home() {
 
     void loadRecentSourceTexts();
     void loadDecks();
+
+    // Rouvre un texte choisi depuis la page /historique (lien
+    // /?sourceTextId=...), puis nettoie l'URL pour éviter de le rerouvrir
+    // si l'utilisateur revient sur cette page plus tard.
+    const requestedSourceTextId = new URLSearchParams(window.location.search).get("sourceTextId");
+    if (requestedSourceTextId) {
+      void loadTokensForText(requestedSourceTextId);
+      window.history.replaceState(null, "", "/");
+    }
   }, []);
 
   // Charge les tokens déjà enregistrés pour un texte existant dans la DB.
   async function loadTokensForText(sourceTextId: string) {
     try {
-      const response = await fetch(`/api/tokens?sourceTextId=${encodeURIComponent(sourceTextId)}`);
-      const data: unknown = await response.json();
+      const [sourceTextResponse, tokensResponse] = await Promise.all([
+        fetch(`/api/source-texts/${encodeURIComponent(sourceTextId)}`),
+        fetch(`/api/tokens?sourceTextId=${encodeURIComponent(sourceTextId)}`),
+      ]);
+      const sourceTextData: unknown = await sourceTextResponse.json();
+      const tokensData: unknown = await tokensResponse.json();
 
-      if (!response.ok || typeof data !== "object" || data === null) {
+      if (!tokensResponse.ok || typeof tokensData !== "object" || tokensData === null) {
         throw new Error("Impossible de récupérer les tokens enregistrés");
       }
 
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
+      if ("error" in tokensData && typeof tokensData.error === "string") {
+        throw new Error(tokensData.error);
       }
 
-      if (!("tokens" in data) || !Array.isArray(data.tokens)) {
+      if (!("tokens" in tokensData) || !Array.isArray(tokensData.tokens)) {
         throw new Error("Réponse inattendue lors du chargement des tokens");
       }
 
+      if (
+        sourceTextResponse.ok &&
+        typeof sourceTextData === "object" &&
+        sourceTextData !== null &&
+        "sourceText" in sourceTextData &&
+        typeof sourceTextData.sourceText === "object" &&
+        sourceTextData.sourceText !== null &&
+        "content" in sourceTextData.sourceText &&
+        typeof sourceTextData.sourceText.content === "string"
+      ) {
+        setText(sourceTextData.sourceText.content);
+      }
+
       setSelectedSourceTextId(sourceTextId);
-      setTokens(data.tokens as TokenResult[]);
+      setTokens(tokensData.tokens as TokenResult[]);
     } catch (loadError) {
       setError(
         loadError instanceof Error

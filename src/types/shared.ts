@@ -8,6 +8,8 @@ export type SourceTextSummary = {
   content: string;
   title: string | null;
   createdAt: string;
+  origin?: string | null;
+  category?: string | null;
 };
 
 // Une carte telle que renvoyée avec la liste des decks (sans le détail des occurrences).
