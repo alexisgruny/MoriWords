@@ -199,9 +199,15 @@ export async function translateText(
   text: string,
   sourceLanguage: string,
   targetLanguage: string,
+  context?: string,
 ): Promise<TranslationResult> {
   const cleanedText = text.trim();
   const cacheKey = cleanedText || text;
+  const cleanedContext = context?.trim() || null;
+  // Une traduction contextualisée peut différer du sens générique du mot :
+  // on ne la lit ni ne l'écrit dans le cache pour ne pas polluer les futures
+  // traductions hors contexte de ce même mot.
+  const useCache = !cleanedContext || cleanedContext === cleanedText;
 
   if (!cacheKey) {
     return {
@@ -211,10 +217,12 @@ export async function translateText(
     };
   }
 
-  const cached = await getCachedTranslation(cacheKey, sourceLanguage, targetLanguage);
+  if (useCache) {
+    const cached = await getCachedTranslation(cacheKey, sourceLanguage, targetLanguage);
 
-  if (cached) {
-    return cached;
+    if (cached) {
+      return cached;
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -248,7 +256,9 @@ export async function translateText(
         messages: [
           {
             role: "user",
-            content: `Traduis ce texte de ${sourceLanguage} vers ${targetLanguage}. S'il s'agit d'une phrase, conserve son sens et son ton naturels. Réponds uniquement en JSON avec la structure suivante : {"translation":"...","explanation":"..."}.\n\nTexte : ${cleanedText}`,
+            content: useCache
+              ? `Traduis ce texte de ${sourceLanguage} vers ${targetLanguage}. S'il s'agit d'une phrase, conserve son sens et son ton naturels. Réponds uniquement en JSON avec la structure suivante : {"translation":"...","explanation":"..."}.\n\nTexte : ${cleanedText}`
+              : `Traduis ce mot ou groupe de mots de ${sourceLanguage} vers ${targetLanguage} en tenant compte du sens qu'il a dans la phrase de contexte ci-dessous (désambiguïse-le si besoin). L'explication doit préciser son sens précis dans ce contexte. Réponds uniquement en JSON avec la structure suivante : {"translation":"...","explanation":"..."}.\n\nPhrase de contexte : ${cleanedContext}\nMot à traduire : ${cleanedText}`,
           },
         ],
       }),
@@ -281,8 +291,11 @@ export async function translateText(
   const payload = await response.json();
   const result = parseAnthropicResponse(payload, cleanedText);
 
-  // Mémorise le résultat pour ne pas refaire le même appel plus tard.
-  await saveTranslation(cacheKey, sourceLanguage, targetLanguage, result);
+  // Mémorise le résultat pour ne pas refaire le même appel plus tard, sauf
+  // s'il est spécifique à un contexte (voir useCache ci-dessus).
+  if (useCache) {
+    await saveTranslation(cacheKey, sourceLanguage, targetLanguage, result);
+  }
 
   return result;
 }

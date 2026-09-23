@@ -5,6 +5,7 @@ type TranslateRequest = {
   text: string;
   sourceLanguage?: string;
   targetLanguage?: string;
+  context?: string;
 };
 
 // Vérifie que le corps de la requête a bien un champ "text" de type chaîne.
@@ -15,7 +16,10 @@ function isTranslateRequest(value: unknown): value is TranslateRequest {
 
   const candidate = value as Record<string, unknown>;
 
-  return typeof candidate.text === "string";
+  return (
+    typeof candidate.text === "string" &&
+    (candidate.context === undefined || typeof candidate.context === "string")
+  );
 }
 
 // Traduit un mot ou une phrase (japonais vers français par défaut).
@@ -34,6 +38,7 @@ export async function POST(request: Request) {
       body.text,
       body.sourceLanguage ?? "ja",
       body.targetLanguage ?? "fr",
+      body.context,
     );
 
     return Response.json({ result });

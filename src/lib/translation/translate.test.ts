@@ -253,6 +253,39 @@ describe("translateText", () => {
     );
   });
 
+  it("skips the cache and sends the surrounding sentence when a context is given", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              translation: "je",
+              explanation: "Dans cette phrase, 私 est utilisé comme sujet et signifie ‘je’.",
+            }),
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const result = await translateText("私", "ja", "fr", "私は毎朝コーヒーを飲みます。");
+
+    expect(result).toEqual({
+      translation: "je",
+      explanation: "Dans cette phrase, 私 est utilisé comme sujet et signifie ‘je’.",
+      difficulty: "N5",
+    });
+    expect(prisma.translationCache.findUnique).not.toHaveBeenCalled();
+    expect(prisma.translationCache.upsert).not.toHaveBeenCalled();
+
+    const requestBody = JSON.parse(fetchSpy.mock.calls[0][1].body as string);
+    expect(requestBody.messages[0].content).toContain("私は毎朝コーヒーを飲みます。");
+  });
+
   it("throws a clear error when Anthropic replies without a usable payload", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
     vi.mocked(prisma.translationCache.findUnique).mockResolvedValue(null);

@@ -380,6 +380,7 @@ export default function Home() {
           text: token.baseForm || token.surface,
           sourceLanguage: "ja",
           targetLanguage: "fr",
+          context: text,
         }),
       });
       const data: unknown = await response.json();
@@ -545,7 +546,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+        <section className="flex flex-col gap-6">
           <form onSubmit={handleSubmit} className="panel flex flex-col p-6 sm:p-8">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div>
