@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 // Délai maximum d'attente de la réponse de Claude avant d'abandonner.
@@ -65,47 +66,38 @@ export async function generateJsonFromClaude<T>({
     throw createError(messages.missingApiKey);
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const client = new Anthropic({ apiKey });
 
-  let response: Response;
+  let message: Anthropic.Message;
 
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
+    message = await client.messages.create(
+      {
         model: "claude-haiku-4-5-20251001",
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
-      }),
-      signal: controller.signal,
-    });
-  } catch (fetchError) {
-    if (fetchError instanceof Error && fetchError.name === "AbortError") {
+      },
+      { timeout: timeoutMs },
+    );
+  } catch (apiError) {
+    if (apiError instanceof Anthropic.APIConnectionTimeoutError) {
       throw createError(messages.timeout);
     }
 
-    console.error("Anthropic generation request failed:", fetchError);
-    throw createError(messages.networkError);
-  } finally {
-    clearTimeout(timeoutId);
+    if (apiError instanceof Anthropic.APIConnectionError) {
+      console.error("Anthropic generation request failed:", apiError);
+      throw createError(messages.networkError);
+    }
+
+    if (apiError instanceof Anthropic.APIError) {
+      console.error(`Anthropic generation API error (${apiError.status}):`, apiError.message);
+      throw createError(messages.httpError);
+    }
+
+    throw apiError;
   }
 
-  if (!response.ok) {
-    const errorPayload = await response.text();
-    console.error(`Anthropic generation API error (${response.status}):`, errorPayload || response.statusText);
-    throw createError(messages.httpError);
-  }
-
-  const payload = (await response.json()) as {
-    content?: Array<{ type?: string; text?: string }>;
-  };
-  const rawText = payload.content?.find((entry) => entry.type === "text")?.text;
+  const rawText = message.content.find((entry) => entry.type === "text")?.text;
 
   if (!rawText) {
     throw createError(messages.empty);

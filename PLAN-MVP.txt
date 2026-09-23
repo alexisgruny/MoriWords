@@ -28,11 +28,23 @@ L'audio (ElevenLabs) est code-complet mais bloque : le plan gratuit refuse les
 voix de bibliotheque via l'API (402 "paid_plan_required"), meme ajoutees a
 My Voices ; mis de cote pour l'instant (voir Priorite 9).
 Le flux RSS NHK Easy est bloque : pas de flux officiel et robots.txt interdit
-les crawlers IA (voir Priorite 11) ; une source alternative reste a choisir.
+les crawlers IA (voir Priorite 11). Source alternative retenue et implementee :
+le flux RSS officiel de nippon.com/ja (depeches Kyodo News), verifie le
+2026-09-23 (robots.txt sans blocage IA, flux publie pour syndication). Voir
+Priorite 11 pour le detail de l'adaptateur, la dedup et le cron.
 Un audit d'accessibilite/responsive a ete fait (labels, focus-visible, un bug
 de style manquant corrige) et un test d'integration bout en bout sur la vraie
-base a ete ajoute (Priorite 12) ; il manque encore un test manuel reel sur
-navigateur/mobile et lecteur d'ecran.
+base a ete ajoute (Priorite 12). Un vrai test navigateur/mobile a suivi le
+2026-09-23 (Priorite 13) : Chromium reel a 3 largeurs, axe-core, arbre
+d'accessibilite - 5 bugs reels trouves et corriges (contrastes de couleur
+insuffisants, ARIA invalide, debordement horizontal mobile, doublon de titre
+dans news-rss). Il manque encore un test avec un lecteur d'ecran materiel sur
+appareil physique (impossible depuis cet environnement).
+Un mode de revision "Quiz" (4 choix de sens, note SM-2 automatique) et un
+bouton d'ajout en masse de tous les mots detectes ont ete ajoutes le
+2026-09-23 (Priorite 14) ; a l'occasion, un bug reel a ete corrige : l'ajout
+d'un mot sans traduction (dont l'ajout en masse) ecrasait silencieusement le
+sens deja enregistre pour ce mot.
 Une source de contenu "citation d'anime" a ete ajoutee (Priorite 11) :
 Claude genere une citation japonaise celebre plutot que de scraper un site,
 ce qui evite le probleme robots.txt rencontre avec NHK.
@@ -45,9 +57,8 @@ GET /api/decks/[deckId] pour charger un deck seul ; types partages dans
 src/types/shared.ts ; navigation dans src/components/nav.tsx.
 Un export Anki a ete ajoute (voir Priorite 6) : transformer pur en TSV,
 telechargeable depuis la page d'un deck.
-Tests et build passent ; la prochaine etape concerne surtout le choix d'une
-source RSS alternative et l'activation reelle d'ElevenLabs/Unsplash avec de
-vraies cles API.
+Tests et build passent ; la prochaine etape concerne surtout l'activation
+reelle d'ElevenLabs avec une vraie cle API (Unsplash est deja active).
 
 Regle de travail
 ----------------
@@ -410,8 +421,8 @@ Priorite 11 - Ajouter les flux quotidiens
 -----------------------------------------
 Objectif : proposer du contenu frais sans scraping fragile ou abusif.
 
-Progression : BLOQUEE sur la source news/NHK Easy (voir plus bas), mais la
-categorie "anime" est TERMINEE via une approche differente : plutot que de
+Progression : TERMINEE pour l'anime (citations generees par Claude) et pour
+une vraie source news RSS (nippon.com). Categorie "anime" : plutot que de
 scraper un site (RSS ou HTML), src/lib/feeds/anime-quote.ts demande
 directement a Claude une citation japonaise celebre et verifiable issue d'un
 anime/film/serie. Ca contourne entierement le probleme robots.txt/CGU
@@ -427,31 +438,65 @@ flux RSS officiel pour NHK Easy News (seul un scraper communautaire non
 officiel existe sur GitHub), et le robots.txt de www3.nhk.or.jp interdit
 explicitement les crawlers IA (ClaudeBot, anthropic-ai, GPTBot, etc. avec
 "Disallow: /"). Recuperer ce contenu irait donc a l'encontre des conditions
-du site. Il faut choisir une autre source avant de continuer sur ce point
-(flux RSS officiel d'un autre media, ou API dediee).
+du site.
+
+Source alternative retenue et implementee le 2026-09-23 : le flux RSS officiel
+de nippon.com (edition japonaise, rubrique actualites, depeches Kyodo News) -
+https://www.nippon.com/ja/rss-others/news.xml. Verification avant
+implementation : robots.txt de nippon.com ne bloque aucun crawler IA et
+n'interdit pas /ja/rss-others/ (seuls /api/, /simple.html et deux chemins de
+webcheck sont exclus) ; le site publie explicitement une page listant ses
+flux RSS (nippon.com/ja/rss_list/), destinee a la syndication par des lecteurs
+tiers. La page de copyright de la fondation (foundation.nippon.com/ja/copyright/)
+interdit la reproduction du contenu sans autorisation mais ne mentionne pas
+les flux RSS explicitement ; pour rester prudent, l'adaptateur ne recupere
+jamais la page complete d'un article et ne stocke que le titre et le resume
+deja tronque publies dans le flux RSS lui-meme (comportement standard d'un
+lecteur de flux). A reevaluer si l'usage devait devenir public/commercial.
+- src/lib/feeds/news-rss.ts : telechargement + parsing (fast-xml-parser),
+  filtre les entrees dont le resume est trop court pour etre utile (ex. juste
+  le nom de l'agence de presse), dedup par sourceUrl contre les SourceText
+  deja importes (origin="nippon-news-rss"), cree le SourceText suivant non
+  encore vu.
+- Route manuelle : POST /api/source-texts/news-rss (bouton "Actualite reelle
+  (nippon.com)" dans l'UI, meme flux que les autres sources generees).
+  Renvoie 409 si tous les articles actuellement dans le flux sont deja
+  importes (le flux se renouvelle au fil de la journee).
+- Route cron securisee : GET /api/cron/news-rss, protegee par le header
+  "Authorization: Bearer $CRON_SECRET" (verifie contre la variable
+  d'environnement CRON_SECRET - a definir dans les settings Vercel du
+  projet, Vercel Cron Jobs l'envoie automatiquement). Importe jusqu'a 3
+  nouveaux articles par declenchement.
+- Scheduler configure via vercel.json (cron quotidien a 06:00 UTC), au format
+  attendu par Vercel Cron Jobs.
+- Valide en reel le 2026-09-23 : 2 appels consecutifs a la route manuelle ont
+  importe 2 articles differents et reels (retraite d'un joueur J1, "Osaka-to
+  koso" sur les noms d'arrondissement), tokenizes sans probleme (readings +
+  niveaux JLPT corrects).
 
 A faire :
-- [BLOQUE] Utiliser NHK Easy comme source news (pas de flux RSS officiel,
-  robots.txt interdit les crawlers IA - voir Progression). Choisir une
-  source alternative.
-- [A FAIRE] Verifier robots.txt, CGU et conditions de redistribution de la
-  source alternative retenue avant tout scraping.
+- [TERMINE] Utiliser NHK Easy comme source news (bloque, voir Progression) ;
+  remplace par le flux RSS de nippon.com.
+- [TERMINE] Verifier robots.txt, CGU et conditions de redistribution de la
+  source alternative retenue avant tout scraping (voir Progression).
 - [TERMINE] Categorie anime : citations generees par Claude, sans scraping
   (src/lib/feeds/anime-quote.ts + route /api/source-texts/anime-quote).
-- Creer un adaptateur par source dans src/lib/feeds/ (pour une future
-  categorie news basee sur du RSS/scraping reel).
-- Parser RSS, dedoublonner les URLs et creer des SourceText (pour la source
-  news, une fois choisie).
-- Creer une route cron protegee par un secret (pour automatiser au-dela du
-  bouton manuel actuel).
-- Configurer le scheduler du fournisseur de deploiement.
+- [TERMINE] Creer un adaptateur par source dans src/lib/feeds/ (news-rss.ts
+  pour la categorie news basee sur du RSS reel).
+- [TERMINE] Parser RSS, dedoublonner les URLs et creer des SourceText.
+- [TERMINE] Creer une route cron protegee par un secret.
+- [PARTIEL] Configurer le scheduler du fournisseur de deploiement :
+  vercel.json cree, mais CRON_SECRET doit encore etre defini manuellement
+  dans les settings Vercel du projet (variable d'environnement) pour que la
+  route cron s'authentifie - a faire par l'utilisateur, pas automatisable
+  depuis le code.
 - [BLOQUE] Categorie gaming : laissee vide, aucune source propre validee.
 
 Validation :
 - [TERMINE] Le job (bouton "Citation d'anime") peut etre relance plusieurs
   fois sans repeter la meme citation (exclusion des 15 dernieres).
-- Le job peut etre relance sans creer de doublons (pour la source news, une
-  fois implementee).
+- [TERMINE] Le job news-rss peut etre relance sans creer de doublons (dedup
+  par sourceUrl, valide en reel le 2026-09-23).
 - Une source en erreur ne bloque pas les autres.
 - [TERMINE] Les citations d'anime sont groupees par categorie ("anime") via
   SourceText.category, coherent avec le reste du modele.
@@ -472,12 +517,13 @@ boutons s'affichaient donc sans aucun style.
 A faire :
 - [TERMINE] Verifier l'accessibilite : labels manquants ajoutes (aria-label
   sur la recherche de cartes et le nom du deck), focus-visible ajoute sur
-  boutons et token-card, contraste texte secondaire verifie (~4.6:1, conforme
-  AA). Non teste avec un lecteur d'ecran reel.
+  boutons et token-card, contraste texte secondaire verifie a la lecture du
+  code (~4.6:1, estime conforme AA). Non teste avec un lecteur d'ecran reel a
+  l'epoque - voir Priorite 13 pour le vrai test qui a corrige cette estimation.
 - [TERMINE] Verifier le responsive mobile : audit du code confirme l'usage
   coherent des breakpoints Tailwind deja en place (grid/flex-wrap) sur les
   nouvelles sections (stats, cartes, revision) ; pas de test visuel reel sur
-  appareil/emulateur.
+  appareil/emulateur a l'epoque - voir Priorite 13.
 - [TERMINE] Ajouter un test d'integration bout en bout sur la vraie base
   Postgres locale (src/app/api/decks/cards-flow.integration.test.ts) :
   dedup carte + occurrences + revision + stats + suppression en cascade.
@@ -485,22 +531,195 @@ A faire :
   jusque-la) ; a permis de detecter et corriger une fuite potentielle de
   secrets (ANTHROPIC_API_KEY etc.) dans les tests si mal configuree.
 
+Priorite 13 - Audit d'accessibilite et responsive reel (navigateur pilote)
+---------------------------------------------------------------------------
+Objectif : remplacer l'estimation faite a la lecture du code (Priorite 12)
+par un vrai test sur un navigateur reel, a plusieurs largeurs, avec un outil
+d'audit WCAG automatise et une lecture de l'arbre d'accessibilite (equivalent
+programmatique a un lecteur d'ecran - aucun lecteur d'ecran materiel
+disponible dans cet environnement).
+
+Methode (2026-09-23) : Chromium reel pilote par Playwright (npx, non ajoute
+aux dependances du projet), contre le serveur de dev tournant en local.
+- Captures d'ecran pleine page a 3 largeurs (375px mobile, 768px tablette,
+  1440px desktop) sur les 4 pages de l'app (/, /decks, /decks/[id],
+  /vocabulaire) - revue visuelle manuelle en plus des outils automatises.
+- Scan WCAG automatise avec axe-core (regles wcag2a/wcag2aa/best-practice)
+  sur chaque combinaison page x largeur.
+- Detection de debordement horizontal (scrollWidth > clientWidth) - un test
+  qu'un simple audit de code ne peut pas faire, il faut le rendu reel.
+- Arbre d'accessibilite (page.locator('body').ariaSnapshot() de Playwright) :
+  c'est exactement l'information qu'un lecteur d'ecran annoncerait (roles,
+  noms accessibles, landmarks, hierarchie des titres) - la meilleure
+  approximation possible sans lecteur d'ecran materiel.
+- Navigation clavier : 15 appuis sur Tab depuis la page d'accueil, ordre de
+  focus et indicateur visuel (outline) enregistres pour chaque element.
+
+Resultats de la premiere passe (avant correctifs) : 15 violations axe-core au
+total (contraste de couleur essentiellement, plus un usage ARIA interdit),
+et un debordement horizontal reel sur les 4 pages en largeur mobile (375px) -
+un bug que l'audit de code de la Priorite 12 n'avait pas detecte.
+
+Bugs reels trouves et corriges :
+- [TERMINE] Contraste insuffisant de .eyebrow et des 4 usages directs de
+  text-[var(--accent)] : 4.03-4.40:1 mesure (seuil AA 4.5:1 requis, donc en
+  dessous malgre l'estimation ~4.6:1 de la Priorite 12). Corrige en passant
+  ces textes a --accent-dark (6.29:1 sur --paper, 5.78:1 sur --background) -
+  meme teinte, plus lisible. Fichiers : src/app/globals.css, src/app/page.tsx,
+  src/app/decks/[deckId]/page.tsx.
+- [TERMINE] Contraste insuffisant de --muted sur --background specifiquement
+  (4.24:1, sous le seuil) alors qu'il passait de justesse sur --paper
+  (4.62:1) - explique pourquoi seul le sous-titre du header (hors panel, donc
+  sur --background directement) etait touche et pas les autres usages de
+  --muted (tous dans un .panel, sur --paper). Corrige en assombrissant
+  --muted de #777168 a #6b6459 (passe desormais sur les deux : 5.13:1 et
+  5.59:1). src/app/globals.css.
+- [TERMINE] .status-dot utilisait aria-label sans role compatible
+  (aria-prohibited-attr, un <span> generique n'accepte pas aria-label) ;
+  ajoute role="img". src/app/page.tsx.
+- [TERMINE] Debordement horizontal reel sur mobile (375px) sur les 4 pages,
+  cause par la barre de navigation (src/components/nav.tsx) : logo + 3 liens
+  depassaient de ~6px la largeur de l'ecran. Corrige en resserrant le
+  padding/gap au niveau mobile (px-5->px-4, gap-4->gap-3, gap-1->gap-0.5,
+  px-3->px-2.5 sur les liens ; les breakpoints sm:/lg: existants sont
+  inchanges). Deuxieme passe : 0 violation axe-core, 0 debordement sur les
+  4 pages x 3 largeurs.
+- [TERMINE] Trouve via la lecture de l'arbre d'accessibilite (pas par les
+  outils automatises) : le nouvel adaptateur news-rss (Priorite 11) dupliquait
+  le titre de l'article au debut du contenu, donc affiche deux fois dans la
+  tuile d'historique et annonce deux fois par un lecteur d'ecran (le nom
+  accessible du bouton concatene les deux paragraphes). Corrige en gardant
+  title et content distincts, comme pour les autres sources generees.
+  src/lib/feeds/news-rss.ts (+ test de non-regression).
+
+Non corrige / a la charge de l'utilisateur :
+- Deux SourceText crees pendant ce test manuel (import reel du flux news-rss)
+  contiennent l'ancien format duplique (avant le correctif ci-dessus) ; leur
+  suppression a ete bloquee par le classifieur de securite de l'outil (DELETE
+  SQL juge trop risque en mode auto). Inoffensif (vrai contenu, juste un
+  affichage legerement redondant) - a supprimer manuellement si souhaite, une
+  fois qu'une suppression de texte source existe dans l'UI (aucune pour
+  l'instant, seule la suppression de deck existe).
+
+Validation :
+- [TERMINE] 0 violation axe-core (wcag2a/wcag2aa/best-practice) sur 4 pages x
+  3 largeurs apres correctifs.
+- [TERMINE] 0 debordement horizontal sur 4 pages x 3 largeurs apres correctif.
+- [TERMINE] Ordre de tabulation logique verifie sur la page d'accueil, chaque
+  element interactif recoit un indicateur de focus visible (outline
+  personnalise 3px sur boutons/liens/token-card, outline navigateur natif sur
+  les champs de formulaire).
+- [PARTIEL] Reste un vrai test avec un lecteur d'ecran materiel (VoiceOver,
+  NVDA, TalkBack) sur un appareil physique - impossible depuis cet
+  environnement ; l'arbre d'accessibilite Playwright en est la meilleure
+  approximation programmatique disponible.
+
+Priorite 14 - Quiz a choix multiples et ajout en masse
+--------------------------------------------------------
+Objectif : accelerer la construction d'un deck (ajout mot par mot trop lent
+depuis un texte entier) et varier les modes de revision (auto-evaluation
+uniquement jusqu'ici).
+
+Progression : TERMINEE, les deux, verifiees en navigateur reel (Playwright)
+sur un deck jetable dedie (voir plus bas), pas seulement par les tests
+automatises.
+
+A faire :
+- [TERMINE] Ajout en masse : bouton "Tout ajouter au deck (N)" dans le panel
+  "Mots detectes" de la page d'accueil (src/app/page.tsx), qui ajoute tous
+  les tokens actuellement affiches (respecte le filtre particules) au deck
+  selectionne en un seul geste, sans traduction automatique (le sens reste
+  "a completer" ; pas d'appel Claude, donc rapide et gratuit). Toast avec le
+  compte (nouveaux / deja presents).
+- [TERMINE] Mode "Quiz" ajoute aux modes de revision existants
+  (src/app/decks/[deckId]/page.tsx) : affiche le mot + 4 choix de sens (1 bon
+  + des leurres), au lieu du bouton "Afficher la reponse" + auto-evaluation.
+  La note SM-2 est envoyee automatiquement (4 si correct, 1 si faux - plus
+  indulgent qu'un vrai echec, car reconnaitre parmi 4 choix est plus facile
+  qu'un rappel libre), avec un court delai visuel (1.1s) montrant la bonne
+  reponse avant de passer a la carte suivante.
+- [TERMINE] Pool de leurres a deux niveaux : d'abord les autres mots deja
+  traduits du meme deck (src/lib/decks/card-utils.ts::buildQuizChoices,
+  pur et teste), complete si besoin par un echantillon aleatoire du cache de
+  traduction global (src/lib/translation/translate.ts::getDistractorTranslations
+  + route GET /api/translate/distractors) - jamais d'appel a Claude, donc
+  instantane et gratuit. Sans meaning sur la carte due, le quiz affiche un
+  message et invite a changer de mode plutot que de planter.
+
+Bug reel trouve et corrige au passage :
+- [TERMINE] L'upsert de carte (POST /api/decks/[deckId]/cards) ecrasait
+  silencieusement surface/reading/meaning avec null quand le payload ne les
+  fournissait pas - declenche concretement par l'ajout en masse sur un mot
+  deja traduit individuellement (perte du sens enregistre). Corrige en
+  preservant la valeur existante quand le payload n'en fournit pas de
+  nouvelle. Test de non-regression ajoute dans
+  src/app/api/decks/cards-flow.integration.test.ts (DB reelle).
+
+Validation :
+- [TERMINE] Verifie en navigateur reel (Chromium/Playwright) sur un deck
+  jetable cree pour l'occasion (jamais sur "Mon deck japonais", les vraies
+  donnees de l'utilisateur) : ajout en masse de 9 tokens (8 nouveaux + 1 deja
+  present), mode Quiz avec 4 choix distincts affiches, clic sur une reponse ->
+  retour visuel correct (bonne reponse en surbrillance, mauvais choix en
+  rouge), requete POST /review confirmee a 200, stats du deck mises a jour
+  (Revisions totales, Cartes dues) apres passage a la carte suivante.
+- [TERMINE] 8 tests unitaires sur buildQuizChoices (dedoublonnage, jamais la
+  bonne reponse en leurre, respect de optionCount, repli si pool insuffisant)
+  et 4 sur getDistractorTranslations (cache vide, count<=0, dedoublonnage,
+  clause d'exclusion).
+
 Prochaines priorites recommandees
-1. Choisir une source RSS alternative a NHK Easy pour la categorie news
-   (bloquee, voir Priorite 11) puis construire l'adaptateur, la
-   deduplication et le cron securise. La categorie anime est deja couverte
-   sans RSS via les citations generees par Claude.
-2. Faire un passage manuel reel sur mobile/navigateur et avec un lecteur
-   d'ecran pour valider l'audit d'accessibilite fait a la lecture du code.
+1. [TERMINE] Choisir une source RSS alternative a NHK Easy pour la categorie
+   news (bloquee, voir Priorite 11) puis construire l'adaptateur, la
+   deduplication et le cron securise. Fait le 2026-09-23 avec le flux RSS
+   officiel de nippon.com (voir Priorite 11 pour le detail). Reste a faire
+   par l'utilisateur : definir CRON_SECRET dans les settings Vercel pour
+   activer le cron automatique (le bouton manuel fonctionne deja sans ca).
+2. [PARTIEL] Faire un passage manuel reel sur mobile/navigateur et avec un
+   lecteur d'ecran pour valider l'audit d'accessibilite fait a la lecture du
+   code. Fait le 2026-09-23 avec Chromium reel (Playwright) a 3 largeurs +
+   axe-core + arbre d'accessibilite (voir Priorite 13) : 5 bugs reels trouves
+   et corriges (contrastes de couleur, ARIA, debordement mobile, doublon de
+   titre). Manque encore un vrai lecteur d'ecran materiel (VoiceOver/NVDA/
+   TalkBack) sur appareil physique, impossible a executer depuis cet
+   environnement.
 3. Reactiver l'UI audio/images quand le moment est venu : le code est pret
    (src/lib/tts, src/lib/images, routes API) mais masque de l'interface
    depuis le 2026-09-22 a la demande de l'utilisateur ; l'audio reste bloque
    sur le plan ElevenLabs gratuit (voir Priorite 9).
-4. Envisager le SDK Anthropic officiel a la place de l'appel HTTP direct
-   (optionnel, l'appel direct fonctionne et est durci).
-5. Prevoir une strategie CEFR pour l'anglais si une deuxieme langue est ajoutee.
-5. Envisager le SDK Anthropic officiel a la place de l'appel HTTP direct
-   (optionnel, l'appel direct fonctionne et est durci).
+4. [TERMINE] Migrer vers le SDK Anthropic officiel (@anthropic-ai/sdk) a la
+   place de l'appel HTTP direct, dans les 3 call sites (translation,
+   generation de contenu feeds/, gloss d'image) : gestion d'erreurs typee
+   (APIConnectionTimeoutError, APIConnectionError, APIError) au lieu du
+   AbortController/fetch manuel, timeout par requete via l'option SDK.
+   Tests mis a jour pour mocker le client SDK plutot que fetch global.
+5. [TERMINE] Strategie CEFR pour l'anglais (si une deuxieme langue est
+   ajoutee un jour) :
+   - Dataset : @polyglot-bundles/en-word-lists (MIT, ~4.5 Mo, mainteneur
+     fustilio - meme famille que @polyglot-bundles/ja-jlpt-syllabi deja
+     utilise pour le JLPT). A verifier au moment venu : forme exacte des
+     donnees exportees (mot -> niveau CEFR A1-C2), pour ecrire
+     src/lib/difficulty/cefr-vocabulary.ts sur le meme modele que
+     jlpt-vocabulary.ts (record genere, ne pas editer a la main).
+   - src/lib/difficulty/classify.ts : le type JLPTLevel et le champ
+     TokenResult.difficulty (src/lib/tokenizer/types.ts) sont actuellement
+     specifiques au JLPT. A generaliser en union `JLPTLevel | CEFRLevel`
+     (CEFRLevel = "A1"|"A2"|"B1"|"B2"|"C1"|"C2"|"unknown"), avec une
+     fonction classifyDifficulty par langue (classifyJlpt/classifyCefr)
+     choisie selon TokenResult.language plutot qu'un classifyDifficulty
+     unique implicitement japonais.
+   - Tokenizer anglais : contrairement au japonais, pas besoin d'un
+     dictionnaire type kuromoji ; un split sur les mots + une lemmatisation
+     legere suffit (ex. wink-lemmatizer ou compromise). Implementer
+     EnglishTokenizer selon l'interface Tokenizer existante
+     (src/lib/tokenizer/types.ts).
+   - Feeds (src/lib/feeds/*) et traduction (src/lib/translation/translate.ts)
+     sont deja parametres par sourceLanguage/targetLanguage : le prompt
+     Claude doit juste accepter "en" en plus de "ja"/"fr", pas de
+     refonte structurelle necessaire.
+   - UI : src/app/page.tsx code en dur le japonais (starterText, lang="ja",
+     libelle "日本語 → Français"). Il faudra un selecteur de langue source
+     avant de brancher l'anglais.
 
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.

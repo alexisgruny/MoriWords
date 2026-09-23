@@ -14,8 +14,10 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "fast-xml-parser": "^5.11.1",
     "kuromoji": "^0.1.2",
     "next": "16.3.5",
     "pg": "^8.23.0",

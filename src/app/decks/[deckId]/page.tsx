@@ -1,24 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
-import type { DeckCardWithOccurrences, DeckStats, DeckSummary } from "@/types/shared";
+import { buildQuizChoices } from "@/lib/decks/card-utils";
+import type { DeckCard, DeckCardWithOccurrences, DeckStats, DeckSummary } from "@/types/shared";
 
-// Les trois façons de présenter une carte pendant la révision : le mode
-// standard montre le kanji et sa lecture, le mode kanji ne montre que le
-// kanji, et le mode contexte montre une phrase où le mot est apparu.
-type ReviewMode = "standard" | "kanji" | "context";
+// Les façons de présenter une carte pendant la révision : le mode standard
+// montre le kanji et sa lecture, le mode kanji ne montre que le kanji, le
+// mode contexte montre une phrase où le mot est apparu, et le mode quiz
+// propose 4 choix de sens au lieu d'une auto-évaluation.
+type ReviewMode = "standard" | "kanji" | "context" | "quiz";
 
 // La liste des modes affichés dans le sélecteur, avec leur libellé.
 const reviewModes: Array<{ id: ReviewMode; label: string }> = [
   { id: "standard", label: "Standard" },
   { id: "kanji", label: "Kanji" },
   { id: "context", label: "Contexte" },
+  { id: "quiz", label: "Quiz" },
 ];
+
+// Note de qualité SM-2 (0-5) envoyée automatiquement selon la réponse au
+// quiz : plus indulgent qu'un échec total puisque reconnaître un sens parmi
+// 4 choix est plus facile qu'un rappel libre, mais loin du score max.
+const QUIZ_CORRECT_QUALITY = 4;
+const QUIZ_INCORRECT_QUALITY = 1;
 
 // Met en évidence le lemme dans la phrase de contexte sans injecter de HTML brut.
 function highlightLemma(sentence: string, lemma: string): ReactNode {
@@ -32,7 +41,7 @@ function highlightLemma(sentence: string, lemma: string): ReactNode {
     index === 0
       ? [part]
       : [
-          <strong key={`highlight-${index}`} className="text-[var(--accent)]">
+          <strong key={`highlight-${index}`} className="text-[var(--accent-dark)]">
             {lemma}
           </strong>,
           part,
@@ -45,6 +54,7 @@ function highlightLemma(sentence: string, lemma: string): ReactNode {
 export default function DeckDetailPage() {
   const params = useParams<{ deckId: string }>();
   const deckId = params.deckId;
+  const router = useRouter();
   const { showToast } = useToast();
 
   const [deck, setDeck] = useState<DeckSummary | null>(null);
@@ -58,6 +68,11 @@ export default function DeckDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [cardPendingDeletion, setCardPendingDeletion] = useState<DeckCardWithOccurrences | null>(null);
+  const [isDeckDeletionPending, setIsDeckDeletionPending] = useState(false);
+  const [isDeletingDeck, setIsDeletingDeck] = useState(false);
+  const [quizChoices, setQuizChoices] = useState<string[]>([]);
+  const [selectedQuizChoice, setSelectedQuizChoice] = useState<string | null>(null);
+  const [isLoadingQuizChoices, setIsLoadingQuizChoices] = useState(false);
 
   // Filtre les cartes affichées selon la recherche (mot, lecture ou sens).
   const normalizedCardSearch = cardSearchQuery.trim().toLowerCase();
@@ -168,6 +183,35 @@ export default function DeckDetailPage() {
     }
   }
 
+  // Supprime le deck entier (et ses cartes) puis retourne à la liste des decks.
+  async function handleDeleteDeck() {
+    setIsDeletingDeck(true);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible de supprimer le deck");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      showToast("Deck supprimé.");
+      router.push("/decks");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la suppression du deck.",
+      );
+      showToast("La suppression du deck a échoué.", "error");
+      setIsDeletingDeck(false);
+    }
+  }
+
   // Envoie la note de révision (0 à 5) choisie par l'utilisateur pour une
   // carte, puis passe à la carte due suivante.
   async function submitReviewCard(cardId: string, quality: number) {
@@ -206,21 +250,6 @@ export default function DeckDetailPage() {
     }
   }
 
-  if (notFound) {
-    return (
-      <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="empty-state">
-            <p className="font-medium text-[var(--ink)]">Deck introuvable.</p>
-            <Link href="/decks" className="mt-4 primary-button">
-              Retour aux decks
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   // Trie les cartes par date d'échéance, les plus en retard en premier.
   const sortedCards = deck
     ? [...deck.cards].sort((a, b) => {
@@ -250,6 +279,101 @@ export default function DeckDetailPage() {
     (occurrence) => occurrence.sourceText !== null,
   )?.sourceText?.content ?? null;
 
+  // Charge les choix du mode quiz dès qu'on l'active ou que la carte due change.
+  useEffect(() => {
+    if (reviewMode !== "quiz" || !activeCard) {
+      return;
+    }
+
+    void loadQuizChoices(activeCard);
+    // deckCards fournit le pool de leurres "même deck" ; loadQuizChoices lit
+    // la valeur actuelle via la fermeture, pas besoin de plus de dépendances.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewMode, activeCard?.id, activeCard?.meaning, deckCards]);
+
+  // Charge les choix du mode quiz pour une carte : la bonne réponse et
+  // jusqu'à 3 leurres, d'abord pris parmi les autres mots déjà traduits du
+  // deck, complétés si besoin depuis le cache de traduction global (jamais
+  // d'appel à Claude, donc jamais bloquant ni coûteux).
+  async function loadQuizChoices(card: DeckCard) {
+    setSelectedQuizChoice(null);
+    // Vide tout de suite les anciens choix pour ne jamais afficher les
+    // options d'une carte précédente pendant le chargement des nouvelles.
+    setQuizChoices([]);
+
+    if (!card.meaning) {
+      return;
+    }
+
+    setIsLoadingQuizChoices(true);
+
+    try {
+      let pool = Array.from(
+        new Set(
+          deckCards
+            .filter((other) => other.id !== card.id && other.meaning)
+            .map((other) => other.meaning as string),
+        ),
+      );
+
+      if (pool.length < 3) {
+        const exclude = [card.meaning, ...pool].join("|");
+        const response = await fetch(
+          `/api/translate/distractors?exclude=${encodeURIComponent(exclude)}&count=${3 - pool.length}`,
+        );
+        const data: unknown = await response.json();
+
+        if (
+          response.ok &&
+          typeof data === "object" &&
+          data !== null &&
+          "translations" in data &&
+          Array.isArray(data.translations)
+        ) {
+          pool = [...pool, ...(data.translations as string[])];
+        }
+      }
+
+      setQuizChoices(buildQuizChoices(card.meaning, pool));
+    } catch {
+      // Le quiz reste vide ; l'utilisateur peut changer de mode de révision.
+      setQuizChoices([]);
+    } finally {
+      setIsLoadingQuizChoices(false);
+    }
+  }
+
+  // Répond au quiz : détermine si le choix est correct, l'affiche brièvement,
+  // puis envoie la note SM-2 correspondante et passe à la carte suivante.
+  function handleQuizAnswer(card: DeckCard, choice: string) {
+    if (selectedQuizChoice) {
+      return;
+    }
+
+    setSelectedQuizChoice(choice);
+
+    const quality = choice === card.meaning ? QUIZ_CORRECT_QUALITY : QUIZ_INCORRECT_QUALITY;
+
+    setTimeout(() => {
+      void submitReviewCard(card.id, quality);
+    }, 1100);
+  }
+
+  if (notFound) {
+    return (
+      <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="empty-state">
+            <p className="font-medium text-[var(--ink)]">Deck introuvable.</p>
+            <Link href="/decks" className="mt-4 primary-button">
+              Retour aux decks
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
@@ -262,13 +386,22 @@ export default function DeckDetailPage() {
               {deck?.name ?? "Deck"}
             </h1>
           </div>
-          <a
-            href={`/api/decks/${deckId}/export/anki`}
-            download
-            className="secondary-button"
-          >
-            Exporter vers Anki
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={`/api/decks/${deckId}/export/anki`}
+              download
+              className="secondary-button"
+            >
+              Exporter vers Anki
+            </a>
+            <button
+              type="button"
+              onClick={() => setIsDeckDeletionPending(true)}
+              className="secondary-button text-red-700 hover:bg-red-50"
+            >
+              Supprimer le deck
+            </button>
+          </div>
         </header>
 
         {error ? (
@@ -345,7 +478,7 @@ export default function DeckDetailPage() {
                     <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
                       {activeCard.lemma}
                     </p>
-                    {reviewMode === "standard" ? (
+                    {reviewMode === "standard" || reviewMode === "quiz" ? (
                       <p className="mt-2 text-sm text-[var(--muted)]">
                         {activeCard.reading ?? "lecture inconnue"}
                       </p>
@@ -353,9 +486,9 @@ export default function DeckDetailPage() {
                   </>
                 )}
 
-                {showAnswer ? (
+                {reviewMode !== "quiz" && showAnswer ? (
                   <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-3">
-                    <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent)]">Réponse</p>
+                    <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent-dark)]">Réponse</p>
                     {reviewMode !== "standard" ? (
                       <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
                         {activeCard.lemma} · {activeCard.reading ?? "lecture inconnue"}
@@ -369,7 +502,44 @@ export default function DeckDetailPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-3">
-                {!showAnswer ? (
+                {reviewMode === "quiz" ? (
+                  !activeCard.meaning ? (
+                    <p className="text-sm text-[var(--muted)]">
+                      Ce mot n’a pas encore de sens enregistré — traduis-le ou utilise un autre
+                      mode pour le réviser.
+                    </p>
+                  ) : quizChoices.length === 0 ? (
+                    <p className="text-sm text-[var(--muted)]">
+                      {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d’autres d’abord."}
+                    </p>
+                  ) : (
+                    <div className="grid w-full gap-2 sm:grid-cols-2">
+                      {quizChoices.map((choice) => {
+                        const isCorrectChoice = choice === activeCard.meaning;
+                        const isSelected = selectedQuizChoice === choice;
+                        const feedbackClass = selectedQuizChoice
+                          ? isCorrectChoice
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
+                            : isSelected
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                          : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
+
+                        return (
+                          <button
+                            key={choice}
+                            type="button"
+                            onClick={() => handleQuizAnswer(activeCard, choice)}
+                            disabled={selectedQuizChoice !== null}
+                            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
+                          >
+                            {choice}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : !showAnswer ? (
                   <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
                     Afficher la réponse
                   </button>
@@ -537,6 +707,19 @@ export default function DeckDetailPage() {
           setCardPendingDeletion(null);
         }}
         onCancel={() => setCardPendingDeletion(null)}
+      />
+
+      <ConfirmDialog
+        open={isDeckDeletionPending}
+        title="Supprimer ce deck ?"
+        description={`« ${deck?.name ?? "Ce deck"} » et ses ${deck?.cards.length ?? 0} carte(s) seront supprimés définitivement.`}
+        confirmLabel={isDeletingDeck ? "Suppression..." : "Supprimer"}
+        danger
+        onConfirm={() => {
+          setIsDeckDeletionPending(false);
+          void handleDeleteDeck();
+        }}
+        onCancel={() => setIsDeckDeletionPending(false)}
       />
     </main>
   );

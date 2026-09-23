@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/prisma";
@@ -94,39 +95,24 @@ function extractTranslationPayload(rawText: string): Omit<TranslationResult, "di
   return null;
 }
 
-// Transforme la réponse brute de l'API Anthropic en TranslationResult, en y
+// Transforme la réponse de l'API Anthropic en TranslationResult, en y
 // ajoutant le niveau JLPT calculé localement (Claude ne le fournit pas).
-function parseAnthropicResponse(payload: unknown, fallbackLemma: string): TranslationResult {
-  if (typeof payload !== "object" || payload === null) {
-    throw new TranslationServiceError("Réponse de traduction invalide. Réessaie dans un instant.");
-  }
+function parseAnthropicResponse(content: Anthropic.ContentBlock[], fallbackLemma: string): TranslationResult {
+  for (const block of content) {
+    if (block.type === "text") {
+      const parsed = extractTranslationPayload(block.text);
 
-  const candidate = payload as Record<string, unknown>;
-
-  if (Array.isArray(candidate.content)) {
-    for (const entry of candidate.content) {
-      if (
-        typeof entry === "object" &&
-        entry !== null &&
-        "type" in entry &&
-        (entry as { type?: unknown }).type === "text" &&
-        "text" in entry
-      ) {
-        const rawText = String((entry as { text: unknown }).text);
-        const parsed = extractTranslationPayload(rawText);
-
-        if (parsed) {
-          return {
-            translation: parsed.translation,
-            explanation: parsed.explanation,
-            difficulty: classifyDifficulty(fallbackLemma, null, null),
-          };
-        }
+      if (parsed) {
+        return {
+          translation: parsed.translation,
+          explanation: parsed.explanation,
+          difficulty: classifyDifficulty(fallbackLemma, null, null),
+        };
       }
     }
   }
 
-  console.error("Anthropic response had no exploitable content:", JSON.stringify(payload));
+  console.error("Anthropic response had no exploitable content:", JSON.stringify(content));
   throw new TranslationServiceError("Le service de traduction n'a pas renvoyé de résultat exploitable.");
 }
 
@@ -235,22 +221,14 @@ export async function translateText(
     };
   }
 
-  // Prépare l'annulation automatique si la requête prend trop de temps.
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
+  const client = new Anthropic({ apiKey });
 
-  let response: Response;
+  let message: Anthropic.Message;
 
   try {
     // Demande à Claude de traduire le texte et d'expliquer brièvement son sens.
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
+    message = await client.messages.create(
+      {
         model: "claude-haiku-4-5-20251001",
         max_tokens: 256,
         messages: [
@@ -261,35 +239,33 @@ export async function translateText(
               : `Traduis ce mot ou groupe de mots de ${sourceLanguage} vers ${targetLanguage} en tenant compte du sens qu'il a dans la phrase de contexte ci-dessous (désambiguïse-le si besoin). L'explication doit préciser son sens précis dans ce contexte. Réponds uniquement en JSON avec la structure suivante : {"translation":"...","explanation":"..."}.\n\nPhrase de contexte : ${cleanedContext}\nMot à traduire : ${cleanedText}`,
           },
         ],
-      }),
-      signal: controller.signal,
-    });
-  } catch (fetchError) {
-    // Distingue un simple délai dépassé d'une vraie panne réseau.
-    if (fetchError instanceof Error && fetchError.name === "AbortError") {
+      },
+      { timeout: ANTHROPIC_TIMEOUT_MS },
+    );
+  } catch (apiError) {
+    // Distingue un simple délai dépassé d'une vraie panne réseau ou d'une erreur HTTP.
+    if (apiError instanceof Anthropic.APIConnectionTimeoutError) {
       throw new TranslationServiceError(
         "Le service de traduction met trop de temps à répondre. Réessaie dans un instant.",
       );
     }
 
-    console.error("Anthropic request failed:", fetchError);
-    throw new TranslationServiceError("Le service de traduction est injoignable pour le moment.");
-  } finally {
-    clearTimeout(timeoutId);
+    if (apiError instanceof Anthropic.APIConnectionError) {
+      console.error("Anthropic request failed:", apiError);
+      throw new TranslationServiceError("Le service de traduction est injoignable pour le moment.");
+    }
+
+    if (apiError instanceof Anthropic.APIError) {
+      console.error(`Anthropic API error (${apiError.status}):`, apiError.message);
+      throw new TranslationServiceError(
+        "Le service de traduction est momentanément indisponible. Réessaie plus tard.",
+      );
+    }
+
+    throw apiError;
   }
 
-  // Si Anthropic répond avec une erreur, on logue le détail côté serveur et
-  // on renvoie un message générique côté client (jamais le détail brut).
-  if (!response.ok) {
-    const errorPayload = await response.text();
-    console.error(`Anthropic API error (${response.status}):`, errorPayload || response.statusText);
-    throw new TranslationServiceError(
-      "Le service de traduction est momentanément indisponible. Réessaie plus tard.",
-    );
-  }
-
-  const payload = await response.json();
-  const result = parseAnthropicResponse(payload, cleanedText);
+  const result = parseAnthropicResponse(message.content, cleanedText);
 
   // Mémorise le résultat pour ne pas refaire le même appel plus tard, sauf
   // s'il est spécifique à un contexte (voir useCache ci-dessus).
@@ -298,4 +274,51 @@ export async function translateText(
   }
 
   return result;
+}
+
+// Pioche un échantillon de traductions déjà en cache pour servir de leurres
+// dans le mode quiz du deck (jamais d'appel à Claude ici). Tire une fenêtre
+// aléatoire du cache plutôt que de trier par RANDOM() côté base pour rester
+// sur l'API standard de Prisma.
+export async function getDistractorTranslations(
+  excludeMeanings: string[],
+  count: number,
+  sourceLanguage: string,
+  targetLanguage: string,
+): Promise<string[]> {
+  if (count <= 0) {
+    return [];
+  }
+
+  const where = {
+    sourceLanguage,
+    targetLanguage,
+    translation: { notIn: excludeMeanings },
+  };
+
+  const total = await prisma.translationCache.count({ where });
+
+  if (total === 0) {
+    return [];
+  }
+
+  const windowSize = Math.min(total, count * 5);
+  const maxSkip = Math.max(0, total - windowSize);
+  const skip = Math.floor(Math.random() * (maxSkip + 1));
+
+  const entries = await prisma.translationCache.findMany({
+    where,
+    select: { translation: true },
+    skip,
+    take: windowSize,
+  });
+
+  const uniqueTranslations = Array.from(new Set(entries.map((entry) => entry.translation)));
+
+  for (let i = uniqueTranslations.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [uniqueTranslations[i], uniqueTranslations[j]] = [uniqueTranslations[j], uniqueTranslations[i]];
+  }
+
+  return uniqueTranslations.slice(0, count);
 }

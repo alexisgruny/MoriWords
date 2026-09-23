@@ -136,4 +136,46 @@ describe("card lifecycle (integration, real DB)", () => {
     const cardsAfterDelete = (await cardsAfterDeleteResponse.json()) as { cards: unknown[] };
     expect(cardsAfterDelete.cards).toHaveLength(0);
   });
+
+  it("keeps an existing translated meaning when the same word is re-added without one (bulk add)", async () => {
+    const deckResponse = await createDeck(
+      jsonRequest("http://localhost/api/decks", { name: `Integration test deck ${Date.now()}` }),
+    );
+    const deck = (await deckResponse.json()) as { deck: { id: string } };
+    deckIdsToCleanUp.push(deck.deck.id);
+    const deckId = deck.deck.id;
+    const params = Promise.resolve({ deckId });
+
+    // Premier ajout : le mot a déjà été traduit (ex. via le clic "Traduire").
+    const translatedResponse = await addCard(
+      jsonRequest(`http://localhost/api/decks/${deckId}/cards`, {
+        lemma: "食べる",
+        surface: "食べる",
+        reading: "たべる",
+        meaning: "manger",
+      }),
+      { params },
+    );
+    const translated = (await translatedResponse.json()) as { card: { id: string; meaning: string | null } };
+    expect(translated.card.meaning).toBe("manger");
+
+    // Deuxième ajout du même mot sans traduction (le payload envoyé par
+    // l'ajout en masse, qui ne traduit rien) : ne doit pas effacer le sens
+    // déjà enregistré.
+    const bulkResponse = await addCard(
+      jsonRequest(`http://localhost/api/decks/${deckId}/cards`, {
+        lemma: "食べる",
+        surface: "食べる",
+        reading: "たべる",
+      }),
+      { params },
+    );
+    const bulk = (await bulkResponse.json()) as {
+      card: { id: string; meaning: string | null };
+      alreadyExisted: boolean;
+    };
+    expect(bulk.alreadyExisted).toBe(true);
+    expect(bulk.card.id).toBe(translated.card.id);
+    expect(bulk.card.meaning).toBe("manger");
+  });
 });

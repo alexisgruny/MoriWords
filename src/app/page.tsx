@@ -14,6 +14,7 @@ const starterText = "私は毎朝コーヒーを飲みながら、日本語を�
 const GENERATED_SOURCES = [
   { key: "anime-quote", label: "Citation d'anime" },
   { key: "news-summary", label: "Actualité simplifiée" },
+  { key: "news-rss", label: "Actualité réelle (nippon.com)" },
   { key: "daily-dialogue", label: "Dialogue quotidien" },
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
@@ -40,6 +41,7 @@ export default function Home() {
   const [isCreatingNewDeck, setIsCreatingNewDeck] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
+  const [isBulkAdding, setIsBulkAdding] = useState(false);
 
   // Cache les particules grammaticales par défaut (moins intéressantes à
   // apprendre), sauf si l'utilisateur coche la case pour les voir.
@@ -456,6 +458,39 @@ export default function Home() {
     }
   }
 
+  // S'assure qu'un deck existe pour y ajouter une carte : renvoie le deck
+  // actuellement sélectionné, ou crée un deck par défaut sinon. Partagé
+  // entre l'ajout d'un seul mot et l'ajout en masse.
+  async function ensureDeckId(): Promise<string> {
+    if (selectedDeckId) {
+      return selectedDeckId;
+    }
+
+    const response = await fetch("/api/decks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Mon deck japonais" }),
+    });
+    const data: unknown = await response.json();
+
+    if (!response.ok || typeof data !== "object" || data === null) {
+      throw new Error("Impossible de créer le deck avant d’ajouter la carte");
+    }
+
+    if ("error" in data && typeof data.error === "string") {
+      throw new Error(data.error);
+    }
+
+    if (!("deck" in data) || typeof data.deck !== "object" || data.deck === null) {
+      throw new Error("Réponse inattendue lors de la création du deck");
+    }
+
+    const createdDeck = data.deck as DeckSummary;
+    setDecks((current) => [createdDeck, ...current.filter((deck) => deck.id !== createdDeck.id)]);
+    setSelectedDeckId(createdDeck.id);
+    return createdDeck.id;
+  }
+
   // Ajoute le mot sélectionné comme carte dans le deck choisi. Si aucun
   // deck n'existe encore, en crée un par défaut avant d'ajouter la carte.
   async function handleAddCardToDeck() {
@@ -465,34 +500,7 @@ export default function Home() {
     }
 
     try {
-      let currentDeckId = selectedDeckId;
-
-      // Filet de sécurité : crée un deck par défaut si aucun n'est sélectionné.
-      if (!currentDeckId) {
-        const response = await fetch("/api/decks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: "Mon deck japonais" }),
-        });
-        const data: unknown = await response.json();
-
-        if (!response.ok || typeof data !== "object" || data === null) {
-          throw new Error("Impossible de créer le deck avant d’ajouter la carte");
-        }
-
-        if ("error" in data && typeof data.error === "string") {
-          throw new Error(data.error);
-        }
-
-        if (!("deck" in data) || typeof data.deck !== "object" || data.deck === null) {
-          throw new Error("Réponse inattendue lors de la création du deck");
-        }
-
-        const createdDeck = data.deck as DeckSummary;
-        setDecks((current) => [createdDeck, ...current.filter((deck) => deck.id !== createdDeck.id)]);
-        currentDeckId = createdDeck.id;
-        setSelectedDeckId(createdDeck.id);
-      }
+      const currentDeckId = await ensureDeckId();
 
       const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
         method: "POST",
@@ -530,6 +538,79 @@ export default function Home() {
     }
   }
 
+  // Ajoute en une fois tous les mots actuellement affichés (respecte le
+  // filtre particules) au deck sélectionné, sans traduction automatique —
+  // le sens pourra être complété plus tard. Bien plus rapide que d'ajouter
+  // chaque mot un par un depuis un texte entier.
+  async function handleAddAllTokensToDeck() {
+    if (visibleTokens.length === 0) {
+      return;
+    }
+
+    setIsBulkAdding(true);
+    setError(null);
+
+    try {
+      const currentDeckId = await ensureDeckId();
+
+      const results = await Promise.allSettled(
+        visibleTokens.map(async (token) => {
+          const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lemma: token.baseForm || token.surface,
+              surface: token.surface,
+              reading: token.reading,
+              sourceTextId: selectedSourceTextId,
+              position: token.position,
+            }),
+          });
+          const data: unknown = await response.json();
+
+          if (!response.ok || typeof data !== "object" || data === null) {
+            throw new Error("add failed");
+          }
+
+          return data as { alreadyExisted: boolean };
+        }),
+      );
+
+      const succeeded = results.filter(
+        (result): result is PromiseFulfilledResult<{ alreadyExisted: boolean }> =>
+          result.status === "fulfilled",
+      );
+      const newCount = succeeded.filter((result) => !result.value.alreadyExisted).length;
+      const alreadyCount = succeeded.length - newCount;
+      const failedCount = results.length - succeeded.length;
+
+      await fetchDecks();
+
+      const parts: string[] = [];
+      if (newCount > 0) {
+        parts.push(`${newCount} nouveau(x)`);
+      }
+      if (alreadyCount > 0) {
+        parts.push(`${alreadyCount} déjà présent(s)`);
+      }
+      if (parts.length > 0) {
+        showToast(`${parts.join(", ")} ajouté(s) au deck.`);
+      }
+
+      if (failedCount > 0) {
+        showToast(`${failedCount} mot(s) n’ont pas pu être ajoutés.`, "error");
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant l’ajout en masse.",
+      );
+    } finally {
+      setIsBulkAdding(false);
+    }
+  }
+
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
@@ -555,7 +636,7 @@ export default function Home() {
                   Colle ton japonais
                 </h2>
               </div>
-              <span className="status-dot" aria-label="Tokenizer disponible" />
+              <span className="status-dot" role="img" aria-label="Tokenizer disponible" />
             </div>
 
             <label htmlFor="japanese-text" className="sr-only">
@@ -625,6 +706,19 @@ export default function Home() {
               </div>
             </div>
 
+            {visibleTokens.length > 0 ? (
+              <div className="mb-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void handleAddAllTokensToDeck()}
+                  disabled={isBulkAdding}
+                  className="secondary-button"
+                >
+                  {isBulkAdding ? "Ajout en cours..." : `Tout ajouter au deck (${visibleTokens.length})`}
+                </button>
+              </div>
+            ) : null}
+
             {tokens.length > 0 ? (
               <div className="mb-6 rounded-2xl border border-[var(--line)] bg-[var(--background)] p-4">
                 <p className="eyebrow">Source preview</p>
@@ -684,7 +778,7 @@ export default function Home() {
                           JLPT {token.difficulty}
                         </span>
                       </div>
-                      <span className="mt-1 block text-sm text-[var(--accent)]" lang="ja">
+                      <span className="mt-1 block text-sm text-[var(--accent-dark)]" lang="ja">
                         {token.reading ?? "lecture inconnue"}
                       </span>
                       <span className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
@@ -849,7 +943,7 @@ export default function Home() {
                     {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
                   </time>
                   {sourceText.title ? (
-                    <p className="mt-1 text-xs font-medium text-[var(--accent)]">{sourceText.title}</p>
+                    <p className="mt-1 text-xs font-medium text-[var(--accent-dark)]">{sourceText.title}</p>
                   ) : null}
                   <p className="mt-2 line-clamp-2 text-base leading-7 text-[var(--ink)]" lang="ja">
                     {sourceText.content}

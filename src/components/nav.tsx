@@ -17,11 +17,11 @@ export default function Nav() {
 
   return (
     <header className="border-b border-[var(--line)] bg-[var(--paper)]">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-12">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-8 lg:px-12">
         <Link href="/" className="text-lg font-semibold tracking-tight text-[var(--ink)]">
           MoriWords
         </Link>
-        <nav className="flex gap-1 sm:gap-2">
+        <nav className="flex gap-0.5 sm:gap-2">
           {links.map((link) => {
             // Compare l'URL actuelle au lien pour savoir s'il faut le mettre en évidence.
             const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
@@ -30,7 +30,7 @@ export default function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-full px-3 py-2 text-sm font-medium transition sm:px-4 ${
+                className={`rounded-full px-2.5 py-2 text-sm font-medium transition sm:px-4 ${
                   isActive
                     ? "bg-[var(--accent-soft)] text-[var(--ink)]"
                     : "text-[var(--muted)] hover:bg-[var(--background)]"

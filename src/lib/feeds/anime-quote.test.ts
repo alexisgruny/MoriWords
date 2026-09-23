@@ -1,10 +1,30 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { messagesCreateMock } = vi.hoisted(() => ({ messagesCreateMock: vi.fn() }));
+
+vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@anthropic-ai/sdk")>();
+
+  class MockAnthropic {
+    messages = { create: messagesCreateMock };
+  }
+
+  // Les classes d'erreur (APIError, APIConnectionTimeoutError, ...) sont des statiques
+  // héritées de BaseAnthropic : on relie la chaîne de prototype statique pour les garder
+  // accessibles sur le client mocké (claude-json-generator.ts fait `instanceof Anthropic.XError`).
+  Object.setPrototypeOf(MockAnthropic, actual.default);
+
+  return { ...actual, default: MockAnthropic };
+});
+
+import Anthropic from "@anthropic-ai/sdk";
+
 import { QuoteServiceError, generateAnimeQuote } from "./anime-quote";
 
 afterEach(() => {
   delete process.env.ANTHROPIC_API_KEY;
   vi.restoreAllMocks();
+  messagesCreateMock.mockReset();
 });
 
 describe("generateAnimeQuote", () => {
@@ -14,24 +34,18 @@ describe("generateAnimeQuote", () => {
 
   it("parses a valid quote payload from Anthropic", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify({
-                quote: "生きろ。",
-                source: "もののけ姫 (1997)",
-                character: "サン",
-              }),
-            },
-          ],
-        }),
-      }),
-    );
+    messagesCreateMock.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            quote: "生きろ。",
+            source: "もののけ姫 (1997)",
+            character: "サン",
+          }),
+        },
+      ],
+    });
 
     const result = await generateAnimeQuote();
 
@@ -44,20 +58,14 @@ describe("generateAnimeQuote", () => {
 
   it("parses a markdown-wrapped JSON response", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          content: [
-            {
-              type: "text",
-              text: "```json\n{\"quote\":\"生きろ。\",\"source\":\"もののけ姫 (1997)\",\"character\":null}\n```",
-            },
-          ],
-        }),
-      }),
-    );
+    messagesCreateMock.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: "```json\n{\"quote\":\"生きろ。\",\"source\":\"もののけ姫 (1997)\",\"character\":null}\n```",
+        },
+      ],
+    });
 
     const result = await generateAnimeQuote();
 
@@ -70,26 +78,19 @@ describe("generateAnimeQuote", () => {
 
   it("includes previously used quotes as an exclusion list in the prompt", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        content: [{ type: "text", text: JSON.stringify({ quote: "q", source: "s", character: null }) }],
-      }),
+    messagesCreateMock.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ quote: "q", source: "s", character: null }) }],
     });
-    vi.stubGlobal("fetch", fetchMock);
 
     await generateAnimeQuote(["前のセリフ"]);
 
-    const requestBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    const promptText = requestBody.messages[0].content as string;
-    expect(promptText).toContain("前のセリフ");
+    const requestParams = messagesCreateMock.mock.calls[0][0];
+    expect(requestParams.messages[0].content).toContain("前のセリフ");
   });
 
   it("throws a clear timeout error without leaking upstream details", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    const abortError = new Error("aborted");
-    abortError.name = "AbortError";
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(abortError));
+    messagesCreateMock.mockRejectedValue(new Anthropic.APIConnectionTimeoutError({}));
 
     await expect(generateAnimeQuote()).rejects.toThrow(
       "La génération de citation met trop de temps à répondre.",
@@ -98,14 +99,8 @@ describe("generateAnimeQuote", () => {
 
   it("throws a generic error without leaking the raw Anthropic error body", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        text: async () => "sensitive upstream detail",
-      }),
+    messagesCreateMock.mockRejectedValue(
+      new Anthropic.APIError(500, undefined, "sensitive upstream detail", undefined),
     );
     vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -117,13 +112,9 @@ describe("generateAnimeQuote", () => {
 
   it("throws a clear error when the response has no exploitable JSON", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ content: [{ type: "text", text: "pas de JSON ici" }] }),
-      }),
-    );
+    messagesCreateMock.mockResolvedValue({
+      content: [{ type: "text", text: "pas de JSON ici" }],
+    });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     await expect(generateAnimeQuote()).rejects.toThrow(QuoteServiceError);

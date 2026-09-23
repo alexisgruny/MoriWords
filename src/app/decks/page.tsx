@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import type { DeckSummary } from "@/types/shared";
 
@@ -13,6 +14,7 @@ export default function DecksPage() {
   const [deckName, setDeckName] = useState("Mon deck japonais");
   const [error, setError] = useState<string | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
+  const [deckPendingDeletion, setDeckPendingDeletion] = useState<DeckSummary | null>(null);
 
   // Va chercher la liste de tous les decks sur le serveur.
   async function fetchDecks() {
@@ -91,6 +93,32 @@ export default function DecksPage() {
     }
   }
 
+  // Supprime un deck (et ses cartes) après confirmation, puis rafraîchit la liste.
+  async function handleDeleteDeck(deckId: string) {
+    try {
+      const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible de supprimer le deck");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      setDecks((current) => current.filter((deck) => deck.id !== deckId));
+      showToast("Deck supprimé.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la suppression du deck.",
+      );
+      showToast("La suppression du deck a échoué.", "error");
+    }
+  }
+
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
@@ -134,15 +162,29 @@ export default function DecksPage() {
           {decks.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {decks.map((deck) => (
-                <Link key={deck.id} href={`/decks/${deck.id}`} className="token-card block text-left">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold text-[var(--ink)]">{deck.name}</span>
-                    <span className="count-badge">{deck.cards.length}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-[var(--muted)]">
-                    {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
-                  </p>
-                </Link>
+                <div key={deck.id} className="token-card relative block text-left">
+                  <Link href={`/decks/${deck.id}`} className="block pr-8">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-lg font-semibold text-[var(--ink)]">{deck.name}</span>
+                      <span className="count-badge">{deck.cards.length}</span>
+                    </div>
+                    <p className="mt-3 text-sm text-[var(--muted)]">
+                      {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
+                    </p>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setDeckPendingDeletion(deck);
+                    }}
+                    aria-label={`Supprimer le deck « ${deck.name} »`}
+                    className="absolute right-3 top-3 rounded-full p-1.5 text-[var(--muted)] transition hover:bg-red-50 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
@@ -155,6 +197,25 @@ export default function DecksPage() {
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={deckPendingDeletion !== null}
+        title="Supprimer ce deck ?"
+        description={
+          deckPendingDeletion
+            ? `« ${deckPendingDeletion.name} » et ses ${deckPendingDeletion.cards.length} carte(s) seront supprimés définitivement.`
+            : undefined
+        }
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={() => {
+          if (deckPendingDeletion) {
+            void handleDeleteDeck(deckPendingDeletion.id);
+          }
+          setDeckPendingDeletion(null);
+        }}
+        onCancel={() => setDeckPendingDeletion(null)}
+      />
     </main>
   );
 }

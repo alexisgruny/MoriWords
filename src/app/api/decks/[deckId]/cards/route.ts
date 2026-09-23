@@ -75,10 +75,13 @@ export async function POST(
           targetLanguage: "fr",
         },
       },
+      // N'écrase jamais un champ déjà renseigné par null : un ajout sans
+      // traduction (ex. ajout en masse) ne doit pas effacer le sens qu'une
+      // traduction précédente avait enregistré pour ce mot dans ce deck.
       update: {
-        surface: normalized.surface,
-        reading: normalized.reading,
-        meaning: normalized.meaning,
+        surface: normalized.surface ?? existingCard?.surface ?? null,
+        reading: normalized.reading ?? existingCard?.reading ?? null,
+        meaning: normalized.meaning ?? existingCard?.meaning ?? null,
       },
       create: {
         deckId,

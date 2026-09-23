@@ -4,7 +4,10 @@
   --background: #f3f0e8;
   --foreground: #24221f;
   --ink: #24221f;
-  --muted: #777168;
+  /* #777168 passait de justesse sur --paper (4.62:1) mais échouait sur
+     --background (4.24:1, sous le seuil AA 4.5:1) ; assombri pour passer
+     confortablement sur les deux (audit axe-core du 2026-09-23). */
+  --muted: #6b6459;
   --paper: #fbfaf5;
   --line: #dcd7ca;
   --accent: #c45132;
@@ -31,7 +34,11 @@ textarea {
 }
 
 .eyebrow {
-  color: var(--accent);
+  /* --accent échouait le contraste AA en texte (4.40:1 sur --paper, sous le
+     seuil 4.5:1 requis pour du texte de cette taille) ; --accent-dark passe
+     confortablement (6.29:1) tout en gardant la même teinte (audit axe-core
+     du 2026-09-23). */
+  color: var(--accent-dark);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.12em;

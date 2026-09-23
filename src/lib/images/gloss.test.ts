@@ -1,10 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { messagesCreateMock } = vi.hoisted(() => ({ messagesCreateMock: vi.fn() }));
+
+vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@anthropic-ai/sdk")>();
+
+  class MockAnthropic {
+    messages = { create: messagesCreateMock };
+  }
+
+  Object.setPrototypeOf(MockAnthropic, actual.default);
+
+  return { ...actual, default: MockAnthropic };
+});
+
 import { toEnglishImageQuery } from "./gloss";
 
 afterEach(() => {
   delete process.env.ANTHROPIC_API_KEY;
   vi.restoreAllMocks();
+  messagesCreateMock.mockReset();
 });
 
 describe("toEnglishImageQuery", () => {
@@ -15,24 +30,15 @@ describe("toEnglishImageQuery", () => {
   });
 
   it("returns the original term for empty input without calling the API", async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-
     const result = await toEnglishImageQuery("   ", "fr");
 
     expect(result).toBe("");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(messagesCreateMock).not.toHaveBeenCalled();
   });
 
   it("returns Claude's English gloss when the API call succeeds", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ content: [{ type: "text", text: "delicious food" }] }),
-      }),
-    );
+    messagesCreateMock.mockResolvedValue({ content: [{ type: "text", text: "delicious food" }] });
 
     const result = await toEnglishImageQuery("délicieux", "fr");
 
@@ -41,26 +47,19 @@ describe("toEnglishImageQuery", () => {
 
   it("states the source language explicitly to avoid cross-lingual homograph mixups", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ content: [{ type: "text", text: "cat" }] }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    messagesCreateMock.mockResolvedValue({ content: [{ type: "text", text: "cat" }] });
 
     await toEnglishImageQuery("chat", "fr");
 
-    const requestBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    const promptText = requestBody.messages[0].content as string;
+    const requestParams = messagesCreateMock.mock.calls[0][0];
+    const promptText = requestParams.messages[0].content as string;
     expect(promptText).toContain("French");
     expect(promptText).toContain("chat");
   });
 
   it("falls back to the original term when the API call fails", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: "Error" }),
-    );
+    messagesCreateMock.mockRejectedValue(new Error("Error"));
 
     const result = await toEnglishImageQuery("délicieux", "fr");
 
@@ -69,7 +68,7 @@ describe("toEnglishImageQuery", () => {
 
   it("falls back to the original term when the request throws", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
+    messagesCreateMock.mockRejectedValue(new Error("network down"));
 
     const result = await toEnglishImageQuery("délicieux", "fr");
 
