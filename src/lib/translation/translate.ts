@@ -23,6 +23,10 @@ const translationPayloadSchema = z.object({
 // Délai maximum d'attente de la réponse de Claude avant d'abandonner.
 const ANTHROPIC_TIMEOUT_MS = 20_000;
 
+// Texte renvoyé à la place d'une vraie traduction quand la clé API Anthropic
+// manque : à ne jamais enregistrer comme sens d'une carte.
+export const MISSING_TRANSLATION_PLACEHOLDER = "À compléter";
+
 // Erreur levée quand la traduction échoue, avec un message compréhensible
 // pour l'utilisateur (jamais le détail technique brut de l'API).
 export class TranslationServiceError extends Error {
@@ -215,7 +219,7 @@ export async function translateText(
 
   if (!apiKey || apiKey.trim().length === 0) {
     return {
-      translation: "À compléter",
+      translation: MISSING_TRANSLATION_PLACEHOLDER,
       explanation: `Anthropic API key manquante. La traduction réelle arrivera quand la clé sera configurée pour ${sourceLanguage} → ${targetLanguage}.`,
       difficulty: classifyDifficulty(cleanedText, null, null),
     };

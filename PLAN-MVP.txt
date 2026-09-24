@@ -774,6 +774,48 @@ Prochaines priorites recommandees
      libelle "日本語 → Français"). Il faudra un selecteur de langue source
      avant de brancher l'anglais.
 
+Priorite 16 - Selection multiple, traduction auto a l'ajout, page Grammaire
+---------------------------------------------------------------------------
+Objectif : rendre l'ajout de vocabulaire fluide (selection de plusieurs mots,
+sens toujours renseigne) et ajouter une reference de grammaire par niveau JLPT.
+
+Progression : TERMINEE, verifiee en navigateur reel (Playwright/Edge) sur un
+deck jetable supprime ensuite (jamais "Mon deck japonais").
+
+A faire :
+- [TERMINE] Selection multiple des mots detectes (src/app/page.tsx) : la
+  petite case a cocher chevauchait le mot et un clic sur la carte ne
+  selectionnait qu'un seul mot (panneau detail). Desormais un clic sur la
+  carte coche/decoche le mot (aria-pressed, coche visuelle en ligne), Maj+clic
+  selectionne la plage depuis le dernier mot clique ; le dernier mot coche
+  sert aussi de mot "detail". Barre d'actions "Traduire la selection" /
+  "Ajouter la selection au deck" inchangee.
+- [TERMINE] Traduction automatique a l'ajout d'un mot au deck, cote serveur
+  (POST /api/decks/[deckId]/cards) : si ni le payload ni la carte existante
+  n'ont de sens, translateText() (cache d'abord, sinon Claude) remplit le
+  sens. Couvre tous les chemins (ajout simple, "Tout ajouter", selection).
+  Ne bloque jamais l'ajout (echec ou cle API absente -> carte sans sens, le
+  texte de remplacement "À compléter" n'est jamais enregistre : constante
+  MISSING_TRANSLATION_PLACEHOLDER). Ne remplace jamais un sens existant.
+  Tests d'integration (vraie DB, translateText mocke) :
+  src/app/api/decks/cards-auto-translate.integration.test.ts.
+  Note : la strategie "sans appel Claude" de la Priorite 14 (Tout ajouter)
+  est volontairement remplacee ; N appels Claude en parallele pour N mots
+  nouveaux non caches (les traductions sont ensuite mises en cache).
+- [TERMINE] Page /grammaire (src/app/grammaire/page.tsx) + lien dans la nav :
+  61 points de grammaire N5 a N1 (formation, explication, exemples JA/FR),
+  filtre par niveau, recherche insensible aux accents/casse, cartes
+  depliables. Donnees statiques curees dans src/lib/grammar/points.ts
+  (gratuit, deterministe, testable : src/lib/grammar/points.test.ts).
+- [TERMINE] Nav mobile : le lien actif est ramene dans la vue (la barre
+  defile horizontalement depuis qu'elle compte 5 liens).
+- [PARTIEL] Le jeu de grammaire est un point de depart (10-14 points par
+  niveau) : a etendre au fil de l'eau en ajoutant des entrees a points.ts
+  (id unique prefixe par le niveau, verifie par les tests).
+- [PARTIEL] Les cartes deja creees sans sens ne sont pas re-traduites
+  automatiquement (seulement re-ajoutees) ; pas de bouton "traduire les
+  cartes sans sens" pour l'instant.
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

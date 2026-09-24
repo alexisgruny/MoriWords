@@ -1,5 +1,26 @@
 import { prisma } from "@/lib/db/prisma";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
+import { MISSING_TRANSLATION_PLACEHOLDER, translateText } from "@/lib/translation/translate";
+
+// Traduit un mot pour lui donner un sens dès son ajout au deck (traduction
+// en cache si elle existe déjà, sinon appel à Claude). Ne bloque jamais
+// l'ajout : en cas d'échec ou de clé API absente, la carte est simplement
+// ajoutée sans sens.
+async function autoTranslateLemma(lemma: string): Promise<string | null> {
+  try {
+    const result = await translateText(lemma, "ja", "fr");
+    const translation = result.translation.trim();
+
+    if (!translation || translation === MISSING_TRANSLATION_PLACEHOLDER) {
+      return null;
+    }
+
+    return translation;
+  } catch (error) {
+    console.error("Auto-translation on card add failed:", error);
+    return null;
+  }
+}
 
 // Ajoute un mot au deck sous forme de carte. Si une carte existe déjà pour ce
 // mot dans ce deck, on ne crée pas de doublon : on ajoute simplement une
@@ -65,6 +86,11 @@ export async function POST(
       },
     });
 
+    // Sens à enregistrer : celui fourni, sinon celui déjà présent sur la carte,
+    // sinon une traduction automatique (jamais d'écrasement d'un sens existant).
+    const meaning =
+      normalized.meaning ?? existingCard?.meaning ?? (await autoTranslateLemma(normalized.lemma));
+
     // Crée la carte si elle n'existe pas encore, sinon met à jour ses champs.
     const card = await prisma.card.upsert({
       where: {
@@ -81,14 +107,14 @@ export async function POST(
       update: {
         surface: normalized.surface ?? existingCard?.surface ?? null,
         reading: normalized.reading ?? existingCard?.reading ?? null,
-        meaning: normalized.meaning ?? existingCard?.meaning ?? null,
+        meaning,
       },
       create: {
         deckId,
         lemma: normalized.lemma,
         surface: normalized.surface,
         reading: normalized.reading,
-        meaning: normalized.meaning,
+        meaning,
         sourceLanguage: "ja",
         targetLanguage: "fr",
       },

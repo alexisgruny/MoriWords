@@ -43,6 +43,11 @@ export default function Home() {
   const [newDeckName, setNewDeckName] = useState("");
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [isBulkAdding, setIsBulkAdding] = useState(false);
+  const [selectedTokenPositions, setSelectedTokenPositions] = useState<Set<number>>(new Set());
+  const [lastClickedPosition, setLastClickedPosition] = useState<number | null>(null);
+  const [tokenTranslations, setTokenTranslations] = useState<Record<number, TranslationResult>>({});
+  const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+  const [isAddingSelectionToDeck, setIsAddingSelectionToDeck] = useState(false);
 
   // Cache les particules grammaticales par défaut (moins intéressantes à
   // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
@@ -114,6 +119,10 @@ export default function Home() {
 
   // Charge les tokens déjà enregistrés pour un texte existant dans la DB.
   async function loadTokensForText(sourceTextId: string) {
+    setSelectedToken(null);
+    setSelectedTokenPositions(new Set());
+    setTokenTranslations({});
+
     try {
       const [sourceTextResponse, tokensResponse] = await Promise.all([
         fetch(`/api/source-texts/${encodeURIComponent(sourceTextId)}`),
@@ -299,6 +308,8 @@ export default function Home() {
     setSelectedToken(null);
     setTranslation(null);
     setTextTranslation(null);
+    setSelectedTokenPositions(new Set());
+    setTokenTranslations({});
 
     try {
       // 1) Sauvegarde d'abord le texte source pour obtenir son id.
@@ -356,6 +367,8 @@ export default function Home() {
     setSelectedToken(null);
     setTranslation(null);
     setTextTranslation(null);
+    setSelectedTokenPositions(new Set());
+    setTokenTranslations({});
 
     try {
       const response = await fetch(`/api/source-texts/${sourceKey}`, {
@@ -567,9 +580,9 @@ export default function Home() {
   }
 
   // Ajoute en une fois tous les mots actuellement affichés (respecte le
-  // filtre particules) au deck sélectionné, sans traduction automatique —
-  // le sens pourra être complété plus tard. Bien plus rapide que d'ajouter
-  // chaque mot un par un depuis un texte entier.
+  // filtre particules) au deck sélectionné. Le serveur traduit automatiquement
+  // chaque nouveau mot (voir POST /api/decks/[deckId]/cards). Bien plus rapide
+  // que d'ajouter chaque mot un par un depuis un texte entier.
   async function handleAddAllTokensToDeck() {
     if (visibleTokens.length === 0) {
       return;
@@ -622,7 +635,7 @@ export default function Home() {
         parts.push(`${alreadyCount} déjà présent(s)`);
       }
       if (parts.length > 0) {
-        showToast(`${parts.join(", ")} ajouté(s) au deck.`);
+        showToast(`${parts.join(", ")} ajouté(s) au deck, avec traduction.`);
       }
 
       if (failedCount > 0) {
@@ -636,6 +649,186 @@ export default function Home() {
       );
     } finally {
       setIsBulkAdding(false);
+    }
+  }
+
+  // Clic sur une carte de mot : la coche/décoche (sélection multiple, pour les
+  // actions groupées). Avec Maj, sélectionne toute la plage depuis le dernier
+  // mot cliqué. Le dernier mot coché sert aussi de mot "détail" (panneau du bas).
+  function handleTokenClick(token: TokenResult, shiftKey: boolean) {
+    const anchor = lastClickedPosition;
+    setLastClickedPosition(token.position);
+
+    if (shiftKey && anchor !== null) {
+      const anchorIndex = visibleTokens.findIndex((candidate) => candidate.position === anchor);
+      const targetIndex = visibleTokens.findIndex((candidate) => candidate.position === token.position);
+
+      if (anchorIndex >= 0 && targetIndex >= 0) {
+        const [from, to] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+        const rangePositions = visibleTokens.slice(from, to + 1).map((candidate) => candidate.position);
+
+        setSelectedTokenPositions((current) => new Set([...current, ...rangePositions]));
+        setSelectedToken(token);
+        return;
+      }
+    }
+
+    const wasChecked = selectedTokenPositions.has(token.position);
+
+    setSelectedTokenPositions((current) => {
+      const next = new Set(current);
+      if (wasChecked) {
+        next.delete(token.position);
+      } else {
+        next.add(token.position);
+      }
+      return next;
+    });
+    setSelectedToken(wasChecked ? null : token);
+  }
+
+  // Traduit tous les mots cochés en parallèle et garde le résultat de chacun
+  // (affiché sur sa carte), pour les consulter avant de décider quoi ajouter.
+  async function handleTranslateSelection() {
+    const selectedTokens = visibleTokens.filter((token) => selectedTokenPositions.has(token.position));
+
+    if (selectedTokens.length === 0) {
+      return;
+    }
+
+    setIsBulkTranslating(true);
+    setError(null);
+
+    try {
+      const results = await Promise.allSettled(
+        selectedTokens.map(async (token) => {
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: token.baseForm || token.surface,
+              sourceLanguage: "ja",
+              targetLanguage: "fr",
+              context: text,
+            }),
+          });
+          const data: unknown = await response.json();
+
+          if (!response.ok || typeof data !== "object" || data === null || !("result" in data)) {
+            throw new Error("translate failed");
+          }
+
+          return { position: token.position, result: data.result as TranslationResult };
+        }),
+      );
+
+      const succeeded = results.filter(
+        (result): result is PromiseFulfilledResult<{ position: number; result: TranslationResult }> =>
+          result.status === "fulfilled",
+      );
+
+      setTokenTranslations((current) => {
+        const next = { ...current };
+        for (const { value } of succeeded) {
+          next[value.position] = value.result;
+        }
+        return next;
+      });
+
+      const failedCount = results.length - succeeded.length;
+
+      if (succeeded.length > 0) {
+        showToast(`${succeeded.length} mot(s) traduits.`);
+      }
+      if (failedCount > 0) {
+        showToast(`${failedCount} mot(s) n’ont pas pu être traduits.`, "error");
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant la traduction groupée.",
+      );
+    } finally {
+      setIsBulkTranslating(false);
+    }
+  }
+
+  // Ajoute les mots cochés au deck, avec leur traduction (voir plus bas).
+  async function handleAddSelectionToDeck() {
+    const selectedTokens = visibleTokens.filter((token) => selectedTokenPositions.has(token.position));
+
+    if (selectedTokens.length === 0) {
+      return;
+    }
+
+    setIsAddingSelectionToDeck(true);
+    setError(null);
+
+    try {
+      const currentDeckId = await ensureDeckId();
+
+      const results = await Promise.allSettled(
+        selectedTokens.map(async (token) => {
+          // Réutilise la traduction déjà affichée sur la carte ; sinon le serveur
+          // traduit automatiquement le mot à l'ajout.
+          const meaning = tokenTranslations[token.position]?.translation ?? null;
+
+          const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lemma: token.baseForm || token.surface,
+              surface: token.surface,
+              reading: token.reading,
+              meaning,
+              sourceTextId: selectedSourceTextId,
+              position: token.position,
+            }),
+          });
+          const data: unknown = await response.json();
+
+          if (!response.ok || typeof data !== "object" || data === null) {
+            throw new Error("add failed");
+          }
+
+          return data as { alreadyExisted: boolean };
+        }),
+      );
+
+      const succeeded = results.filter(
+        (result): result is PromiseFulfilledResult<{ alreadyExisted: boolean }> =>
+          result.status === "fulfilled",
+      );
+      const newCount = succeeded.filter((result) => !result.value.alreadyExisted).length;
+      const alreadyCount = succeeded.length - newCount;
+      const failedCount = results.length - succeeded.length;
+
+      await fetchDecks();
+
+      const parts: string[] = [];
+      if (newCount > 0) {
+        parts.push(`${newCount} nouveau(x)`);
+      }
+      if (alreadyCount > 0) {
+        parts.push(`${alreadyCount} déjà présent(s)`);
+      }
+      if (parts.length > 0) {
+        showToast(`${parts.join(", ")} ajouté(s) au deck avec traduction.`);
+      }
+      if (failedCount > 0) {
+        showToast(`${failedCount} mot(s) n’ont pas pu être ajoutés.`, "error");
+      }
+
+      setSelectedTokenPositions(new Set());
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Une erreur est survenue pendant l’ajout de la sélection.",
+      );
+    } finally {
+      setIsAddingSelectionToDeck(false);
     }
   }
 
@@ -747,6 +940,39 @@ export default function Home() {
               </div>
             ) : null}
 
+            {selectedTokenPositions.size > 0 ? (
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--accent-soft)] px-4 py-3">
+                <span className="text-sm font-medium text-[var(--ink)]">
+                  {selectedTokenPositions.size} mot(s) sélectionné(s)
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleTranslateSelection()}
+                    disabled={isBulkTranslating || isAddingSelectionToDeck}
+                    className="secondary-button"
+                  >
+                    {isBulkTranslating ? "Traduction..." : "Traduire la sélection"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleAddSelectionToDeck()}
+                    disabled={isBulkTranslating || isAddingSelectionToDeck}
+                    className="primary-button"
+                  >
+                    {isAddingSelectionToDeck ? "Ajout..." : "Ajouter la sélection au deck"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTokenPositions(new Set())}
+                    className="text-xs text-[var(--muted)] underline"
+                  >
+                    Désélectionner tout
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {tokens.length > 0 ? (
               <div className="mb-6 rounded-2xl border border-[var(--line)] bg-[var(--background)] p-4">
                 <p className="eyebrow">Source preview</p>
@@ -790,35 +1016,59 @@ export default function Home() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {visibleTokens.map((token) => {
                   const isSelected = selectedToken?.position === token.position;
+                  const isChecked = selectedTokenPositions.has(token.position);
+                  const tokenTranslation = tokenTranslations[token.position];
 
                   return (
-                    <button
+                    <div
                       key={`${token.position}-${token.surface}`}
-                      type="button"
-                      onClick={() => setSelectedToken(token)}
-                      className={`token-card text-left ${isSelected ? "token-card-selected" : ""}`}
+                      className={`token-card ${isSelected || isChecked ? "token-card-selected" : ""}`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xl font-semibold text-[var(--ink)]" lang="ja">
-                          {token.surface}
+                      <button
+                        type="button"
+                        aria-pressed={isChecked}
+                        onClick={(event) => handleTokenClick(token, event.shiftKey)}
+                        className="block w-full text-left"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="flex items-center gap-2">
+                            <span
+                              aria-hidden="true"
+                              className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-bold ${
+                                isChecked
+                                  ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                                  : "border-[var(--line)] bg-[var(--paper)] text-transparent"
+                              }`}
+                            >
+                              ✓
+                            </span>
+                            <span className="text-xl font-semibold text-[var(--ink)]" lang="ja">
+                              {token.surface}
+                            </span>
+                          </span>
+                          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--ink)]">
+                            JLPT {token.difficulty}
+                          </span>
+                        </div>
+                        <span className="mt-1 block text-sm text-[var(--accent-dark)]" lang="ja">
+                          {token.reading ?? "lecture inconnue"}
                         </span>
-                        <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--ink)]">
-                          JLPT {token.difficulty}
+                        <span className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
+                          <span>{token.baseForm}</span>
+                          <span className="part-of-speech">{token.partOfSpeech}</span>
                         </span>
-                      </div>
-                      <span className="mt-1 block text-sm text-[var(--accent-dark)]" lang="ja">
-                        {token.reading ?? "lecture inconnue"}
-                      </span>
-                      <span className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
-                        <span>{token.baseForm}</span>
-                        <span className="part-of-speech">{token.partOfSpeech}</span>
-                      </span>
-                      {addedLemmas.has(token.baseForm || token.surface) ? (
-                        <span className="mt-2 inline-block rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--ink)]">
-                          Déjà ajouté
-                        </span>
-                      ) : null}
-                    </button>
+                        {tokenTranslation ? (
+                          <span className="mt-2 block text-sm font-medium text-[var(--ink)]">
+                            → {tokenTranslation.translation}
+                          </span>
+                        ) : null}
+                        {addedLemmas.has(token.baseForm || token.surface) ? (
+                          <span className="mt-2 inline-block rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--ink)]">
+                            Déjà ajouté
+                          </span>
+                        ) : null}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
