@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import { buildQuizChoices } from "@/lib/decks/card-utils";
-import type { DeckCard, DeckCardWithOccurrences, DeckStats, DeckSummary } from "@/types/shared";
+import type { DeckCard, DeckCardWithOccurrences, DeckSummary } from "@/types/shared";
 
 // Les façons de présenter une carte pendant la révision : le mode standard
 // montre le kanji et sa lecture, le mode kanji ne montre que le kanji, le
@@ -49,51 +47,31 @@ function highlightLemma(sentence: string, lemma: string): ReactNode {
   );
 }
 
-// Page de détail d'un deck : révision des cartes dues (avec 3 modes
-// d'entraînement), statistiques et gestion des cartes (recherche, suppression).
-export default function DeckDetailPage() {
+// Page d'accueil d'un deck : l'entraînement (révision des cartes dues avec 4
+// modes). La liste des mots et les statistiques ont leurs propres pages,
+// accessibles depuis les boutons de l'en-tête (voir layout.tsx).
+export default function DeckTrainingPage() {
   const params = useParams<{ deckId: string }>();
   const deckId = params.deckId;
-  const router = useRouter();
   const { showToast } = useToast();
 
   const [deck, setDeck] = useState<DeckSummary | null>(null);
   const [deckCards, setDeckCards] = useState<DeckCardWithOccurrences[]>([]);
-  const [deckStats, setDeckStats] = useState<DeckStats | null>(null);
-  const [cardSearchQuery, setCardSearchQuery] = useState("");
   const [reviewCardId, setReviewCardId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [reviewMode, setReviewMode] = useState<ReviewMode>("standard");
   const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [cardPendingDeletion, setCardPendingDeletion] = useState<DeckCardWithOccurrences | null>(null);
-  const [editingMeaningCardId, setEditingMeaningCardId] = useState<string | null>(null);
-  const [editingMeaningValue, setEditingMeaningValue] = useState("");
-  const [isSavingMeaning, setIsSavingMeaning] = useState(false);
-  const [isDeckDeletionPending, setIsDeckDeletionPending] = useState(false);
-  const [isDeletingDeck, setIsDeletingDeck] = useState(false);
   const [quizChoices, setQuizChoices] = useState<string[]>([]);
   const [selectedQuizChoice, setSelectedQuizChoice] = useState<string | null>(null);
   const [isLoadingQuizChoices, setIsLoadingQuizChoices] = useState(false);
 
-  // Filtre les cartes affichées selon la recherche (mot, lecture ou sens).
-  const normalizedCardSearch = cardSearchQuery.trim().toLowerCase();
-  const filteredDeckCards = normalizedCardSearch
-    ? deckCards.filter((card) =>
-        [card.lemma, card.reading, card.meaning]
-          .filter((value): value is string => typeof value === "string")
-          .some((value) => value.toLowerCase().includes(normalizedCardSearch)),
-      )
-    : deckCards;
-
-  // Charge le deck, ses cartes et ses statistiques à chaque changement de deck.
+  // Charge le deck et ses cartes à chaque changement de deck.
   useEffect(() => {
     void loadDeck();
     void loadDeckCards();
-    void loadDeckStats();
-    // loadDeck/loadDeckCards/loadDeckStats close over deckId and are also
-    // called after mutations (delete, review) below; only re-run on navigation.
+    // loadDeck/loadDeckCards close over deckId and loadDeck is also called
+    // after each review below; only re-run on navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId]);
 
@@ -102,11 +80,6 @@ export default function DeckDetailPage() {
     try {
       const response = await fetch(`/api/decks/${deckId}`);
       const data: unknown = await response.json();
-
-      if (response.status === 404) {
-        setNotFound(true);
-        return;
-      }
 
       if (
         response.ok &&
@@ -119,12 +92,12 @@ export default function DeckDetailPage() {
         setDeck(data.deck as DeckSummary);
       }
     } catch {
-      // The deck header can be refreshed again later.
+      // The deck can be refreshed again later.
     }
   }
 
   // Va chercher les cartes du deck avec leurs occurrences (textes source), pour
-  // la gestion des cartes et le mode d'entraînement "Contexte".
+  // le mode d'entraînement "Contexte" et les leurres du quiz.
   async function loadDeckCards() {
     try {
       const response = await fetch(`/api/decks/${deckId}/cards`);
@@ -141,125 +114,6 @@ export default function DeckDetailPage() {
       }
     } catch {
       // The card list can be refreshed again later.
-    }
-  }
-
-  // Va chercher les statistiques de révision du deck.
-  async function loadDeckStats() {
-    try {
-      const response = await fetch(`/api/decks/${deckId}/stats`);
-      const data: unknown = await response.json();
-
-      if (response.ok && typeof data === "object" && data !== null && !("error" in data)) {
-        setDeckStats(data as DeckStats);
-      }
-    } catch {
-      // Stats are optional and can be refreshed again later.
-    }
-  }
-
-  // Supprime une carte du deck et rafraîchit l'affichage.
-  async function handleDeleteCard(cardId: string) {
-    try {
-      const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
-        method: "DELETE",
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de supprimer la carte");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await Promise.all([loadDeck(), loadDeckCards(), loadDeckStats()]);
-      showToast("Carte supprimée.");
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la suppression de la carte.",
-      );
-      showToast("La suppression de la carte a échoué.", "error");
-    }
-  }
-
-  // Enregistre le sens saisi à la main pour une carte (complète un "sens à
-  // compléter" laissé par l'ajout en masse, ou corrige une traduction).
-  // Réutilise la route d'ajout : comme le lemme existe déjà dans ce deck,
-  // elle met simplement à jour la carte au lieu d'en créer une nouvelle.
-  async function handleSaveMeaning(card: DeckCardWithOccurrences) {
-    const trimmedMeaning = editingMeaningValue.trim();
-
-    if (!trimmedMeaning) {
-      return;
-    }
-
-    setIsSavingMeaning(true);
-
-    try {
-      const response = await fetch(`/api/decks/${deckId}/cards`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lemma: card.lemma,
-          reading: card.reading,
-          meaning: trimmedMeaning,
-        }),
-      });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible d’enregistrer le sens");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      await loadDeckCards();
-      setEditingMeaningCardId(null);
-      showToast("Sens mis à jour.");
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la mise à jour du sens.",
-      );
-      showToast("La mise à jour du sens a échoué.", "error");
-    } finally {
-      setIsSavingMeaning(false);
-    }
-  }
-
-  // Supprime le deck entier (et ses cartes) puis retourne à la liste des decks.
-  async function handleDeleteDeck() {
-    setIsDeletingDeck(true);
-
-    try {
-      const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
-      const data: unknown = await response.json();
-
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de supprimer le deck");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
-      }
-
-      showToast("Deck supprimé.");
-      router.push("/decks");
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la suppression du deck.",
-      );
-      showToast("La suppression du deck a échoué.", "error");
-      setIsDeletingDeck(false);
     }
   }
 
@@ -286,7 +140,7 @@ export default function DeckDetailPage() {
         throw new Error(data.error);
       }
 
-      await Promise.all([loadDeck(), loadDeckStats()]);
+      await loadDeck();
       setReviewCardId(null);
       setShowAnswer(false);
       showToast("Révision enregistrée.");
@@ -410,420 +264,178 @@ export default function DeckDetailPage() {
     }, 1100);
   }
 
-  if (notFound) {
-    return (
-      <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="empty-state">
-            <p className="font-medium text-[var(--ink)]">Deck introuvable.</p>
-            <Link href="/decks" className="mt-4 primary-button">
-              Retour aux decks
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-10 flex flex-wrap items-end justify-between gap-4">
+    <>
+      {error ? (
+        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      <section className="panel p-6 sm:p-8">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <Link href="/decks" className="eyebrow">
-              ← Decks
-            </Link>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-              {deck?.name ?? "Deck"}
-            </h1>
+            <p className="eyebrow">Daily review</p>
+            <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">Entraînement</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={`/api/decks/${deckId}/export/anki`}
-              download
-              className="secondary-button"
-            >
-              Exporter vers Anki
-            </a>
+          <span className="count-badge" aria-label={`${dueCards.length} carte(s) à revoir`}>
+            {dueCards.length}
+          </span>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
+          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            Total: {deck?.cards.length ?? 0}
+          </span>
+          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            Due today: {dueCards.length}
+          </span>
+          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            Nouveau: {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
+          </span>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          {reviewModes.map((mode) => (
             <button
+              key={mode.id}
               type="button"
-              onClick={() => setIsDeckDeletionPending(true)}
-              className="secondary-button text-red-700 hover:bg-red-50"
+              onClick={() => {
+                setReviewMode(mode.id);
+                setShowAnswer(false);
+              }}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                reviewMode === mode.id
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
+                  : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+              }`}
             >
-              Supprimer le deck
+              {mode.label}
             </button>
-          </div>
-        </header>
+          ))}
+        </div>
 
-        {error ? (
-          <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
-        <section className="panel p-6 sm:p-8">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="eyebrow">Daily review</p>
-              <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">Révision du deck</h2>
-            </div>
-            <span className="count-badge">{dueCards.length}</span>
-          </div>
-
-          <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-            <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-              Total: {deck?.cards.length ?? 0}
-            </span>
-            <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-              Due today: {dueCards.length}
-            </span>
-            <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-              Nouveau: {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
-            </span>
-          </div>
-
-          <div className="mb-4 flex flex-wrap gap-2">
-            {reviewModes.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => {
-                  setReviewMode(mode.id);
-                  setShowAnswer(false);
-                }}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  reviewMode === mode.id
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-
-          {activeCard ? (
-            <>
-              <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
-                {reviewMode === "context" ? (
-                  activeCardContextSentence ? (
-                    <>
-                      <p className="text-sm text-[var(--muted)]">Phrase à comprendre</p>
-                      <p className="mt-2 text-xl leading-8 text-[var(--ink)]" lang="ja">
-                        {highlightLemma(activeCardContextSentence, activeCard.lemma)}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-[var(--muted)]">
-                        Aucun contexte disponible pour ce mot — mode kanji utilisé à la place
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
-                        {activeCard.lemma}
-                      </p>
-                    </>
-                  )
+        {activeCard ? (
+          <>
+            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
+              {reviewMode === "context" ? (
+                activeCardContextSentence ? (
+                  <>
+                    <p className="text-sm text-[var(--muted)]">Phrase à comprendre</p>
+                    <p className="mt-2 text-xl leading-8 text-[var(--ink)]" lang="ja">
+                      {highlightLemma(activeCardContextSentence, activeCard.lemma)}
+                    </p>
+                  </>
                 ) : (
                   <>
-                    <p className="text-sm text-[var(--muted)]">Mot à revoir</p>
+                    <p className="text-sm text-[var(--muted)]">
+                      Aucun contexte disponible pour ce mot — mode kanji utilisé à la place
+                    </p>
                     <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
                       {activeCard.lemma}
                     </p>
-                    {reviewMode === "standard" || reviewMode === "quiz" ? (
-                      <p className="mt-2 text-sm text-[var(--muted)]">
-                        {activeCard.reading ?? "lecture inconnue"}
-                      </p>
-                    ) : null}
                   </>
-                )}
-
-                {reviewMode !== "quiz" && showAnswer ? (
-                  <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-3">
-                    <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent-dark)]">Réponse</p>
-                    {reviewMode !== "standard" ? (
-                      <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
-                        {activeCard.lemma} · {activeCard.reading ?? "lecture inconnue"}
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-lg font-medium text-[var(--ink)]">
-                      {activeCard.meaning ?? "Sens à compléter"}
+                )
+              ) : (
+                <>
+                  <p className="text-sm text-[var(--muted)]">Mot à revoir</p>
+                  <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
+                    {activeCard.lemma}
+                  </p>
+                  {reviewMode === "standard" || reviewMode === "quiz" ? (
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      {activeCard.reading ?? "lecture inconnue"}
                     </p>
-                  </div>
-                ) : null}
-              </div>
+                  ) : null}
+                </>
+              )}
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                {reviewMode === "quiz" ? (
-                  !activeCard.meaning ? (
-                    <p className="text-sm text-[var(--muted)]">
-                      Ce mot n’a pas encore de sens enregistré — traduis-le ou utilise un autre
-                      mode pour le réviser.
+              {reviewMode !== "quiz" && showAnswer ? (
+                <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-3">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent-dark)]">Réponse</p>
+                  {reviewMode !== "standard" ? (
+                    <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
+                      {activeCard.lemma} · {activeCard.reading ?? "lecture inconnue"}
                     </p>
-                  ) : quizChoices.length === 0 ? (
-                    <p className="text-sm text-[var(--muted)]">
-                      {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d’autres d’abord."}
-                    </p>
-                  ) : (
-                    <div className="grid w-full gap-2 sm:grid-cols-2">
-                      {quizChoices.map((choice) => {
-                        const isCorrectChoice = choice === activeCard.meaning;
-                        const isSelected = selectedQuizChoice === choice;
-                        const feedbackClass = selectedQuizChoice
-                          ? isCorrectChoice
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                            : isSelected
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
-                          : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
+                  ) : null}
+                  <p className="mt-1 text-lg font-medium text-[var(--ink)]">
+                    {activeCard.meaning ?? "Sens à compléter"}
+                  </p>
+                </div>
+              ) : null}
+            </div>
 
-                        return (
-                          <button
-                            key={choice}
-                            type="button"
-                            onClick={() => handleQuizAnswer(activeCard, choice)}
-                            disabled={selectedQuizChoice !== null}
-                            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
-                          >
-                            {choice}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )
-                ) : !showAnswer ? (
-                  <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
-                    Afficher la réponse
-                  </button>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {reviewMode === "quiz" ? (
+                !activeCard.meaning ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    Ce mot n’a pas encore de sens enregistré — ajoute-le depuis l’onglet Mots ou
+                    utilise un autre mode pour le réviser.
+                  </p>
+                ) : quizChoices.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d’autres d’abord."}
+                  </p>
                 ) : (
-                  <div className="grid w-full grid-cols-3 gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((quality) => {
-                      const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
+                  <div className="grid w-full gap-2 sm:grid-cols-2">
+                    {quizChoices.map((choice) => {
+                      const isCorrectChoice = choice === activeCard.meaning;
+                      const isSelected = selectedQuizChoice === choice;
+                      const feedbackClass = selectedQuizChoice
+                        ? isCorrectChoice
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
+                          : isSelected
+                            ? "border-red-200 bg-red-50 text-red-700"
+                            : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                        : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
+
                       return (
                         <button
-                          key={quality}
+                          key={choice}
                           type="button"
-                          onClick={() => void submitReviewCard(activeCard.id, quality)}
-                          disabled={isReviewing && reviewCardId === activeCard.id}
-                          className="primary-button"
+                          onClick={() => handleQuizAnswer(activeCard, choice)}
+                          disabled={selectedQuizChoice !== null}
+                          className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
                         >
-                          {labels[quality]}
+                          {choice}
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="empty-state min-h-48">
-              <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd’hui.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Ajoute de nouveaux mots depuis la page Analyser ou reviens plus tard.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {deckStats ? (
-          <section className="mt-8 panel p-6 sm:p-8">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Progress</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Statistiques du deck
-                </h2>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Total cartes : {deckStats.totalCards}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Cartes dues : {deckStats.dueCards}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Révisions totales : {deckStats.totalReviews}
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-                Taux de réussite :{" "}
-                {deckStats.successRate === null
-                  ? "—"
-                  : `${Math.round(deckStats.successRate * 100)}%`}
-              </span>
-            </div>
-
-            {deckStats.recentReviews.length > 0 ? (
-              <div className="mt-5">
-                <p className="eyebrow">Historique</p>
-                <ul className="mt-3 flex flex-col gap-2">
-                  {deckStats.recentReviews.map((review) => (
-                    <li
-                      key={review.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2 text-sm"
-                    >
-                      <span className="text-[var(--ink)]" lang="ja">{review.lemma}</span>
-                      <span className="text-xs text-[var(--muted)]">
-                        {new Date(review.reviewedAt).toLocaleString("fr-FR")}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          review.quality >= 3
-                            ? "bg-[var(--accent-soft)] text-[var(--ink)]"
-                            : "bg-red-50 text-red-700"
-                        }`}
-                      >
-                        {review.quality}/5
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mt-5 text-sm text-[var(--muted)]">
-                Aucune révision enregistrée pour ce deck pour le moment.
-              </p>
-            )}
-          </section>
-        ) : null}
-
-        <section className="mt-8 panel p-6 sm:p-8">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Manage</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Cartes du deck</h2>
-            </div>
-            <span className="text-sm text-[var(--muted)]">{filteredDeckCards.length} carte(s)</span>
-          </div>
-
-          <input
-            value={cardSearchQuery}
-            onChange={(event) => setCardSearchQuery(event.target.value)}
-            placeholder="Rechercher une carte (mot, lecture, sens)"
-            aria-label="Rechercher une carte"
-            className="mb-5 min-h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-          />
-
-          {filteredDeckCards.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {filteredDeckCards.map((card) => (
-                <div key={card.id} className="token-card">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold text-[var(--ink)]" lang="ja">
-                      {card.lemma}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {editingMeaningCardId !== card.id ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingMeaningCardId(card.id);
-                            setEditingMeaningValue(card.meaning ?? "");
-                          }}
-                          className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
-                        >
-                          Éditer
-                        </button>
-                      ) : null}
+                )
+              ) : !showAnswer ? (
+                <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
+                  Afficher la réponse
+                </button>
+              ) : (
+                <div className="grid w-full grid-cols-3 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((quality) => {
+                    const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
+                    return (
                       <button
+                        key={quality}
                         type="button"
-                        onClick={() => setCardPendingDeletion(card)}
-                        className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                        onClick={() => void submitReviewCard(activeCard.id, quality)}
+                        disabled={isReviewing && reviewCardId === activeCard.id}
+                        className="primary-button"
                       >
-                        Supprimer
+                        {labels[quality]}
                       </button>
-                    </div>
-                  </div>
-
-                  {editingMeaningCardId === card.id ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-[var(--muted)]">
-                        {card.reading ?? "lecture inconnue"} ·
-                      </span>
-                      <input
-                        value={editingMeaningValue}
-                        onChange={(event) => setEditingMeaningValue(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            void handleSaveMeaning(card);
-                          }
-                        }}
-                        placeholder="Sens en français"
-                        aria-label={`Sens de « ${card.lemma} »`}
-                        autoFocus
-                        className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void handleSaveMeaning(card)}
-                        disabled={isSavingMeaning || editingMeaningValue.trim().length === 0}
-                        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
-                      >
-                        {isSavingMeaning ? "..." : "Enregistrer"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingMeaningCardId(null)}
-                        className="text-xs text-[var(--muted)] underline"
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      {card.reading ?? "lecture inconnue"} · {card.meaning ?? "sens à compléter"}
-                    </p>
-                  )}
-
-                  {card.occurrences.length > 0 ? (
-                    <p className="mt-2 text-xs text-[var(--muted)]">
-                      Vu dans {card.occurrences.length} texte(s)
-                    </p>
-                  ) : null}
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
-          ) : (
-            <div className="empty-state">
-              <p className="font-medium text-[var(--ink)]">
-                {cardSearchQuery ? "Aucune carte ne correspond à la recherche." : "Aucune carte dans ce deck pour le moment."}
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
-
-      <ConfirmDialog
-        open={cardPendingDeletion !== null}
-        title="Supprimer cette carte ?"
-        description={
-          cardPendingDeletion
-            ? `« ${cardPendingDeletion.lemma} » sera définitivement supprimée de ce deck, avec son historique de révision.`
-            : undefined
-        }
-        confirmLabel="Supprimer"
-        danger
-        onConfirm={() => {
-          if (cardPendingDeletion) {
-            void handleDeleteCard(cardPendingDeletion.id);
-          }
-          setCardPendingDeletion(null);
-        }}
-        onCancel={() => setCardPendingDeletion(null)}
-      />
-
-      <ConfirmDialog
-        open={isDeckDeletionPending}
-        title="Supprimer ce deck ?"
-        description={`« ${deck?.name ?? "Ce deck"} » et ses ${deck?.cards.length ?? 0} carte(s) seront supprimés définitivement.`}
-        confirmLabel={isDeletingDeck ? "Suppression..." : "Supprimer"}
-        danger
-        onConfirm={() => {
-          setIsDeckDeletionPending(false);
-          void handleDeleteDeck();
-        }}
-        onCancel={() => setIsDeckDeletionPending(false)}
-      />
-    </main>
+          </>
+        ) : (
+          <div className="empty-state min-h-48">
+            <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd’hui.</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Ajoute de nouveaux mots depuis la page Analyser ou reviens plus tard.
+            </p>
+          </div>
+        )}
+      </section>
+    </>
   );
 }

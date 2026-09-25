@@ -816,6 +816,35 @@ A faire :
   automatiquement (seulement re-ajoutees) ; pas de bouton "traduire les
   cartes sans sens" pour l'instant.
 
+
+Priorite 17 - Page de deck allegee : entrainement, mots, statistiques
+--------------------------------------------------------------------
+Objectif : la page d'un deck etait trop chargee (revision + stats + liste
+des cartes sur une seule page). Elle est decoupee en sous-pages.
+
+Progression : TERMINEE, verifiee en navigateur reel (Playwright/Edge) sur un
+deck jetable supprime ensuite.
+
+A faire :
+- [TERMINE] src/app/decks/[deckId]/layout.tsx : en-tete commun (titre,
+  nombre de cartes, export Anki, suppression du deck avec confirmation) et
+  boutons de navigation Entrainement / Mots / Statistiques (aria-current).
+- [TERMINE] /decks/[deckId] = uniquement l'entrainement (4 modes : standard,
+  kanji, contexte, quiz). C'est la page d'arrivee quand on choisit un deck.
+- [TERMINE] /decks/[deckId]/mots : liste des mots avec definition, lecture,
+  statut (nouveau / en cours / maitrise), prochaine revision, nombre de
+  revisions, contextes depliables, recherche, filtres (dont "sans sens"),
+  edition du sens et suppression confirmee.
+- [TERMINE] /decks/[deckId]/stats : chiffres cles, repartition des mots par
+  statut, mots les plus difficiles (facteur de facilite SM-2 le plus bas),
+  historique des revisions.
+- [TERMINE] GET /api/decks/[deckId]/cards renvoie aussi _count.reviewLogs ;
+  helpers purs getCardStatus / pickHardestCards (src/lib/decks/card-utils.ts,
+  testes). Une carte ratee (repetitions remises a 0) reste "en cours".
+- [PARTIEL] "Maitrise" = intervalle SM-2 >= 21 jours (seuil arbitraire,
+  constante MATURE_INTERVAL_DAYS). Pas de stats par jour/semaine (courbe de
+  progression) pour l'instant.
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

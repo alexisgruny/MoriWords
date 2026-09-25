@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildQuizChoices, normalizeCardPayload } from "./card-utils";
+import { buildQuizChoices, getCardStatus, normalizeCardPayload, pickHardestCards } from "./card-utils";
 
 describe("normalizeCardPayload", () => {
   it("trims and preserves the core identifiers for a card", () => {
@@ -75,5 +75,39 @@ describe("buildQuizChoices", () => {
 
     expect(choices).toHaveLength(2);
     expect(choices).toContain("manger");
+  });
+});
+
+describe("getCardStatus", () => {
+  it("treats a never-reviewed card as new", () => {
+    expect(getCardStatus({ repetitions: 0, interval: 0 })).toBe("new");
+    expect(getCardStatus({})).toBe("new");
+  });
+
+  it("treats a reviewed card with a short interval as learning", () => {
+    expect(getCardStatus({ repetitions: 2, interval: 6 })).toBe("learning");
+  });
+
+  it("keeps a failed card (repetitions reset to 0) as learning, not new", () => {
+    expect(getCardStatus({ repetitions: 0, interval: 1, _count: { reviewLogs: 1 } })).toBe("learning");
+    expect(getCardStatus({ repetitions: 0, interval: 0, _count: { reviewLogs: 0 } })).toBe("new");
+  });
+
+  it("treats a card with an interval of 21+ days as mature", () => {
+    expect(getCardStatus({ repetitions: 5, interval: 21 })).toBe("mature");
+    expect(getCardStatus({ repetitions: 5, interval: 60 })).toBe("mature");
+  });
+});
+
+describe("pickHardestCards", () => {
+  it("returns reviewed cards ordered by lowest ease factor, ignoring never-reviewed ones", () => {
+    const cards = [
+      { id: "a", easeFactor: 2.5, _count: { reviewLogs: 3 } },
+      { id: "b", easeFactor: 1.4, _count: { reviewLogs: 2 } },
+      { id: "c", easeFactor: 1.3, _count: { reviewLogs: 0 } },
+      { id: "d", easeFactor: 1.9, _count: { reviewLogs: 1 } },
+    ];
+
+    expect(pickHardestCards(cards, 2).map((card) => card.id)).toEqual(["b", "d"]);
   });
 });

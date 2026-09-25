@@ -39,6 +39,13 @@ export type DeckCardWithOccurrences = {
   lemma: string;
   reading?: string | null;
   meaning?: string | null;
+  // État de répétition espacée (SM-2) de la carte, pour la page des mots et les stats.
+  repetitions?: number;
+  interval?: number;
+  easeFactor?: number;
+  dueAt?: string | null;
+  createdAt?: string;
+  _count?: { reviewLogs: number };
   occurrences: Array<{ id: string; sourceText: { id: string; title: string | null; content: string } | null }>;
 };
 

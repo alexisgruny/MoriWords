@@ -169,6 +169,7 @@ export async function GET(
       where: { deckId },
       orderBy: { createdAt: "desc" },
       include: {
+        _count: { select: { reviewLogs: true } },
         occurrences: {
           include: { sourceText: { select: { id: true, title: true, content: true } } },
           orderBy: { createdAt: "desc" },

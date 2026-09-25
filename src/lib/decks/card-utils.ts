@@ -57,3 +57,38 @@ export function buildQuizChoices(
 
   return shuffle([correctMeaning, ...chosenDistractors]);
 }
+
+// Où en est une carte dans l'apprentissage : jamais révisée, en cours, ou
+// "maîtrisée" (intervalle de révision d'au moins 3 semaines).
+export type CardStatus = "new" | "learning" | "mature";
+
+export const MATURE_INTERVAL_DAYS = 21;
+
+export function getCardStatus(card: {
+  repetitions?: number | null;
+  interval?: number | null;
+  _count?: { reviewLogs: number };
+}): CardStatus {
+  // Une carte ratée voit ses répétitions remises à 0 : le nombre de révisions
+  // enregistrées est plus fiable que les répétitions pour savoir si elle a déjà été vue.
+  const hasBeenReviewed = card._count ? card._count.reviewLogs > 0 : Boolean(card.repetitions);
+
+  if (!hasBeenReviewed) {
+    return "new";
+  }
+
+  return card.repetitions && (card.interval ?? 0) >= MATURE_INTERVAL_DAYS ? "mature" : "learning";
+}
+
+// Les mots qui posent le plus de problèmes : cartes déjà révisées dont le
+// facteur de facilité SM-2 est le plus bas (il baisse à chaque mauvaise
+// réponse), du plus difficile au moins difficile.
+export function pickHardestCards<T extends { repetitions?: number | null; easeFactor?: number | null; _count?: { reviewLogs: number } }>(
+  cards: T[],
+  limit: number,
+): T[] {
+  return cards
+    .filter((card) => (card._count?.reviewLogs ?? 0) > 0 && typeof card.easeFactor === "number")
+    .sort((a, b) => (a.easeFactor as number) - (b.easeFactor as number))
+    .slice(0, limit);
+}
