@@ -70,6 +70,7 @@ export default function DeckWordsPage() {
   const [editingValue, setEditingValue] = useState("");
   const [isSavingMeaning, setIsSavingMeaning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [translateProgress, setTranslateProgress] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
     void loadCards();
@@ -107,6 +108,66 @@ export default function DeckWordsPage() {
       showToast("Carte supprimée.");
     } catch {
       showToast("La suppression de la carte a échoué.", "error");
+    }
+  }
+
+  // Traduit automatiquement tous les mots du deck qui n'ont pas de sens, par
+  // petits lots (l'API en traite quelques-uns à chaque appel). Les mots dont la
+  // traduction échoue sont mis de côté pour ne pas boucler dessus.
+  async function handleTranslateMissing() {
+    const total = cards.filter((card) => !card.meaning).length;
+
+    if (total === 0) {
+      return;
+    }
+
+    setTranslateProgress({ done: 0, total });
+    setError(null);
+
+    const failedIds = new Set<string>();
+    let translatedCount = 0;
+
+    try {
+      let remaining = total;
+
+      while (remaining > 0) {
+        const response = await fetch(`/api/decks/${deckId}/cards/translate-missing`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ excludeIds: [...failedIds] }),
+        });
+        const data = (await response.json()) as {
+          translated?: number;
+          failedIds?: string[];
+          remaining?: number;
+        };
+
+        if (!response.ok || typeof data.translated !== "number" || typeof data.remaining !== "number") {
+          throw new Error("translate-missing failed");
+        }
+
+        translatedCount += data.translated;
+        (data.failedIds ?? []).forEach((id) => failedIds.add(id));
+        remaining = data.remaining;
+        setTranslateProgress({ done: translatedCount + failedIds.size, total });
+
+        if (data.translated === 0 && (data.failedIds ?? []).length === 0) {
+          break;
+        }
+      }
+
+      if (translatedCount > 0) {
+        showToast(`${translatedCount} mot(s) traduit(s).`);
+      }
+
+      if (failedIds.size > 0) {
+        showToast(`${failedIds.size} mot(s) n’ont pas pu être traduits.`, "error");
+      }
+    } catch {
+      showToast("La traduction des mots a échoué.", "error");
+    } finally {
+      await loadCards();
+      setTranslateProgress(null);
     }
   }
 
@@ -157,6 +218,7 @@ export default function DeckWordsPage() {
       .some((value) => value.toLowerCase().includes(normalizedQuery));
   });
 
+  const missingMeaningCount = cards.filter((card) => !card.meaning).length;
   const countFor = (candidate: WordFilter) => cards.filter((card) => matchesFilter(card, candidate)).length;
 
   return (
@@ -169,6 +231,24 @@ export default function DeckWordsPage() {
           </div>
           <span className="text-sm text-[var(--muted)]">{visibleCards.length} mot(s)</span>
         </div>
+
+        {missingMeaningCount > 0 ? (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--accent-soft)] px-4 py-3">
+            <p className="text-sm text-[var(--ink)]">
+              {translateProgress
+                ? `Traduction en cours… ${translateProgress.done}/${translateProgress.total}`
+                : `${missingMeaningCount} mot(s) n’ont pas encore de sens.`}
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleTranslateMissing()}
+              disabled={translateProgress !== null}
+              className="primary-button px-4! py-2! text-xs!"
+            >
+              {translateProgress ? "Traduction..." : "Traduire automatiquement"}
+            </button>
+          </div>
+        ) : null}
 
         <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer les mots">
           {filters.map((option) => (

@@ -812,9 +812,15 @@ A faire :
 - [PARTIEL] Le jeu de grammaire est un point de depart (10-14 points par
   niveau) : a etendre au fil de l'eau en ajoutant des entrees a points.ts
   (id unique prefixe par le niveau, verifie par les tests).
-- [PARTIEL] Les cartes deja creees sans sens ne sont pas re-traduites
-  automatiquement (seulement re-ajoutees) ; pas de bouton "traduire les
-  cartes sans sens" pour l'instant.
+- [TERMINE] Cartes deja creees sans sens : bouton "Traduire
+  automatiquement" sur la page Mots d'un deck (bandeau "N mot(s) n'ont pas
+  encore de sens"). POST /api/decks/[deckId]/cards/translate-missing traduit
+  par lots de 10 (limite de duree serverless), le client enchaine les appels
+  avec progression ; ne remplit que les sens vides (jamais d'ecrasement), les
+  echecs sont renvoyes (excludeIds) pour ne pas boucler. Logique partagee :
+  src/lib/decks/auto-translate.ts. Tests d'integration :
+  src/app/api/decks/cards-translate-missing.integration.test.ts.
+  Reste : a lancer deck par deck (pas de bouton "tous les decks").
 
 
 Priorite 17 - Page de deck allegee : entrainement, mots, statistiques

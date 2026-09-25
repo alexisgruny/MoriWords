@@ -1,26 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
-import { MISSING_TRANSLATION_PLACEHOLDER, translateText } from "@/lib/translation/translate";
-
-// Traduit un mot pour lui donner un sens dès son ajout au deck (traduction
-// en cache si elle existe déjà, sinon appel à Claude). Ne bloque jamais
-// l'ajout : en cas d'échec ou de clé API absente, la carte est simplement
-// ajoutée sans sens.
-async function autoTranslateLemma(lemma: string): Promise<string | null> {
-  try {
-    const result = await translateText(lemma, "ja", "fr");
-    const translation = result.translation.trim();
-
-    if (!translation || translation === MISSING_TRANSLATION_PLACEHOLDER) {
-      return null;
-    }
-
-    return translation;
-  } catch (error) {
-    console.error("Auto-translation on card add failed:", error);
-    return null;
-  }
-}
+import { autoTranslateLemma } from "@/lib/decks/auto-translate";
 
 // Ajoute un mot au deck sous forme de carte. Si une carte existe déjà pour ce
 // mot dans ce deck, on ne crée pas de doublon : on ajoute simplement une
