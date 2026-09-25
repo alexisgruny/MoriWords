@@ -821,6 +821,7 @@ export default function Home() {
       }
 
       setSelectedTokenPositions(new Set());
+      setSelectedToken(null);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -831,6 +832,63 @@ export default function Home() {
       setIsAddingSelectionToDeck(false);
     }
   }
+
+  // Sélecteur du deck de destination (ou création d'un nouveau deck), affiché
+  // dans la barre de sélection : c'est lui qui sert à toutes les actions
+  // d'ajout (un mot ou plusieurs).
+  const deckPicker = isCreatingNewDeck ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <input
+        value={newDeckName}
+        onChange={(event) => setNewDeckName(event.target.value)}
+        placeholder="Nom du nouveau deck"
+        aria-label="Nom du nouveau deck"
+        autoFocus
+        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+      />
+      <button
+        type="button"
+        onClick={() => void handleCreateDeckInline()}
+        disabled={isCreatingDeck}
+        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+      >
+        {isCreatingDeck ? "Création..." : "Créer"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setIsCreatingNewDeck(false);
+          setNewDeckName("");
+        }}
+        className="text-xs text-[var(--muted)] underline"
+      >
+        Annuler
+      </button>
+    </div>
+  ) : (
+    <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
+      Ajouter dans
+      <select
+        value={selectedDeckId ?? ""}
+        onChange={(event) => {
+          if (event.target.value === "__new__") {
+            setIsCreatingNewDeck(true);
+            return;
+          }
+          setSelectedDeckId(event.target.value);
+        }}
+        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+      >
+        {decks.length === 0 ? <option value="">Aucun deck</option> : null}
+        {decks.map((deck) => (
+          <option key={deck.id} value={deck.id}>
+            {deck.name}
+          </option>
+        ))}
+        <option value="__new__">+ Nouveau deck</option>
+      </select>
+    </label>
+  );
 
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
@@ -941,11 +999,14 @@ export default function Home() {
             ) : null}
 
             {selectedTokenPositions.size > 0 ? (
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--accent-soft)] px-4 py-3">
-                <span className="text-sm font-medium text-[var(--ink)]">
-                  {selectedTokenPositions.size} mot(s) sélectionné(s)
-                </span>
-                <div className="flex flex-wrap gap-2">
+              <div className="sticky top-2 z-20 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--accent-soft)] px-4 py-3 shadow-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-[var(--ink)]">
+                    {selectedTokenPositions.size} mot(s) sélectionné(s)
+                  </span>
+                  {deckPicker}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => void handleTranslateSelection()}
@@ -964,7 +1025,10 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedTokenPositions(new Set())}
+                    onClick={() => {
+                      setSelectedTokenPositions(new Set());
+                      setSelectedToken(null);
+                    }}
                     className="text-xs text-[var(--muted)] underline"
                   >
                     Désélectionner tout
@@ -1094,60 +1158,6 @@ export default function Home() {
                   ) : null}
                 </div>
 
-                <div className="mt-3">
-                  <p className="mb-1 text-xs text-[var(--muted)]">Ajouter dans</p>
-                  {isCreatingNewDeck ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        value={newDeckName}
-                        onChange={(event) => setNewDeckName(event.target.value)}
-                        placeholder="Nom du nouveau deck"
-                        aria-label="Nom du nouveau deck"
-                        autoFocus
-                        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void handleCreateDeckInline()}
-                        disabled={isCreatingDeck}
-                        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
-                      >
-                        {isCreatingDeck ? "Création..." : "Créer"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreatingNewDeck(false);
-                          setNewDeckName("");
-                        }}
-                        className="text-xs text-[var(--muted)] underline"
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  ) : (
-                    <select
-                      value={selectedDeckId ?? ""}
-                      onChange={(event) => {
-                        if (event.target.value === "__new__") {
-                          setIsCreatingNewDeck(true);
-                          return;
-                        }
-                        setSelectedDeckId(event.target.value);
-                      }}
-                      className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
-                    >
-                      {decks.length === 0 ? <option value="">Aucun deck</option> : null}
-                      {decks.map((deck) => (
-                        <option key={deck.id} value={deck.id}>
-                          {deck.name}
-                        </option>
-                      ))}
-                      <option value="__new__">+ Nouveau deck</option>
-                    </select>
-                  )}
-                </div>
-
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     type="button"
@@ -1155,24 +1165,39 @@ export default function Home() {
                     disabled={isTranslating}
                     className="primary-button"
                   >
-                    {isTranslating ? "Traduction..." : "Traduire"}
+                    {isTranslating ? "Traduction..." : "Traduire ce mot"}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSavingCard(true);
-                      void handleAddCardToDeck();
-                    }}
-                    disabled={isSavingCard}
-                    className="primary-button"
-                  >
-                    {isSavingCard
-                      ? "Ajout..."
-                      : addedLemmas.has(selectedToken.baseForm || selectedToken.surface)
-                        ? "Ajouter une occurrence"
-                        : "Ajouter au deck"}
-                  </button>
+                  {/* Avec plusieurs mots cochés, ce bouton ajoute TOUTE la sélection
+                      (et pas seulement le mot affiché ici) pour ne jamais en oublier. */}
+                  {selectedTokenPositions.size > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleAddSelectionToDeck()}
+                      disabled={isBulkTranslating || isAddingSelectionToDeck}
+                      className="primary-button"
+                    >
+                      {isAddingSelectionToDeck
+                        ? "Ajout..."
+                        : `Ajouter les ${selectedTokenPositions.size} mots au deck`}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSavingCard(true);
+                        void handleAddCardToDeck();
+                      }}
+                      disabled={isSavingCard}
+                      className="primary-button"
+                    >
+                      {isSavingCard
+                        ? "Ajout..."
+                        : addedLemmas.has(selectedToken.baseForm || selectedToken.surface)
+                          ? "Ajouter une occurrence"
+                          : "Ajouter au deck"}
+                    </button>
+                  )}
                 </div>
 
                 {translation ? (
