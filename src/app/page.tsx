@@ -14,8 +14,8 @@ const starterText = "私は毎朝コーヒーを飲みながら、日本語を�
 // POST /api/source-texts/<key> (voir src/lib/feeds/).
 const GENERATED_SOURCES = [
   { key: "anime-quote", label: "Citation d'anime" },
-  { key: "news-summary", label: "Actualité simplifiée" },
-  { key: "news-rss", label: "Actualité réelle (nippon.com)" },
+  { key: "news-summary", label: "Actu simplifiée" },
+  { key: "news-rss", label: "Actu nippon.com" },
   { key: "daily-dialogue", label: "Dialogue quotidien" },
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
@@ -674,17 +674,20 @@ export default function Home() {
     }
 
     const wasChecked = selectedTokenPositions.has(token.position);
+    const nextPositions = new Set(selectedTokenPositions);
 
-    setSelectedTokenPositions((current) => {
-      const next = new Set(current);
-      if (wasChecked) {
-        next.delete(token.position);
-      } else {
-        next.add(token.position);
-      }
-      return next;
-    });
-    setSelectedToken(wasChecked ? null : token);
+    if (wasChecked) {
+      nextPositions.delete(token.position);
+    } else {
+      nextPositions.add(token.position);
+    }
+
+    setSelectedTokenPositions(nextPositions);
+
+    // En décochant, le panneau reste sur un des mots encore cochés (sinon la
+    // sélection restante n'aurait plus de panneau pour agir dessus).
+    const remaining = visibleTokens.filter((candidate) => nextPositions.has(candidate.position));
+    setSelectedToken(wasChecked ? (remaining[remaining.length - 1] ?? null) : token);
   }
 
   // Traduit tous les mots cochés en parallèle et garde le résultat de chacun
@@ -915,7 +918,10 @@ export default function Home() {
                   Colle ton japonais
                 </h2>
               </div>
-              <span className="status-dot" role="img" aria-label="Tokenizer disponible" />
+              <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap text-sm text-[var(--muted)]">{text.length} caractères</span>
+                <span className="status-dot" role="img" aria-label="Tokenizer disponible" />
+              </div>
             </div>
 
             <label htmlFor="japanese-text" className="sr-only">
@@ -930,30 +936,25 @@ export default function Home() {
               lang="ja"
             />
 
-            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-sm text-[var(--muted)]">
-                {text.length} caractères
-              </span>
-              <div className="flex flex-wrap gap-3">
-                {GENERATED_SOURCES.map((source) => (
-                  <button
-                    key={source.key}
-                    type="button"
-                    onClick={() => void handleGenerateSource(source.key)}
-                    disabled={loadingSourceKey !== null || isLoading}
-                    className="secondary-button"
-                  >
-                    {loadingSourceKey === source.key ? "Génération..." : source.label}
-                  </button>
-                ))}
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {GENERATED_SOURCES.map((source) => (
                 <button
-                  type="submit"
-                  disabled={isLoading || text.trim().length === 0}
-                  className="primary-button"
+                  key={source.key}
+                  type="button"
+                  onClick={() => void handleGenerateSource(source.key)}
+                  disabled={loadingSourceKey !== null || isLoading}
+                  className="secondary-button px-3.5! py-2! text-xs!"
                 >
-                  {isLoading ? "Analyse en cours..." : "Analyser le texte"}
+                  {loadingSourceKey === source.key ? "Génération..." : source.label}
                 </button>
-              </div>
+              ))}
+              <button
+                type="submit"
+                disabled={isLoading || text.trim().length === 0}
+                className="primary-button ml-auto"
+              >
+                {isLoading ? "Analyse en cours..." : "Analyser le texte"}
+              </button>
             </div>
 
             {error ? (
@@ -995,45 +996,6 @@ export default function Home() {
                 >
                   {isBulkAdding ? "Ajout en cours..." : `Tout ajouter au deck (${visibleTokens.length})`}
                 </button>
-              </div>
-            ) : null}
-
-            {selectedTokenPositions.size > 0 ? (
-              <div className="sticky top-2 z-20 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--accent-soft)] px-4 py-3 shadow-sm">
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-[var(--ink)]">
-                    {selectedTokenPositions.size} mot(s) sélectionné(s)
-                  </span>
-                  {deckPicker}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleTranslateSelection()}
-                    disabled={isBulkTranslating || isAddingSelectionToDeck}
-                    className="secondary-button"
-                  >
-                    {isBulkTranslating ? "Traduction..." : "Traduire la sélection"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleAddSelectionToDeck()}
-                    disabled={isBulkTranslating || isAddingSelectionToDeck}
-                    className="primary-button"
-                  >
-                    {isAddingSelectionToDeck ? "Ajout..." : "Ajouter la sélection au deck"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedTokenPositions(new Set());
-                      setSelectedToken(null);
-                    }}
-                    className="text-xs text-[var(--muted)] underline"
-                  >
-                    Désélectionner tout
-                  </button>
-                </div>
               </div>
             ) : null}
 
@@ -1140,7 +1102,11 @@ export default function Home() {
 
             {selectedToken ? (
               <div className="mt-6 border-t border-[var(--line)] pt-5">
-                <p className="eyebrow">Selected token</p>
+                <p className="eyebrow">
+                  {selectedTokenPositions.size > 1
+                    ? `${selectedTokenPositions.size} mots sélectionnés`
+                    : "Selected token"}
+                </p>
                 <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
                   {selectedToken.surface} <span className="text-[var(--muted)]">·</span>{" "}
                   {selectedToken.baseForm}
@@ -1158,18 +1124,33 @@ export default function Home() {
                   ) : null}
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void handleTranslateToken(selectedToken)}
-                    disabled={isTranslating}
-                    className="primary-button"
-                  >
-                    {isTranslating ? "Traduction..." : "Traduire ce mot"}
-                  </button>
+                <div className="mt-3">{deckPicker}</div>
 
-                  {/* Avec plusieurs mots cochés, ce bouton ajoute TOUTE la sélection
-                      (et pas seulement le mot affiché ici) pour ne jamais en oublier. */}
+                {/* Avec plusieurs mots cochés, les boutons agissent sur TOUTE la
+                    sélection (et pas seulement sur le mot affiché ici). */}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  {selectedTokenPositions.size > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleTranslateSelection()}
+                      disabled={isBulkTranslating || isAddingSelectionToDeck}
+                      className="primary-button"
+                    >
+                      {isBulkTranslating
+                        ? "Traduction..."
+                        : `Traduire les ${selectedTokenPositions.size} mots`}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleTranslateToken(selectedToken)}
+                      disabled={isTranslating}
+                      className="primary-button"
+                    >
+                      {isTranslating ? "Traduction..." : "Traduire"}
+                    </button>
+                  )}
+
                   {selectedTokenPositions.size > 1 ? (
                     <button
                       type="button"
@@ -1198,6 +1179,19 @@ export default function Home() {
                           : "Ajouter au deck"}
                     </button>
                   )}
+
+                  {selectedTokenPositions.size > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTokenPositions(new Set());
+                        setSelectedToken(null);
+                      }}
+                      className="text-xs text-[var(--muted)] underline"
+                    >
+                      Désélectionner tout
+                    </button>
+                  ) : null}
                 </div>
 
                 {translation ? (
