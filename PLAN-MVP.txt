@@ -851,6 +851,45 @@ A faire :
   constante MATURE_INTERVAL_DAYS). Pas de stats par jour/semaine (courbe de
   progression) pour l'instant.
 
+
+Priorite 18 - Niveaux JLPT : N4 absent et mauvais classements
+-------------------------------------------------------------
+Constat : jamais de N4 (et peu de N2) dans les mots detectes.
+
+Causes trouvees :
+- Le dataset source (egg rolls JLPT 10k, package @polyglot-bundles/ja-jlpt-syllabi)
+  fusionne N5 et N4 en une seule liste "N5-N4" (1568 mots), ramenee a "N5" :
+  N4 etait impossible a produire.
+- Les lectures etaient melangees aux mots dans une seule table : un lemme comme
+  ます (auxiliaire poli) heritait du niveau de 増す (N1, lu aussi "ます") ;
+  が sortait N1, も N1, で N2. Le parametre partOfSpeech de classifyDifficulty
+  n'etait jamais utilise.
+- Le niveau etait fige en base a l'ecriture (colonne difficulty, defaut "N5") :
+  toute amelioration du dataset ne touchait pas les mots deja enregistres.
+- N2 existe bien dans les donnees (2875 mots) ; il apparait peu car le
+  vocabulaire enregistre est petit et simple.
+
+A faire :
+- [TERMINE] scripts/generate-jlpt-vocabulary.mjs regenere src/lib/difficulty/
+  jlpt-vocabulary.ts (mode d'emploi en en-tete du script) : deux tables JLPT_WORDS (forme ecrite) et JLPT_READINGS (lecture),
+  le niveau le plus facile gagne en cas de doublon.
+- [TERMINE] N5/N4 separes avec les listes de Jonathan Waller (tanos.co.uk,
+  CC BY) via elzup/jlpt-word-list, gardees en colonnes expression,reading dans
+  scripts/data/ (README d'attribution) ; le reste de la liste fusionnee est N4,
+  sauf les graphies en kana de mots N5/N4 (ある, いる). Repartition : N5 699,
+  N4 1161, N3 1397, N2 2875, N1 4039 mots.
+- [TERMINE] classifyDifficulty : forme exacte, puis (hors mots-outils
+  助動詞/助詞/記号/フィラー) lecture comme mot en kana, puis lecture d'un mot en
+  kanji pour un lemme en kana. Tests ajoutes (N4, N2, ます != 増す).
+- [TERMINE] Niveau recalcule a la lecture (route vocabulaire, cache de
+  traduction) : les mots deja enregistres beneficient de la correction sans
+  migration. Credit des sources dans le pied de page.
+- [PARTIEL] Les mots-outils (particules, auxiliaires) sont "unknown" sauf s'ils
+  sont listes tels quels ; les niveaux restent ceux de listes non officielles
+  (le JLPT ne publie plus de liste officielle), donc approximatifs.
+- [PARTIEL] La colonne VocabularyEntry.difficulty et TranslationCache.difficulty
+  en base gardent d'anciennes valeurs (plus lues, mais toujours ecrites).
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

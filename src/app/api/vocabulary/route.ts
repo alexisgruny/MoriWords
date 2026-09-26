@@ -31,11 +31,12 @@ export async function GET() {
       take: 20,
     });
 
-    // Calcule le niveau JLPT à la volée pour les entrées qui n'en ont pas encore un.
+    // Calcule le niveau JLPT à la volée plutôt que de relire la colonne
+    // enregistrée : les améliorations du dataset s'appliquent ainsi aussi aux
+    // mots déjà sauvegardés.
     const normalizedEntries = entries.map((entry) => ({
       ...entry,
-      difficulty:
-        entry.difficulty ?? classifyDifficulty(entry.lemma, entry.reading, entry.partOfSpeech),
+      difficulty: classifyDifficulty(entry.lemma, entry.reading, entry.partOfSpeech),
     }));
 
     return Response.json({ entries: normalizedEntries });

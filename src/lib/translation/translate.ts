@@ -144,9 +144,9 @@ async function getCachedTranslation(
   return {
     translation: cached.translation,
     explanation: cached.explanation,
-    difficulty:
-      (cached.difficulty as TranslationResult["difficulty"]) ??
-      classifyDifficulty(cached.lemma, null, null),
+    // Recalculé à la lecture (et non lu depuis la colonne) pour que les
+    // améliorations du dataset JLPT s'appliquent aussi aux traductions déjà en cache.
+    difficulty: classifyDifficulty(cached.lemma, null, null),
   };
 }
 
