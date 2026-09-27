@@ -11,8 +11,11 @@ vi.mock("@/lib/feeds/claude-json-generator", () => ({
 }));
 
 import { prisma } from "@/lib/db/prisma";
+import { conjugationForms } from "@/lib/conjugation/forms";
+
 import {
   correctTranslation,
+  pickConjugationExercise,
   pickExampleExercise,
   pickGrammarExercise,
   resolveExercise,
@@ -198,6 +201,43 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
 
     const nonMatching = await pickExampleExercise("N2", others);
     expect(nonMatching).toBeNull();
+  });
+});
+
+describe("pickConjugationExercise and resolveExercise round-trip", () => {
+  it("picks an unseen example and resolves it back to its form", async () => {
+    const form = conjugationForms.find((candidate) => candidate.id === "n5-te-form")!;
+    const otherIds = conjugationForms
+      .filter((candidate) => candidate.id !== form.id)
+      .flatMap((candidate) => candidate.examples.map((_, index) => `conj:${candidate.id}:${index}`));
+
+    const exercise = await pickConjugationExercise("all", otherIds);
+
+    expect(exercise?.id.startsWith(`conj:${form.id}:`)).toBe(true);
+    expect(exercise?.focus).toBe(form.name);
+    expect(exercise?.level).toBe("N5");
+
+    const resolved = await resolveExercise(exercise!.id);
+    const index = Number(exercise!.id.split(":")[2]);
+    expect(resolved).toEqual({
+      french: form.examples[index].meaning,
+      japanese: form.examples[index].conjugated,
+      focus: form.name,
+    });
+  });
+
+  it("filters by JLPT level", async () => {
+    const n4 = await pickConjugationExercise("N4", []);
+    expect(n4).not.toBeNull();
+    expect(n4?.level).toBe("N4");
+  });
+
+  it("returns null once every example has been excluded", async () => {
+    const allIds = conjugationForms.flatMap((form) =>
+      form.examples.map((_, index) => `conj:${form.id}:${index}`),
+    );
+
+    await expect(pickConjugationExercise("all", allIds)).resolves.toBeNull();
   });
 });
 

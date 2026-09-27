@@ -5,6 +5,8 @@ import { classifyDifficulty } from "@/lib/difficulty/classify";
 import { generateJsonFromClaude } from "@/lib/feeds/claude-json-generator";
 import { shuffle } from "@/lib/shuffle";
 
+import { conjugationForms } from "@/lib/conjugation/forms";
+
 import { type GrammarLevel, type GrammarPoint, filterGrammarPoints, grammarPoints } from "./points";
 
 // Nombre de phrases générées par Claude la première fois qu'un point de
@@ -66,6 +68,7 @@ type ExerciseGenerator = typeof generateGrammarExercises;
 
 const STATIC_PREFIX = "static:";
 const EXAMPLE_PREFIX = "ex:";
+const CONJUGATION_PREFIX = "conj:";
 
 type PoolEntry = { id: string; french: string };
 
@@ -154,6 +157,35 @@ export async function pickExampleExercise(
   };
 }
 
+// Choisit au hasard un exemple de conjugaison au hasard parmi ceux pas encore
+// vus, pour un niveau donné (ou tous). Contrairement à la grammaire, chaque
+// forme a déjà ses exemples écrits à la main (src/lib/conjugation/forms.ts) :
+// pas besoin d'appeler Claude pour en générer d'autres.
+export async function pickConjugationExercise(
+  level: GrammarLevel | "all",
+  excludeIds: string[],
+): Promise<Exercise | null> {
+  const seen = new Set(excludeIds);
+
+  const pool = conjugationForms
+    .filter((form) => level === "all" || form.level === level)
+    .flatMap((form) =>
+      form.examples.map((example, index) => ({
+        id: `${CONJUGATION_PREFIX}${form.id}:${index}`,
+        french: example.meaning,
+        level: form.level,
+        focus: form.name,
+      })),
+    )
+    .filter((entry) => !seen.has(entry.id));
+
+  if (pool.length === 0) {
+    return null;
+  }
+
+  return shuffle(pool)[0];
+}
+
 // Retrouve la phrase française et sa traduction japonaise de référence à
 // partir de l'identifiant d'un exercice.
 export async function resolveExercise(
@@ -165,6 +197,16 @@ export async function resolveExercise(
     const example = point?.examples[Number(indexText)];
 
     return point && example ? { french: example.fr, japanese: example.ja, focus: point.pattern } : null;
+  }
+
+  if (id.startsWith(CONJUGATION_PREFIX)) {
+    const [formId, indexText] = id.slice(CONJUGATION_PREFIX.length).split(":");
+    const form = conjugationForms.find((candidate) => candidate.id === formId);
+    const example = form?.examples[Number(indexText)];
+
+    return form && example
+      ? { french: example.meaning, japanese: example.conjugated, focus: form.name }
+      : null;
   }
 
   if (id.startsWith(EXAMPLE_PREFIX)) {

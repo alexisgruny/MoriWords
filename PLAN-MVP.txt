@@ -1093,6 +1093,24 @@ Priorite 25 - Page de conjugaison par niveau JLPT
 - Verifie : tsc, eslint et les tests passent ; capture Playwright a 1280 et
   390px.
 
+Priorite 26 - Exercices de conjugaison
+------------------------------------------
+Suite logique de la Priorite 25, a la demande de l'utilisateur : meme
+principe que les exercices de grammaire/vocabulaire, applique au referentiel
+de conjugaison.
+- [TERMINE] pickConjugationExercise() dans exercises.ts : pioche parmi les
+  exemples deja ecrits a la main de chaque forme (src/lib/conjugation/forms.ts),
+  sans generation Claude (contrairement a la grammaire, il n'y a pas besoin
+  d'appeler Claude puisque les exemples existent deja). resolveExercise()
+  reconnait le prefixe "conj:".
+- [TERMINE] TranslationExercise devient a 3 sources (grammaire / mon
+  vocabulaire / conjugaison), prop defaultSource pour choisir laquelle est
+  active par defaut selon la page. Le composant est maintenant aussi affiche
+  sur /conjugaison (defaultSource="conjugation"), en plus de /grammaire.
+- Verifie : tsc, eslint, tests (141, dont 3 nouveaux pour
+  pickConjugationExercise), et en direct dans le navigateur (phrase chargee,
+  correction reelle par Claude).
+
 
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.

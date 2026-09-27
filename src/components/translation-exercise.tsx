@@ -16,7 +16,13 @@ type Correction = {
   errors: ExerciseError[];
 };
 
-type Source = "grammar" | "examples";
+type Source = "grammar" | "examples" | "conjugation";
+
+const SOURCE_LABELS: Record<Source, string> = {
+  grammar: "grammaire",
+  examples: "mon vocabulaire",
+  conjugation: "conjugaison",
+};
 
 const VERDICT_STYLES: Record<Correction["verdict"], string> = {
   correct: "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]",
@@ -31,16 +37,16 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
 };
 
 // Exercice d'écriture : Claude propose une phrase française à traduire en
-// japonais (issue des points de grammaire ou du vocabulaire des decks),
-// l'élève écrit sa traduction, puis Claude la corrige en expliquant chaque
-// erreur. Un composant client autonome, inséré dans la page Grammaire, avec
-// son propre sélecteur de niveau JLPT (indépendant du filtre de la liste de
-// référence au-dessus).
-export function TranslationExercise() {
+// japonais (issue des points de grammaire, du vocabulaire des decks, ou du
+// référentiel de conjugaison), l'élève écrit sa traduction, puis Claude la
+// corrige en expliquant chaque erreur. Un composant client autonome, inséré
+// dans les pages Grammaire et Conjugaison, avec son propre sélecteur de
+// niveau JLPT (indépendant du filtre de la liste de référence au-dessus).
+export function TranslationExercise({ defaultSource = "grammar" }: { defaultSource?: Source }) {
   const { showToast } = useToast();
 
   const [level, setLevel] = useState<GrammarLevel | "all">("all");
-  const [source, setSource] = useState<Source>("grammar");
+  const [source, setSource] = useState<Source>(defaultSource);
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [seenIds, setSeenIds] = useState<string[]>([]);
   const [answer, setAnswer] = useState("");
@@ -178,12 +184,18 @@ export function TranslationExercise() {
       </div>
 
       <div className="mb-5 flex flex-wrap gap-3">
-        <button type="button" onClick={() => handleStart("grammar")} className="secondary-button">
-          {exercise || info ? "Nouvelle phrase (grammaire)" : "Commencer (grammaire)"}
-        </button>
-        <button type="button" onClick={() => handleStart("examples")} className="secondary-button">
-          {source === "examples" && (exercise || info) ? "Nouvelle phrase (mon vocabulaire)" : "Commencer (mon vocabulaire)"}
-        </button>
+        {(Object.keys(SOURCE_LABELS) as Source[]).map((candidate) => (
+          <button
+            key={candidate}
+            type="button"
+            onClick={() => handleStart(candidate)}
+            className="secondary-button"
+          >
+            {source === candidate && (exercise || info)
+              ? `Nouvelle phrase (${SOURCE_LABELS[candidate]})`
+              : `Commencer (${SOURCE_LABELS[candidate]})`}
+          </button>
+        ))}
       </div>
 
       {isLoadingExercise ? <p className="text-sm text-[var(--muted)]">Préparation de la phrase...</p> : null}

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { conjugationForms, filterConjugationForms } from "@/lib/conjugation/forms";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
+import { TranslationExercise } from "@/components/translation-exercise";
 
 // Page de référence de conjugaison : formes classées par niveau JLPT, avec
 // filtre par niveau, recherche libre et exemples traduits. Même structure que
@@ -28,6 +29,10 @@ export default function ConjugationPage() {
             cherche un mot-clé (en japonais ou en français).
           </p>
         </header>
+
+        <div className="mb-8">
+          <TranslationExercise defaultSource="conjugation" />
+        </div>
 
         <section className="panel">
           <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
