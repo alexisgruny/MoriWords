@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -932,6 +933,8 @@ export default function Home() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
+        <StreakBanner />
+
         <header className="mb-8">
           <h1 className="text-[var(--ink)]">Analyser un texte</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">

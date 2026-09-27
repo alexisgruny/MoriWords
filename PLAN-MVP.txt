@@ -1161,6 +1161,30 @@ Priorite 28 - Exercices et ajout au deck pour les kanji
   apres rechargement du deck).
 
 
+Priorite 29 - Serie de revision (streak)
+-----------------------------------------
+Reprise d'une recommandation faite plus tot (rappel/streak pour la
+regularite), a la demande de l'utilisateur. Pas d'email/push (ecarte
+explicitement : cout d'infra en plus pour un gain incertain) - juste un
+bandeau en front.
+- [TERMINE] src/lib/srs/streak.ts : computeStreak(reviewDates, now) pure et
+  testee, a partir des dates de ReviewLog regroupees par jour (fuseau du
+  serveur). Calcule la serie en cours (aujourd'hui si deja revise, sinon hier
+  tant que la journee n'est pas terminee) et la plus longue serie jamais
+  atteinte.
+- [TERMINE] GET /api/streak : agrege tous les ReviewLog (tous decks
+  confondus - la regularite globale compte, pas par deck), ne selectionne
+  que reviewedAt.
+- [TERMINE] src/components/streak-banner.tsx : rien ne s'affiche sans aucun
+  historique (nouvel utilisateur, pas de quoi culpabiliser). Sinon : "🔥 N
+  jour(s) d'affilée" (+ lien "Reviser maintenant" si pas encore fait
+  aujourd'hui), ou "Serie interrompue, ta meilleure etait de N jours" si
+  rompue. Affiche sur la page Analyser et sur Decks.
+- Verifie : tsc, eslint, tests (161, dont 9 nouveaux : 8 pour computeStreak,
+  1 d'integration sur la route), et en direct dans le navigateur (etat vide
+  masque, "1 jour(s)" -> "1 jour" bien accorde apres une vraie revision).
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

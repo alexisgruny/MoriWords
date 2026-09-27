@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
 import type { DeckSummary } from "@/types/shared";
 
@@ -140,6 +141,8 @@ export default function DecksPage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
+        <StreakBanner />
+
         <header className="mb-8">
           <h1 className="text-[var(--ink)]">Decks</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
