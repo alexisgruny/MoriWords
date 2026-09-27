@@ -148,7 +148,6 @@ export default function DeckTrainingPage() {
       setReviewCardId(null);
       setShowAnswer(false);
       setUndoableCardId(cardId);
-      showToast("Révision enregistrée.");
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -236,6 +235,65 @@ export default function DeckTrainingPage() {
     // la valeur actuelle via la fermeture, pas besoin de plus de dépendances.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewMode, activeCard?.id, activeCard?.meaning, deckCards]);
+
+  // Raccourcis clavier, pour éviter d'avoir à prendre la souris à chaque
+  // carte pendant une session de révision (l'action la plus répétée du
+  // site) : espace/entrée révèle la réponse, 0-5 note la carte selon
+  // l'échelle SM-2, 1-4 choisit une réponse en mode quiz.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!activeCard || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) {
+        return;
+      }
+
+      if (reviewMode === "quiz") {
+        if (selectedQuizChoice || quizChoices.length === 0) {
+          return;
+        }
+
+        const index = Number(event.key) - 1;
+
+        if (Number.isInteger(index) && index >= 0 && index < quizChoices.length) {
+          event.preventDefault();
+          handleQuizAnswer(activeCard, quizChoices[index]);
+        }
+
+        return;
+      }
+
+      if (!showAnswer) {
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          setShowAnswer(true);
+        }
+
+        return;
+      }
+
+      if (isReviewing && reviewCardId === activeCard.id) {
+        return;
+      }
+
+      const quality = Number(event.key);
+
+      if (Number.isInteger(quality) && quality >= 0 && quality <= 5) {
+        event.preventDefault();
+        void submitReviewCard(activeCard.id, quality);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // handleQuizAnswer/submitReviewCard are recreated every render but only
+    // close over state already listed below; omitted to avoid re-binding the
+    // listener on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCard, reviewMode, showAnswer, quizChoices, selectedQuizChoice, isReviewing, reviewCardId]);
 
   // Charge les choix du mode quiz pour une carte : la bonne réponse et
   // jusqu'à 3 leurres, d'abord pris parmi les autres mots déjà traduits du
@@ -427,53 +485,61 @@ export default function DeckTrainingPage() {
                     {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d’autres d’abord."}
                   </p>
                 ) : (
-                  <div className="grid w-full gap-2 sm:grid-cols-2">
-                    {quizChoices.map((choice) => {
-                      const isCorrectChoice = choice === activeCard.meaning;
-                      const isSelected = selectedQuizChoice === choice;
-                      const feedbackClass = selectedQuizChoice
-                        ? isCorrectChoice
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                          : isSelected
-                            ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-                        : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
+                  <>
+                    <div className="grid w-full gap-2 sm:grid-cols-2">
+                      {quizChoices.map((choice, index) => {
+                        const isCorrectChoice = choice === activeCard.meaning;
+                        const isSelected = selectedQuizChoice === choice;
+                        const feedbackClass = selectedQuizChoice
+                          ? isCorrectChoice
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                            : isSelected
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
+                          : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
 
+                        return (
+                          <button
+                            key={choice}
+                            type="button"
+                            onClick={() => handleQuizAnswer(activeCard, choice)}
+                            disabled={selectedQuizChoice !== null}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
+                          >
+                            <span className="mono text-xs text-[var(--muted)]">{index + 1}</span>
+                            {choice}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 1 à 4.</p>
+                  </>
+                )
+              ) : !showAnswer ? (
+                <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
+                  Afficher la réponse <span className="opacity-70">(espace)</span>
+                </button>
+              ) : (
+                <>
+                  <div className="grid w-full grid-cols-3 gap-2">
+                    {[0, 1, 2, 3, 4, 5].map((quality) => {
+                      const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
                       return (
                         <button
-                          key={choice}
+                          key={quality}
                           type="button"
-                          onClick={() => handleQuizAnswer(activeCard, choice)}
-                          disabled={selectedQuizChoice !== null}
-                          className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
+                          onClick={() => void submitReviewCard(activeCard.id, quality)}
+                          disabled={isReviewing && reviewCardId === activeCard.id}
+                          className="primary-button flex items-center justify-center gap-1.5"
                         >
-                          {choice}
+                          <span className="mono text-xs opacity-70">{quality}</span>
+                          {labels[quality]}
                         </button>
                       );
                     })}
                   </div>
-                )
-              ) : !showAnswer ? (
-                <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
-                  Afficher la réponse
-                </button>
-              ) : (
-                <div className="grid w-full grid-cols-3 gap-2">
-                  {[0, 1, 2, 3, 4, 5].map((quality) => {
-                    const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
-                    return (
-                      <button
-                        key={quality}
-                        type="button"
-                        onClick={() => void submitReviewCard(activeCard.id, quality)}
-                        disabled={isReviewing && reviewCardId === activeCard.id}
-                        className="primary-button"
-                      >
-                        {labels[quality]}
-                      </button>
-                    );
-                  })}
-                </div>
+                  <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 0 à 5.</p>
+                </>
               )}
             </div>
           </>

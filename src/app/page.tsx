@@ -49,6 +49,13 @@ export default function Home() {
   const [tokenTranslations, setTokenTranslations] = useState<Record<number, TranslationResult>>({});
   const [isBulkTranslating, setIsBulkTranslating] = useState(false);
   const [isAddingSelectionToDeck, setIsAddingSelectionToDeck] = useState(false);
+  // Avancement affiché pendant un ajout/une traduction en masse (les requêtes
+  // partent en parallèle, mais chacune incrémente ce compteur en se terminant,
+  // pour ne jamais laisser l'interface paraître figée sur un gros lot).
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  // Dernier deck dans lequel un mot a été ajouté depuis cette page : sert à
+  // proposer un accès direct à sa révision sans repasser par la liste des decks.
+  const [lastAddedDeckId, setLastAddedDeckId] = useState<string | null>(null);
 
   // Cache les particules grammaticales par défaut (moins intéressantes à
   // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
@@ -568,6 +575,7 @@ export default function Home() {
 
       await fetchDecks();
       setError(null);
+      setLastAddedDeckId(currentDeckId);
       showToast(`« ${selectedToken.baseForm || selectedToken.surface} » ajouté au deck.`);
     } catch (requestError) {
       setError(
@@ -591,30 +599,37 @@ export default function Home() {
 
     setIsBulkAdding(true);
     setError(null);
+    setBulkProgress({ done: 0, total: visibleTokens.length });
 
     try {
       const currentDeckId = await ensureDeckId();
+      let done = 0;
 
       const results = await Promise.allSettled(
         visibleTokens.map(async (token) => {
-          const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              lemma: token.baseForm || token.surface,
-              surface: token.surface,
-              reading: token.reading,
-              sourceTextId: selectedSourceTextId,
-              position: token.position,
-            }),
-          });
-          const data: unknown = await response.json();
+          try {
+            const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                lemma: token.baseForm || token.surface,
+                surface: token.surface,
+                reading: token.reading,
+                sourceTextId: selectedSourceTextId,
+                position: token.position,
+              }),
+            });
+            const data: unknown = await response.json();
 
-          if (!response.ok || typeof data !== "object" || data === null) {
-            throw new Error("add failed");
+            if (!response.ok || typeof data !== "object" || data === null) {
+              throw new Error("add failed");
+            }
+
+            return data as { alreadyExisted: boolean };
+          } finally {
+            done += 1;
+            setBulkProgress({ done, total: visibleTokens.length });
           }
-
-          return data as { alreadyExisted: boolean };
         }),
       );
 
@@ -636,6 +651,7 @@ export default function Home() {
         parts.push(`${alreadyCount} déjà présent(s)`);
       }
       if (parts.length > 0) {
+        setLastAddedDeckId(currentDeckId);
         showToast(`${parts.join(", ")} ajouté(s) au deck, avec traduction.`);
       }
 
@@ -650,6 +666,7 @@ export default function Home() {
       );
     } finally {
       setIsBulkAdding(false);
+      setBulkProgress(null);
     }
   }
 
@@ -702,27 +719,35 @@ export default function Home() {
 
     setIsBulkTranslating(true);
     setError(null);
+    setBulkProgress({ done: 0, total: selectedTokens.length });
 
     try {
+      let done = 0;
+
       const results = await Promise.allSettled(
         selectedTokens.map(async (token) => {
-          const response = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: token.baseForm || token.surface,
-              sourceLanguage: "ja",
-              targetLanguage: "fr",
-              context: text,
-            }),
-          });
-          const data: unknown = await response.json();
+          try {
+            const response = await fetch("/api/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                text: token.baseForm || token.surface,
+                sourceLanguage: "ja",
+                targetLanguage: "fr",
+                context: text,
+              }),
+            });
+            const data: unknown = await response.json();
 
-          if (!response.ok || typeof data !== "object" || data === null || !("result" in data)) {
-            throw new Error("translate failed");
+            if (!response.ok || typeof data !== "object" || data === null || !("result" in data)) {
+              throw new Error("translate failed");
+            }
+
+            return { position: token.position, result: data.result as TranslationResult };
+          } finally {
+            done += 1;
+            setBulkProgress({ done, total: selectedTokens.length });
           }
-
-          return { position: token.position, result: data.result as TranslationResult };
         }),
       );
 
@@ -755,6 +780,7 @@ export default function Home() {
       );
     } finally {
       setIsBulkTranslating(false);
+      setBulkProgress(null);
     }
   }
 
@@ -768,35 +794,42 @@ export default function Home() {
 
     setIsAddingSelectionToDeck(true);
     setError(null);
+    setBulkProgress({ done: 0, total: selectedTokens.length });
 
     try {
       const currentDeckId = await ensureDeckId();
+      let done = 0;
 
       const results = await Promise.allSettled(
         selectedTokens.map(async (token) => {
-          // Réutilise la traduction déjà affichée sur la carte ; sinon le serveur
-          // traduit automatiquement le mot à l'ajout.
-          const meaning = tokenTranslations[token.position]?.translation ?? null;
+          try {
+            // Réutilise la traduction déjà affichée sur la carte ; sinon le serveur
+            // traduit automatiquement le mot à l'ajout.
+            const meaning = tokenTranslations[token.position]?.translation ?? null;
 
-          const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              lemma: token.baseForm || token.surface,
-              surface: token.surface,
-              reading: token.reading,
-              meaning,
-              sourceTextId: selectedSourceTextId,
-              position: token.position,
-            }),
-          });
-          const data: unknown = await response.json();
+            const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                lemma: token.baseForm || token.surface,
+                surface: token.surface,
+                reading: token.reading,
+                meaning,
+                sourceTextId: selectedSourceTextId,
+                position: token.position,
+              }),
+            });
+            const data: unknown = await response.json();
 
-          if (!response.ok || typeof data !== "object" || data === null) {
-            throw new Error("add failed");
+            if (!response.ok || typeof data !== "object" || data === null) {
+              throw new Error("add failed");
+            }
+
+            return data as { alreadyExisted: boolean };
+          } finally {
+            done += 1;
+            setBulkProgress({ done, total: selectedTokens.length });
           }
-
-          return data as { alreadyExisted: boolean };
         }),
       );
 
@@ -818,6 +851,7 @@ export default function Home() {
         parts.push(`${alreadyCount} déjà présent(s)`);
       }
       if (parts.length > 0) {
+        setLastAddedDeckId(currentDeckId);
         showToast(`${parts.join(", ")} ajouté(s) au deck avec traduction.`);
       }
       if (failedCount > 0) {
@@ -834,6 +868,7 @@ export default function Home() {
       );
     } finally {
       setIsAddingSelectionToDeck(false);
+      setBulkProgress(null);
     }
   }
 
@@ -969,6 +1004,15 @@ export default function Home() {
               </div>
             </div>
 
+            {lastAddedDeckId ? (
+              <p className="mb-4 text-sm text-[var(--muted)]">
+                Mots ajoutés à « {decks.find((deck) => deck.id === lastAddedDeckId)?.name ?? "ton deck"} ».{" "}
+                <Link href={`/decks/${lastAddedDeckId}`} className="link-button text-sm!">
+                  Réviser maintenant →
+                </Link>
+              </p>
+            ) : null}
+
             {visibleTokens.length > 0 ? (
               <div className="mb-6 flex justify-end">
                 <button
@@ -977,7 +1021,9 @@ export default function Home() {
                   disabled={isBulkAdding}
                   className="secondary-button"
                 >
-                  {isBulkAdding ? "Ajout en cours..." : `Tout ajouter au deck (${visibleTokens.length})`}
+                  {isBulkAdding
+                    ? `Ajout en cours... ${bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}`
+                    : `Tout ajouter au deck (${visibleTokens.length})`}
                 </button>
               </div>
             ) : null}
@@ -1117,7 +1163,7 @@ export default function Home() {
                       className="primary-button"
                     >
                       {isBulkTranslating
-                        ? "Traduction..."
+                        ? `Traduction... ${bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}`
                         : `Traduire les ${selectedTokenPositions.size} mots`}
                     </button>
                   ) : (
@@ -1139,7 +1185,7 @@ export default function Home() {
                       className="primary-button"
                     >
                       {isAddingSelectionToDeck
-                        ? "Ajout..."
+                        ? `Ajout... ${bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}`
                         : `Ajouter les ${selectedTokenPositions.size} mots au deck`}
                     </button>
                   ) : (

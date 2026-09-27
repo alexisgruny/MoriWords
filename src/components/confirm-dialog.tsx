@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -15,7 +15,9 @@ type ConfirmDialogProps = {
 
 // Boîte de dialogue de confirmation générique, utilisée avant toute action
 // irréversible (ex. suppression d'une carte). Se ferme sur Échap ou clic
-// en dehors du panneau.
+// en dehors du panneau ; le focus est piégé à l'intérieur pendant qu'elle est
+// ouverte, posé sur "Annuler" à l'ouverture (jamais sur l'action dangereuse),
+// et rendu au bouton qui l'a ouverte à la fermeture.
 export function ConfirmDialog({
   open,
   title,
@@ -26,20 +28,63 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  // Garde la dernière version de onCancel sans la mettre en dépendance de
+  // l'effet ci-dessous : sinon, comme les appelants passent presque toujours
+  // une fonction recréée à chaque rendu, l'effet se relancerait à chaque
+  // rendu du parent pendant que la boîte est ouverte et volerait le focus.
+  const onCancelRef = useRef(onCancel);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  });
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    previouslyFocusedElement.current = document.activeElement as HTMLElement | null;
+    cancelButtonRef.current?.focus();
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onCancel();
+        onCancelRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      // Piège le focus dans le panneau : seuls les boutons qu'il contient
+      // sont atteignables tant que la boîte est ouverte.
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>("button");
+
+      if (!focusable || focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onCancel]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElement.current?.focus();
+    };
+  }, [open]);
 
   if (!open) {
     return null;
@@ -48,6 +93,7 @@ export function ConfirmDialog({
   return (
     <div className="confirm-overlay" role="presentation" onClick={onCancel}>
       <div
+        ref={panelRef}
         className="confirm-panel"
         role="alertdialog"
         aria-modal="true"
@@ -61,7 +107,7 @@ export function ConfirmDialog({
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{description}</p>
         ) : null}
         <div className="mt-5 flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="secondary-button">
+          <button ref={cancelButtonRef} type="button" onClick={onCancel} className="secondary-button">
             {cancelLabel}
           </button>
           <button

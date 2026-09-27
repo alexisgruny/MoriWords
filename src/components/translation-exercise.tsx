@@ -202,13 +202,19 @@ export function TranslationExercise() {
           <textarea
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                event.preventDefault();
+                void handleSubmit();
+              }
+            }}
             placeholder="日本語で書いてみよう"
             lang="ja"
             rows={3}
             className="mt-4 min-h-24 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-lg text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
           />
 
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => void handleSubmit()}
@@ -217,6 +223,7 @@ export function TranslationExercise() {
             >
               {isCorrecting ? "Correction..." : "Corriger ma traduction"}
             </button>
+            <span className="text-xs text-[var(--muted)]">Ctrl/Cmd + Entrée pour envoyer</span>
             <button
               type="button"
               onClick={() => void loadExercise(source, level, seenIds)}

@@ -986,6 +986,41 @@ Priorite 21 - Systeme de deck : gestion avancee
   cross-deck, badge leech apres 6 echecs, deplacement en masse via l'UI.
 
 
+Priorite 22 - Passe UX (interactions, pas le visuel)
+--------------------------------------------------
+Audit (agent Explore) sur toutes les pages : clavier, feedback d'attente,
+gestion du focus, coherence des messages. 6 corrections prioritaires + 3
+complements rapides :
+- [TERMINE] Raccourcis clavier en entrainement (par deck et "Reviser tout") :
+  espace/entree pour reveler la reponse, 0-5 pour noter (indices affiches sur
+  les boutons), 1-4 pour repondre au quiz. Ignores si le focus est dans un
+  champ de texte.
+- [TERMINE] ConfirmDialog : piege le focus dans le panneau (Tab/Shift+Tab),
+  pose le focus initial sur "Annuler" (jamais sur l'action dangereuse), et le
+  restaure au bouton declencheur a la fermeture. Un seul composant partage
+  par toutes les suppressions du site.
+- [TERMINE] Toast retire apres chaque note en entrainement (le changement de
+  carte confirme deja le succes ; bruyant sur une session de 20+ cartes).
+- [TERMINE] Lien "Reviser maintenant" apres un ajout au deck depuis la page
+  Analyser (mot seul, selection ou "tout ajouter") : ferme la boucle
+  detection -> ajout -> revision sans repasser par la liste des decks.
+- [TERMINE] Progression X/Y affichee sur les actions groupees de la page
+  Analyser (tout ajouter, traduire la selection, ajouter la selection),
+  comme deja fait sur la page Mots.
+- [TERMINE] Recherche de l'historique debouncee (300ms) : evite une requete
+  et un flash de "Chargement..." a chaque caractere tape.
+- [TERMINE] Complements : ordre de tabulation corrige sur l'edition d'un mot
+  (lecture avant sens), case a cocher de selection multiple agrandie
+  (cible tactile), raccourci Ctrl/Cmd+Entree pour envoyer un exercice de
+  traduction, export Anki recupere en JS (fetch + blob) au lieu d'un lien
+  <a download> silencieux en cas d'echec (toast d'erreur maintenant).
+- Verifie manuellement (Playwright) : notation au clavier (0-5, avec attente
+  de la reponse serveur), focus initial/restaure de ConfirmDialog, lien
+  "Reviser maintenant" et compteur "0/9" pendant l'ajout en masse,
+  1 seule requete pour 6 caracteres tapes rapidement dans l'historique,
+  telechargement Anki avec le bon nom de fichier.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

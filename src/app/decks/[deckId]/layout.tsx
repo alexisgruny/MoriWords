@@ -26,6 +26,7 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Le layout reste monté quand on passe d'une sous-page à l'autre : le deck
   // n'est rechargé que si on change de deck.
@@ -97,6 +98,41 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
       showToast("Le renommage du deck a échoué.", "error");
     } finally {
       setIsSavingName(false);
+    }
+  }
+
+  // Télécharge l'export Anki. Un simple lien <a download> n'affiche aucune
+  // erreur si la route échoue (l'utilisateur ne voit qu'un rien-ne-se-passe) :
+  // on récupère donc le fichier nous-mêmes pour pouvoir montrer un toast si
+  // ça échoue, avant de déclencher le téléchargement.
+  async function handleExportAnki() {
+    setIsExporting(true);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/export/anki`);
+
+      if (!response.ok) {
+        throw new Error("export failed");
+      }
+
+      const blob = await response.blob();
+      const filenameMatch = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] ?? "deck-anki.txt";
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      // Certains navigateurs n'émettent l'événement de téléchargement que si
+      // le lien est réellement dans le document au moment du clic.
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast("L’export vers Anki a échoué.", "error");
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -205,9 +241,14 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <a href={`/api/decks/${deckId}/export/anki`} download className="secondary-button px-4! py-2! text-xs!">
-              Exporter vers Anki
-            </a>
+            <button
+              type="button"
+              onClick={() => void handleExportAnki()}
+              disabled={isExporting}
+              className="secondary-button px-4! py-2! text-xs!"
+            >
+              {isExporting ? "Export..." : "Exporter vers Anki"}
+            </button>
             <button
               type="button"
               onClick={() => setIsDeletionPending(true)}

@@ -45,6 +45,49 @@ export default function ReviewAllDuePage() {
 
   const activeCard = dueCards[0];
 
+  // Raccourcis clavier : espace/entrée révèle la réponse, 0-5 note la carte
+  // (voir la même logique et sa justification sur la page d'entraînement
+  // par deck, src/app/decks/[deckId]/page.tsx).
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!activeCard || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) {
+        return;
+      }
+
+      if (!showAnswer) {
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          setShowAnswer(true);
+        }
+
+        return;
+      }
+
+      if (isReviewing) {
+        return;
+      }
+
+      const quality = Number(event.key);
+
+      if (Number.isInteger(quality) && quality >= 0 && quality <= 5) {
+        event.preventDefault();
+        void submitReview(activeCard, quality);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // submitReview est recréée à chaque rendu mais ne ferme que sur l'état
+    // déjà listé ci-dessous ; on l'omet pour ne pas rebrancher l'écouteur à
+    // chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCard, showAnswer, isReviewing]);
+
   async function submitReview(card: DueCard, quality: number) {
     setIsReviewing(true);
     setError(null);
@@ -68,7 +111,6 @@ export default function ReviewAllDuePage() {
       await loadDueCards();
       setShowAnswer(false);
       setUndoableCard({ id: card.id, deckId: card.deckId });
-      showToast("Révision enregistrée.");
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "Une erreur est survenue pendant la révision.",
@@ -168,25 +210,29 @@ export default function ReviewAllDuePage() {
               <div className="mt-4 flex flex-wrap gap-3">
                 {!showAnswer ? (
                   <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
-                    Afficher la réponse
+                    Afficher la réponse <span className="opacity-70">(espace)</span>
                   </button>
                 ) : (
-                  <div className="grid w-full grid-cols-3 gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((quality) => {
-                      const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
-                      return (
-                        <button
-                          key={quality}
-                          type="button"
-                          onClick={() => void submitReview(activeCard, quality)}
-                          disabled={isReviewing}
-                          className="primary-button"
-                        >
-                          {labels[quality]}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <>
+                    <div className="grid w-full grid-cols-3 gap-2">
+                      {[0, 1, 2, 3, 4, 5].map((quality) => {
+                        const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
+                        return (
+                          <button
+                            key={quality}
+                            type="button"
+                            onClick={() => void submitReview(activeCard, quality)}
+                            disabled={isReviewing}
+                            className="primary-button flex items-center justify-center gap-1.5"
+                          >
+                            <span className="mono text-xs opacity-70">{quality}</span>
+                            {labels[quality]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 0 à 5.</p>
+                  </>
                 )}
               </div>
             </>

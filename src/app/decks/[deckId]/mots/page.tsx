@@ -501,13 +501,15 @@ export default function DeckWordsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2">
                       {isSelectionMode ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(card.id)}
-                          onChange={() => toggleSelected(card.id)}
-                          aria-label={`Sélectionner « ${card.lemma} »`}
-                          className="mt-1.5 h-4 w-4 shrink-0"
-                        />
+                        <label className="-m-1.5 flex shrink-0 cursor-pointer items-center p-1.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(card.id)}
+                            onChange={() => toggleSelected(card.id)}
+                            aria-label={`Sélectionner « ${card.lemma} »`}
+                            className="h-5 w-5 shrink-0"
+                          />
+                        </label>
                       ) : null}
                       <div>
                         <span className="text-xl font-semibold text-[var(--ink)]" lang="ja">
@@ -542,9 +544,15 @@ export default function DeckWordsPage() {
                         <input
                           value={editingReading}
                           onChange={(event) => setEditingReading(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              void handleSaveEdits(card);
+                            }
+                          }}
                           placeholder="Lecture (hiragana)"
                           aria-label={`Lecture de « ${card.lemma} »`}
                           lang="ja"
+                          autoFocus
                           className="min-w-0 flex-1 rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                         />
                         <input
@@ -557,7 +565,6 @@ export default function DeckWordsPage() {
                           }}
                           placeholder="Sens en français"
                           aria-label={`Sens de « ${card.lemma} »`}
-                          autoFocus
                           className="min-w-0 flex-1 rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                         />
                       </div>

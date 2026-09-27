@@ -22,6 +22,10 @@ const ORIGIN_LABELS: Record<string, string> = {
 // sur le titre et le contenu.
 export default function HistoriquePage() {
   const [query, setQuery] = useState("");
+  // Valeur réellement utilisée pour la recherche, mise à jour 300ms après la
+  // dernière frappe : évite de relancer une requête (et le flash de
+  // "Chargement...") à chaque caractère tapé.
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sourceTexts, setSourceTexts] = useState<SourceTextSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -58,7 +62,14 @@ export default function HistoriquePage() {
     };
   }
 
-  // Relance la recherche depuis le début à chaque changement de requête.
+  // Attend une pause de frappe avant de répercuter la recherche.
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  // Relance la recherche depuis le début à chaque changement de requête
+  // (une fois la frappe stabilisée, voir l'effet ci-dessus).
   useEffect(() => {
     let cancelled = false;
 
@@ -67,7 +78,7 @@ export default function HistoriquePage() {
       setError(null);
 
       try {
-        const result = await loadPage(query);
+        const result = await loadPage(debouncedQuery);
         if (cancelled) {
           return;
         }
@@ -95,7 +106,7 @@ export default function HistoriquePage() {
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [debouncedQuery]);
 
   // Charge la page suivante et l'ajoute à la liste déjà affichée.
   async function handleLoadMore() {
@@ -103,7 +114,7 @@ export default function HistoriquePage() {
     setError(null);
 
     try {
-      const result = await loadPage(query, sourceTexts.length);
+      const result = await loadPage(debouncedQuery, sourceTexts.length);
       setSourceTexts((current) => [...current, ...result.sourceTexts]);
       setTotal(result.total);
       setHasMore(result.hasMore);
@@ -204,7 +215,7 @@ export default function HistoriquePage() {
           ) : (
             <div className="empty-state">
               <p className="font-medium text-[var(--ink)]">
-                {query ? "Aucun texte ne correspond à la recherche." : "Aucun texte analysé pour le moment."}
+                {debouncedQuery ? "Aucun texte ne correspond à la recherche." : "Aucun texte analysé pour le moment."}
               </p>
             </div>
           )}
