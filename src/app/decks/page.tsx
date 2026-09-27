@@ -208,7 +208,7 @@ export default function DecksPage() {
               {decks.map((deck) => (
                 <div key={deck.id} className="token-card relative flex items-start gap-4">
                   <Link href={`/decks/${deck.id}`} className="block min-w-0 flex-1">
-                    <span className="block text-lg font-bold text-[var(--ink)]" style={{ fontFamily: "var(--font-mincho), serif" }}>
+                    <span className="block text-lg font-bold text-[var(--ink)]">
                       {deck.name}
                     </span>
                     <span className="mt-0.5 block text-sm text-[var(--muted)]">

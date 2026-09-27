@@ -1,31 +1,24 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Shippori_Mincho } from "next/font/google";
+import { Nunito, Noto_Sans_JP } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
 import { ToastProvider } from "@/components/toast-provider";
 import "./globals.css";
 
-// Texte courant : sans-serif à l'esprit « manuel technique ». Les kanji
-// retombent sur la police japonaise du système (voir --font-body dans globals.css).
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// Texte courant : sans-serif à terminaisons arrondies, chaleureuse et très lisible.
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "600", "700", "800"],
 });
 
-// Titres et texte japonais : mincho, comme un livre imprimé. Seuls les
-// glyphes latins sont embarqués ; les kanji utilisent la mincho du système.
-const mincho = Shippori_Mincho({
-  variable: "--font-mincho",
-  subsets: ["latin", "latin-ext"],
-  weight: ["500", "700"],
-});
-
-// Chiffres, dates et niveaux (tabulaires).
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500"],
+// Japonais : gothique (sans empattement), plus lisible qu'une mincho pour un
+// débutant qui doit distinguer chaque trait. Les kanji sont chargés par tranches
+// à la demande, d'où preload désactivé.
+const notoSansJp = Noto_Sans_JP({
+  variable: "--font-noto-jp",
+  weight: ["400", "500", "700"],
+  preload: false,
 });
 
 // Titre et description affichés dans l'onglet du navigateur et les moteurs de recherche.
@@ -40,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${plexSans.variable} ${mincho.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${nunito.variable} ${notoSansJp.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ToastProvider>

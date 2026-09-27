@@ -171,7 +171,7 @@ export default function HistoriquePage() {
                         {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
                       </time>
                       {sourceText.origin ? (
-                        <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
+                        <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
                           {ORIGIN_LABELS[sourceText.origin] ?? sourceText.origin}
                         </span>
                       ) : null}

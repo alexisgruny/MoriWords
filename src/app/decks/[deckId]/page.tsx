@@ -303,8 +303,8 @@ export default function DeckTrainingPage() {
               }}
               className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition ${
                 reviewMode === mode.id
-                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                  : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
               }`}
             >
               {mode.label}
@@ -314,7 +314,7 @@ export default function DeckTrainingPage() {
 
         {activeCard ? (
           <>
-            <div className="border border-[var(--ink)] bg-[var(--paper)] p-5">
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6">
               {reviewMode === "context" ? (
                 activeCardContextSentence ? (
                   <>
@@ -348,7 +348,7 @@ export default function DeckTrainingPage() {
               )}
 
               {reviewMode !== "quiz" && showAnswer ? (
-                <div className="mt-4 border-t border-[var(--ink)] pt-3">
+                <div className="mt-4 border-t border-[var(--line)] pt-4">
                   <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
                   {reviewMode !== "standard" ? (
                     <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
@@ -380,10 +380,10 @@ export default function DeckTrainingPage() {
                       const isSelected = selectedQuizChoice === choice;
                       const feedbackClass = selectedQuizChoice
                         ? isCorrectChoice
-                          ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
                           : isSelected
                             ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                            : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                         : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
 
                       return (

@@ -983,7 +983,7 @@ export default function Home() {
             ) : null}
 
             {tokens.length > 0 ? (
-              <div className="mb-6 border-l-2 border-[var(--ink)] pl-4">
+              <div className="mb-6 border-l-4 border-[var(--line-strong)] pl-4">
                 <p className="eyebrow">Phrase analysée</p>
                 <p className="mt-1 line-clamp-3 text-base leading-7 text-[var(--ink)]" lang="ja">
                   {text}
@@ -1038,7 +1038,7 @@ export default function Home() {
                       >
                         <span
                           aria-hidden="true"
-                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center border text-[10px] font-bold leading-none ${
+                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center border text-xs font-bold leading-none ${
                             isChecked
                               ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                               : "border-[var(--ink)] bg-[var(--paper)] text-transparent"
@@ -1047,7 +1047,7 @@ export default function Home() {
                           ✓
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-xs text-[var(--muted)]" lang="ja">
+                          <span className="block text-sm text-[var(--muted)]" lang="ja">
                             {token.reading ?? "lecture inconnue"}
                           </span>
                           <span className="block text-2xl font-bold leading-tight text-[var(--ink)]" lang="ja">
@@ -1068,7 +1068,7 @@ export default function Home() {
                             </span>
                           ) : null}
                         </span>
-                        <span className="mono mt-1 shrink-0 border border-[var(--ink)] px-1.5 py-0.5 text-xs text-[var(--ink)]">
+                        <span className="mono mt-1 shrink-0 rounded-md bg-[var(--tint)] px-2 py-0.5 text-xs font-bold text-[var(--ink)]">
                           {token.difficulty === "unknown" ? "—" : token.difficulty}
                         </span>
                       </button>
@@ -1079,7 +1079,7 @@ export default function Home() {
             )}
 
             {selectedToken ? (
-              <div className="mt-8 border-t border-[var(--ink)] pt-5">
+              <div className="mt-8 rounded-2xl bg-[var(--tint)] p-5">
                 <p className="eyebrow">
                   {selectedTokenPositions.size > 1
                     ? `${selectedTokenPositions.size} mots sélectionnés`
@@ -1095,7 +1095,7 @@ export default function Home() {
                 <div className="mt-2 flex items-center gap-3 text-sm text-[var(--muted)]">
                   <span>
                     Niveau JLPT{" "}
-                    <span className="mono border border-[var(--ink)] px-1.5 py-0.5 text-xs text-[var(--ink)]">
+                    <span className="mono rounded-md bg-[var(--tint)] px-2 py-0.5 text-xs font-bold text-[var(--ink)]">
                       {selectedToken.difficulty === "unknown" ? "—" : selectedToken.difficulty}
                     </span>
                   </span>
@@ -1175,7 +1175,7 @@ export default function Home() {
                 </div>
 
                 {translation ? (
-                  <div className="mt-5 border-l-2 border-[var(--ink)] pl-4">
+                  <div className="mt-5 border-l-4 border-[var(--line-strong)] pl-4">
                     <p className="text-sm text-[var(--muted)]">Traduction</p>
                     <p className="mt-1 text-xl font-semibold text-[var(--ink)]">
                       {translation.translation}

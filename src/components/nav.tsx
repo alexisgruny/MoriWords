@@ -27,13 +27,13 @@ export default function Nav() {
   }, [pathname]);
 
   return (
-    <header className="border-b-2 border-[var(--ink)] px-5 sm:px-8 lg:px-12">
+    <header className="border-b border-[var(--line)] bg-[var(--paper)] px-5 sm:px-8 lg:px-12">
       <div className="mx-auto flex max-w-6xl items-end justify-between gap-4 pt-4">
         <Link href="/" className="mb-3 flex shrink-0 items-center gap-2.5 text-[var(--ink)]">
           <span className="seal" aria-hidden="true">
             森
           </span>
-          <span className="text-lg font-bold tracking-tight" lang="fr" style={{ fontFamily: "var(--font-mincho), serif" }}>
+          <span className="text-xl font-extrabold" lang="fr">
             MoriWords
           </span>
         </Link>
@@ -50,7 +50,7 @@ export default function Nav() {
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`-mb-[2px] shrink-0 whitespace-nowrap border-b-[3px] pb-3 text-sm font-medium transition ${
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-[3px] pb-3 text-base font-semibold transition ${
                   isActive
                     ? "border-[var(--accent)] text-[var(--ink)]"
                     : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"

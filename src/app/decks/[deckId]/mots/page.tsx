@@ -256,8 +256,8 @@ export default function DeckWordsPage() {
               aria-pressed={filter === option.id}
               className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                 filter === option.id
-                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                  : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
               }`}
             >
               {option.label} ({countFor(option.id)})
@@ -298,10 +298,10 @@ export default function DeckWordsPage() {
                       </span>
                     </div>
                     <span
-                      className={`shrink-0 whitespace-nowrap rounded-sm border px-2 py-0.5 text-[11px] font-semibold ${
+                      className={`shrink-0 whitespace-nowrap rounded-sm border px-2 py-0.5 text-xs font-semibold ${
                         status === "mature"
-                          ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                          : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                          : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                       }`}
                     >
                       {statusLabels[status]}

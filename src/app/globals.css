@@ -1,63 +1,68 @@
 @import "tailwindcss";
 
 /*
-  Direction visuelle : un cahier de vocabulaire imprimé. Papier blanc cassé,
-  encre noire, un seul rouge vermillon (celui du sceau hanko) pour la marque
-  et la sélection. Pas d'ombres, pas de coins arrondis : des filets, comme
-  dans un dictionnaire. Contrastes vérifiés AA (texte courant >= 4.5:1).
+  Direction visuelle : claire, chaleureuse et lisible pour un débutant.
+  Fond gris très clair, cartes blanches aux coins arrondis, texte assez grand,
+  polices sans empattement (Nunito + Noto Sans JP), et un rouge vermillon
+  réservé aux actions et à la sélection. Contrastes vérifiés AA.
 */
 :root {
-  --background: #fbfbf8;
-  --foreground: #16171a;
-  --ink: #16171a;
-  --muted: #5d6068; /* 6.3:1 sur --background */
+  --background: #f5f5f1;
+  --foreground: #1f2328;
+  --ink: #1f2328;
+  --muted: #565b63; /* 6.5:1 sur --background */
   --paper: #ffffff;
-  --line: #d9d9d3;
+  --line: #e3e2dc;
+  --line-strong: #b9b8b0;
   --accent: #cd2d1c; /* vermillon, 5.1:1 sur blanc */
   --accent-dark: #a02114;
-  --accent-soft: #f8e6e2;
-  --tint: #f2f2ed;
-  --radius: 2px;
+  --accent-soft: #fbeae6;
+  --tint: #efeee9;
+  --radius: 8px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 2px;
-  --radius-xl: 2px;
-  --radius-2xl: 2px;
-  --radius-3xl: 2px;
+  --font-sans: var(--font-nunito);
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-plex-sans), "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  font-family: var(--font-nunito), var(--font-noto-jp), "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
 }
 
-/* Titres et tout texte japonais : mincho. Les kanji viennent de la police du système. */
+/* Le japonais passe toujours par la gothique, avec un peu d'air entre les caractères. */
+[lang="ja"] {
+  font-family: var(--font-noto-jp), "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  letter-spacing: 0.03em;
+}
+
 h1,
 h2,
-h3,
-[lang="ja"] {
-  font-family: var(--font-mincho), "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "Noto Serif JP", serif;
+h3 {
+  font-family: var(--font-nunito), var(--font-noto-jp), "Hiragino Sans", "Yu Gothic UI", sans-serif;
 }
 
 h1 {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.1rem;
+  font-weight: 800;
   line-height: 1.2;
-  letter-spacing: -0.01em;
 }
 
 h2 {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -78,19 +83,24 @@ a {
   text-underline-offset: 3px;
 }
 
-/* Petite étiquette de section : discrète, sans capitales ni couleur d'accent. */
 .eyebrow {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
 }
 
-/* Une section : pas de carte, juste un gros filet noir au-dessus. */
+/* Une section : une carte blanche discrète. */
 .panel {
-  border-top: 2px solid var(--ink);
-  background: transparent;
-  padding: 1.1rem 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  padding: 1.25rem 1.1rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .panel {
+    padding: 1.6rem 1.75rem 1.4rem;
+  }
 }
 
 .panel > h2:first-child,
@@ -102,97 +112,105 @@ a {
   display: none;
 }
 
-/* Boutons rectangulaires : encre pleine ou simple contour. */
+/* Boutons : coins arrondis, grande zone de clic. */
 .primary-button,
 .secondary-button {
-  border-radius: var(--radius);
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   line-height: 1.2;
-  padding: 0.65rem 1.1rem;
+  padding: 0.75rem 1.3rem;
   transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
 .primary-button {
-  border: 1px solid var(--ink);
-  background: var(--ink);
+  border: 1px solid var(--accent);
+  background: var(--accent);
   color: #fff;
 }
 
 .primary-button:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
 }
 
 .secondary-button {
-  border: 1px solid var(--ink);
-  background: transparent;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
   color: var(--ink);
 }
 
 .secondary-button:hover:not(:disabled) {
-  background: var(--ink);
-  color: #fff;
+  border-color: var(--ink);
+  background: var(--tint);
 }
 
 .primary-button:disabled,
 .secondary-button:disabled {
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 /* Bouton-lien : action secondaire qui ne doit pas ressembler à un bouton. */
 .link-button {
   background: none;
   border: 0;
-  color: var(--ink);
+  color: var(--accent-dark);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   padding: 0;
   text-decoration: underline;
-  text-decoration-color: var(--line);
+  text-decoration-color: rgb(160 33 20 / 0.35);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
 .link-button:hover:not(:disabled) {
-  text-decoration-color: var(--accent);
-  color: var(--accent-dark);
+  text-decoration-color: var(--accent-dark);
 }
 
 .link-button:disabled {
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .link-button:focus-visible,
 .token-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 input,
 select,
 textarea {
-  border-radius: var(--radius);
+  border-color: var(--line-strong);
+  border-radius: 10px;
 }
 
-/* Compteur : un petit carré d'encre, chiffres tabulaires. */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
 .count-badge {
   display: inline-grid;
-  min-width: 1.75rem;
-  height: 1.75rem;
-  padding: 0 0.4rem;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  padding: 0 0.5rem;
   place-items: center;
-  border-radius: var(--radius);
-  background: var(--ink);
+  border-radius: 999px;
+  background: var(--accent);
   color: #fff;
-  font-family: var(--font-plex-mono), monospace;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
 .empty-state {
@@ -201,43 +219,45 @@ textarea {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  padding: 2rem 0;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  padding: 1.75rem 1.5rem;
   text-align: left;
 }
 
-/* Une entrée de liste, comme une ligne de dictionnaire : filet en dessous, rien d'autre. */
+/* Une entrée de liste : petite carte blanche, qui se met en évidence au survol. */
 .token-card {
   width: 100%;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  padding: 0.85rem 0.6rem;
-  transition: background 100ms ease;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 0.9rem 1rem;
+  transition: background 100ms ease, border-color 100ms ease;
 }
 
 .token-card:hover {
-  background: var(--tint);
+  border-color: var(--line-strong);
+  background: #fafaf7;
 }
 
 .token-card-selected,
 .token-card-selected:hover {
+  border-color: var(--accent);
   background: var(--accent-soft);
-  box-shadow: inset 3px 0 0 var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
 }
 
 .part-of-speech {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0.05rem 0.4rem;
-  font-size: 0.7rem;
+  border-radius: 999px;
+  background: var(--tint);
+  padding: 0.05rem 0.55rem;
+  font-size: 0.78rem;
   white-space: nowrap;
 }
 
 .mono {
-  font-family: var(--font-plex-mono), monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -254,12 +274,12 @@ textarea {
 
 .toast {
   border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 10px;
   background: var(--ink);
   color: #fff;
-  padding: 0.7rem 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 0.8rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   animation: toast-in 160ms ease;
 }
 
@@ -289,7 +309,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgb(22 23 26 / 0.55);
+  background: rgb(31 35 40 / 0.5);
   padding: 1.25rem;
   animation: toast-in 120ms ease;
 }
@@ -297,10 +317,9 @@ textarea {
 .confirm-panel {
   width: 100%;
   max-width: 26rem;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
+  border-radius: 16px;
   background: var(--paper);
-  padding: 1.5rem;
+  padding: 1.6rem;
 }
 
 .confirm-danger-button {
@@ -316,19 +335,18 @@ textarea {
 /* Sceau (hanko) de la marque. */
 .seal {
   display: inline-grid;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2.1rem;
+  height: 2.1rem;
   place-items: center;
-  border-radius: var(--radius);
+  border-radius: 10px;
   background: var(--accent);
   color: #fff;
-  font-family: var(--font-mincho), "Hiragino Mincho ProN", "Yu Mincho", serif;
-  font-size: 1.15rem;
+  font-family: var(--font-noto-jp), "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  font-size: 1.2rem;
   font-weight: 700;
   line-height: 1;
-  transform: rotate(-4deg);
 }
 
 .font-display {
-  font-family: var(--font-mincho), "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-weight: 800;
 }

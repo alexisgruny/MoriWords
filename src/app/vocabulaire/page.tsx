@@ -87,8 +87,8 @@ export default function VocabularyPage() {
                 onClick={() => setSelectedDifficulty(level)}
                 className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition ${
                   selectedDifficulty === level
-                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                    : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                    : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                 }`}
               >
                 {level === "all" ? "Tous" : level}

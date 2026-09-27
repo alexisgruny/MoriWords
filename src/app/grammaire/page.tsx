@@ -40,8 +40,8 @@ export default function GrammarPage() {
               aria-pressed={level === "all"}
               className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                 level === "all"
-                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                  : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
               }`}
             >
               Tous ({grammarPoints.length})
@@ -54,8 +54,8 @@ export default function GrammarPage() {
                 aria-pressed={level === candidate}
                 className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                   level === candidate
-                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                    : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                    : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                 }`}
               >
                 {candidate} ({countFor(candidate)})
@@ -84,7 +84,7 @@ export default function GrammarPage() {
                       </span>
                       <span className="mt-1 block text-sm text-[var(--muted)]">{point.meaning}</span>
                     </span>
-                    <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-[11px] text-[var(--ink)]">
+                    <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-xs text-[var(--ink)]">
                       JLPT {point.level}
                     </span>
                   </summary>

@@ -106,7 +106,7 @@ export default function DeckStatsPage() {
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {summary.map((item) => (
-            <div key={item.label} className="border-t border-[var(--ink)] pt-3">
+            <div key={item.label} className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
               <p className="text-sm text-[var(--muted)]">{item.label}</p>
               <p className="font-display mt-1 text-4xl font-bold text-[var(--ink)]">{item.value}</p>
             </div>
