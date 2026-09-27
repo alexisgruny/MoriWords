@@ -3,26 +3,30 @@ import {
   pickConjugationExercise,
   pickExampleExercise,
   pickGrammarExercise,
+  pickKanjiExercise,
 } from "@/lib/grammar/exercises";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 
 // La première phrase d'un point de grammaire peut déclencher une génération Claude.
 export const maxDuration = 60;
 
-type Source = "grammar" | "examples" | "conjugation";
+type Source = "grammar" | "examples" | "conjugation" | "kanji";
+
+const SOURCES: Source[] = ["examples", "conjugation", "kanji"];
 
 // Propose une phrase française à traduire en japonais. source "grammar" : phrases
 // liées aux points de grammaire (du niveau choisi) ; "examples" : phrases
 // d'exemple des mots sauvegardés dans les decks ; "conjugation" : exemples du
-// référentiel de conjugaison (src/lib/conjugation/forms.ts). excludeIds évite
-// de reproposer les phrases déjà faites pendant la session.
+// référentiel de conjugaison (src/lib/conjugation/forms.ts) ; "kanji" : sens
+// d'un kanji du référentiel (src/lib/kanji/kanji.ts), l'élève doit écrire le
+// caractère. excludeIds évite de reproposer les phrases déjà faites pendant
+// la session.
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json().catch(() => null);
     const candidate = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
 
-    const source: Source =
-      candidate.source === "examples" || candidate.source === "conjugation" ? candidate.source : "grammar";
+    const source: Source = SOURCES.includes(candidate.source as Source) ? (candidate.source as Source) : "grammar";
     const level = GRAMMAR_LEVELS.includes(candidate.level as GrammarLevel)
       ? (candidate.level as GrammarLevel)
       : "all";
@@ -30,11 +34,14 @@ export async function POST(request: Request) {
       ? candidate.excludeIds.filter((id): id is string => typeof id === "string")
       : [];
 
-    const exercise = await (source === "examples"
-      ? pickExampleExercise(level, excludeIds)
-      : source === "conjugation"
-        ? pickConjugationExercise(level, excludeIds)
-        : pickGrammarExercise(level, excludeIds));
+    const pickers: Record<Source, () => Promise<Awaited<ReturnType<typeof pickGrammarExercise>>>> = {
+      grammar: () => pickGrammarExercise(level, excludeIds),
+      examples: () => pickExampleExercise(level, excludeIds),
+      conjugation: () => pickConjugationExercise(level, excludeIds),
+      kanji: () => pickKanjiExercise(level, excludeIds),
+    };
+
+    const exercise = await pickers[source]();
 
     if (!exercise) {
       const messages: Record<Source, string> = {
@@ -43,6 +50,7 @@ export async function POST(request: Request) {
             ? "Aucune phrase d'exemple disponible : ajoute des mots à un deck pour en générer."
             : `Aucune phrase d'exemple de niveau ${level} disponible. Essaie un autre niveau ou ajoute des mots de ce niveau à un deck.`,
         conjugation: "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
+        kanji: "Tu as fait tous les kanji disponibles pour ce niveau. Change de niveau pour continuer.",
         grammar: "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
       };
 

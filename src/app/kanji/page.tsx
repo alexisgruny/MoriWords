@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
+import { TranslationExercise } from "@/components/translation-exercise";
+import { useToast } from "@/components/toast-provider";
 import { filterKanji, JLPT_KANJI } from "@/lib/kanji/kanji";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
+import type { DeckSummary } from "@/types/shared";
 
 // Combien de kanji afficher avant d'exiger un clic sur "Charger plus" : le
 // dataset est bien plus gros que grammaire/conjugaison (~2200 kanji, surtout
@@ -11,13 +15,21 @@ import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 const PAGE_SIZE = 60;
 
 // Page de référence de kanji : classés par niveau JLPT, avec filtre par
-// niveau, recherche libre (kanji, lecture ou sens) et pagination locale.
-// Même principe que /grammaire et /conjugaison, sur un dataset généré
-// (src/lib/kanji/jlpt-kanji-data.ts) plutôt qu'écrit à la main.
+// niveau, recherche libre (kanji, lecture ou sens), pagination locale, un
+// exercice d'écriture (composant partagé, defaultSource="kanji") et un ajout
+// direct au deck (même route que la page Analyser : POST .../cards, lemme =
+// le kanji lui-même).
 export default function KanjiPage() {
+  const { showToast } = useToast();
+
   const [level, setLevel] = useState<GrammarLevel | "all">("N5");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const [decks, setDecks] = useState<DeckSummary[]>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [existingLemmas, setExistingLemmas] = useState<Set<string>>(new Set());
+  const [addingKanji, setAddingKanji] = useState<string | null>(null);
 
   // Revient à la première page dès que le filtre change, sans passer par un
   // effet (juste une comparaison pendant le rendu, motif recommandé par React
@@ -27,6 +39,81 @@ export default function KanjiPage() {
   if (filterKey !== previousFilterKey) {
     setPreviousFilterKey(filterKey);
     setVisibleCount(PAGE_SIZE);
+  }
+
+  useEffect(() => {
+    async function loadDecks() {
+      try {
+        const response = await fetch("/api/decks");
+        const data: unknown = await response.json();
+
+        if (response.ok && typeof data === "object" && data !== null && "decks" in data && Array.isArray(data.decks)) {
+          const loaded = data.decks as DeckSummary[];
+          setDecks(loaded);
+          setSelectedDeckId((current) => current || loaded[0]?.id || "");
+        }
+      } catch {
+        // Le sélecteur de deck restera vide ; l'utilisateur peut recharger la page.
+      }
+    }
+
+    void loadDecks();
+  }, []);
+
+  // Sait quels kanji sont déjà dans le deck choisi, pour afficher "déjà dans
+  // ce deck" plutôt que de laisser croire qu'un nouvel ajout est possible.
+  useEffect(() => {
+    if (!selectedDeckId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadExistingLemmas() {
+      try {
+        const response = await fetch(`/api/decks/${selectedDeckId}/cards`);
+        const data: unknown = await response.json();
+
+        if (!cancelled && response.ok && typeof data === "object" && data !== null && "cards" in data && Array.isArray(data.cards)) {
+          setExistingLemmas(new Set(data.cards.map((card) => (card as { lemma: string }).lemma)));
+        }
+      } catch {
+        // Sans cette liste, un kanji déjà présent semble juste "pas encore ajouté" : sans gravité.
+      }
+    }
+
+    void loadExistingLemmas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDeckId]);
+
+  async function handleAddToDeck(kanji: string, reading: string, meaning: string) {
+    if (!selectedDeckId) {
+      return;
+    }
+
+    setAddingKanji(kanji);
+
+    try {
+      const response = await fetch(`/api/decks/${selectedDeckId}/cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lemma: kanji, reading, meaning }),
+      });
+
+      if (!response.ok) {
+        throw new Error("add failed");
+      }
+
+      setExistingLemmas((current) => new Set(current).add(kanji));
+      showToast(`« ${kanji} » ajouté au deck.`);
+    } catch {
+      showToast("L’ajout au deck a échoué.", "error");
+    } finally {
+      setAddingKanji(null);
+    }
   }
 
   const results = filterKanji(JLPT_KANJI, level, query);
@@ -45,35 +132,66 @@ export default function KanjiPage() {
           </p>
         </header>
 
+        <div className="mb-8">
+          <TranslationExercise defaultSource="kanji" />
+        </div>
+
         <section className="panel">
-          <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
-            <button
-              type="button"
-              onClick={() => setLevel("all")}
-              aria-pressed={level === "all"}
-              className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                level === "all"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                  : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-              }`}
-            >
-              Tous ({JLPT_KANJI.length})
-            </button>
-            {GRAMMAR_LEVELS.map((candidate) => (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
               <button
-                key={candidate}
                 type="button"
-                onClick={() => setLevel(candidate)}
-                aria-pressed={level === candidate}
+                onClick={() => setLevel("all")}
+                aria-pressed={level === "all"}
                 className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                  level === candidate
+                  level === "all"
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
                     : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                 }`}
               >
-                {candidate} ({countFor(candidate)})
+                Tous ({JLPT_KANJI.length})
               </button>
-            ))}
+              {GRAMMAR_LEVELS.map((candidate) => (
+                <button
+                  key={candidate}
+                  type="button"
+                  onClick={() => setLevel(candidate)}
+                  aria-pressed={level === candidate}
+                  className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
+                    level === candidate
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                      : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
+                  }`}
+                >
+                  {candidate} ({countFor(candidate)})
+                </button>
+              ))}
+            </div>
+
+            {decks.length > 0 ? (
+              <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                Ajouter dans
+                <select
+                  value={selectedDeckId}
+                  onChange={(event) => setSelectedDeckId(event.target.value)}
+                  aria-label="Deck de destination"
+                  className="min-h-9 rounded-sm border border-[var(--line-strong)] bg-[var(--paper)] px-2 py-1 text-sm text-[var(--ink)]"
+                >
+                  {decks.map((deck) => (
+                    <option key={deck.id} value={deck.id}>
+                      {deck.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">
+                <Link href="/decks" className="link-button text-sm!">
+                  Crée un deck
+                </Link>{" "}
+                pour pouvoir ajouter des kanji.
+              </p>
+            )}
           </div>
 
           <input
@@ -90,29 +208,45 @@ export default function KanjiPage() {
           {visibleResults.length > 0 ? (
             <>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {visibleResults.map((entry) => (
-                  <div key={entry.kanji} className="token-card">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-3xl font-bold text-[var(--ink)]" lang="ja">
-                        {entry.kanji}
-                      </span>
-                      <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-xs text-[var(--ink)]">
-                        JLPT {entry.level}
-                      </span>
+                {visibleResults.map((entry) => {
+                  const preferredReading = entry.kunReadings[0] ?? entry.onReadings[0] ?? "";
+                  const isAdded = existingLemmas.has(entry.kanji);
+
+                  return (
+                    <div key={entry.kanji} className="token-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-3xl font-bold text-[var(--ink)]" lang="ja">
+                          {entry.kanji}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-xs text-[var(--ink)]">
+                          JLPT {entry.level}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-[var(--ink)]">{entry.meaning}</p>
+                      {entry.onReadings.length > 0 ? (
+                        <p className="mt-2 text-sm text-[var(--muted)]" lang="ja">
+                          <span className="eyebrow">On</span> {entry.onReadings.join("・")}
+                        </p>
+                      ) : null}
+                      {entry.kunReadings.length > 0 ? (
+                        <p className="mt-1 text-sm text-[var(--muted)]" lang="ja">
+                          <span className="eyebrow">Kun</span> {entry.kunReadings.join("・")}
+                        </p>
+                      ) : null}
+
+                      {decks.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleAddToDeck(entry.kanji, preferredReading, entry.meaning)}
+                          disabled={!selectedDeckId || addingKanji === entry.kanji || isAdded}
+                          className="mt-3 rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)] disabled:opacity-55"
+                        >
+                          {isAdded ? "Déjà dans ce deck" : addingKanji === entry.kanji ? "Ajout..." : "Ajouter au deck"}
+                        </button>
+                      ) : null}
                     </div>
-                    <p className="mt-2 text-sm font-medium text-[var(--ink)]">{entry.meaning}</p>
-                    {entry.onReadings.length > 0 ? (
-                      <p className="mt-2 text-sm text-[var(--muted)]" lang="ja">
-                        <span className="eyebrow">On</span> {entry.onReadings.join("・")}
-                      </p>
-                    ) : null}
-                    {entry.kunReadings.length > 0 ? (
-                      <p className="mt-1 text-sm text-[var(--muted)]" lang="ja">
-                        <span className="eyebrow">Kun</span> {entry.kunReadings.join("・")}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {results.length > visibleResults.length ? (

@@ -16,12 +16,13 @@ type Correction = {
   errors: ExerciseError[];
 };
 
-type Source = "grammar" | "examples" | "conjugation";
+type Source = "grammar" | "examples" | "conjugation" | "kanji";
 
 const SOURCE_LABELS: Record<Source, string> = {
   grammar: "grammaire",
   examples: "mon vocabulaire",
   conjugation: "conjugaison",
+  kanji: "kanji",
 };
 
 const VERDICT_STYLES: Record<Correction["verdict"], string> = {
@@ -206,7 +207,9 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
         <div>
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-4">
             <p className="eyebrow">
-              À traduire en japonais {exercise.level ? `· niveau ${exercise.level}` : ""} · {exercise.focus}
+              {source === "kanji" ? "Quel est le kanji ?" : "À traduire en japonais"}
+              {exercise.level ? ` · niveau ${exercise.level}` : ""}
+              {source === "kanji" ? ` · lectures : ${exercise.focus}` : ` · ${exercise.focus}`}
             </p>
             <p className="mt-1 text-lg font-semibold text-[var(--ink)]">{exercise.french}</p>
           </div>

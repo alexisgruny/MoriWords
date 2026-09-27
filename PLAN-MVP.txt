@@ -1139,6 +1139,28 @@ l'utilisateur.
   侑 aux niveaux N5/N2/N1).
 
 
+Priorite 28 - Exercices et ajout au deck pour les kanji
+------------------------------------------------------------
+- [TERMINE] pickKanjiExercise() dans exercises.ts : 4e source du widget
+  d'exercice (grammaire / mon vocabulaire / conjugaison / kanji). Le sens du
+  kanji sert de phrase a "traduire" (l'eleve ecrit le caractere), les
+  lectures on/kun sont donnees en indice (focus) - sans ça, deviner un
+  caractere precis parmi ~2200 serait impossible. resolveExercise() reconnait
+  le prefixe "kanji:". TranslationExercise affiche un intitule different pour
+  cette source ("Quel est le kanji ?" plutot que "A traduire en japonais").
+  Widget aussi affiche sur /kanji (defaultSource="kanji").
+- [TERMINE] Ajout au deck depuis /kanji : selecteur de deck + bouton par
+  carte, reutilise tel quel POST /api/decks/[deckId]/cards (lemma = le kanji,
+  reading = premiere lecture kun sinon on, meaning = le sens) - aucun
+  changement d'API necessaire. Recharge les mots du deck choisi pour afficher
+  "Deja dans ce deck" plutot que de laisser un doublon silencieux paraitre
+  possible.
+- Verifie : tsc, eslint, tests (152, dont 3 nouveaux pour
+  pickKanjiExercise), et en direct dans le navigateur (exercice charge avec
+  indice de lecture, ajout au deck confirme en base, "Deja dans ce deck"
+  apres rechargement du deck).
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

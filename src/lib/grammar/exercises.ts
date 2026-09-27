@@ -6,6 +6,7 @@ import { generateJsonFromClaude } from "@/lib/feeds/claude-json-generator";
 import { shuffle } from "@/lib/shuffle";
 
 import { conjugationForms } from "@/lib/conjugation/forms";
+import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import { type GrammarLevel, type GrammarPoint, filterGrammarPoints, grammarPoints } from "./points";
 
@@ -69,6 +70,7 @@ type ExerciseGenerator = typeof generateGrammarExercises;
 const STATIC_PREFIX = "static:";
 const EXAMPLE_PREFIX = "ex:";
 const CONJUGATION_PREFIX = "conj:";
+const KANJI_PREFIX = "kanji:";
 
 type PoolEntry = { id: string; french: string };
 
@@ -186,6 +188,32 @@ export async function pickConjugationExercise(
   return shuffle(pool)[0];
 }
 
+// Choisit un kanji au hasard parmi ceux pas encore vus, pour un niveau donné
+// (ou tous) : le sens sert de phrase à "traduire" (l'élève doit écrire le
+// kanji lui-même), les lectures sont données comme indice (focus) pour que
+// deviner le bon caractère parmi ~2200 reste possible.
+export async function pickKanjiExercise(
+  level: GrammarLevel | "all",
+  excludeIds: string[],
+): Promise<Exercise | null> {
+  const seen = new Set(excludeIds);
+
+  const pool = JLPT_KANJI.filter((entry) => level === "all" || entry.level === level)
+    .map((entry) => ({
+      id: `${KANJI_PREFIX}${entry.kanji}`,
+      french: entry.meaning,
+      level: entry.level,
+      focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+    }))
+    .filter((entry) => !seen.has(entry.id));
+
+  if (pool.length === 0) {
+    return null;
+  }
+
+  return shuffle(pool)[0];
+}
+
 // Retrouve la phrase française et sa traduction japonaise de référence à
 // partir de l'identifiant d'un exercice.
 export async function resolveExercise(
@@ -206,6 +234,15 @@ export async function resolveExercise(
 
     return form && example
       ? { french: example.meaning, japanese: example.conjugated, focus: form.name }
+      : null;
+  }
+
+  if (id.startsWith(KANJI_PREFIX)) {
+    const kanji = id.slice(KANJI_PREFIX.length);
+    const entry = JLPT_KANJI.find((candidate) => candidate.kanji === kanji);
+
+    return entry
+      ? { french: entry.meaning, japanese: entry.kanji, focus: [...entry.onReadings, ...entry.kunReadings].join("・") }
       : null;
   }
 

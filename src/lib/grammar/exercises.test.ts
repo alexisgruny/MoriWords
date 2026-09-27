@@ -12,12 +12,14 @@ vi.mock("@/lib/feeds/claude-json-generator", () => ({
 
 import { prisma } from "@/lib/db/prisma";
 import { conjugationForms } from "@/lib/conjugation/forms";
+import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import {
   correctTranslation,
   pickConjugationExercise,
   pickExampleExercise,
   pickGrammarExercise,
+  pickKanjiExercise,
   resolveExercise,
 } from "./exercises";
 import { grammarPoints } from "./points";
@@ -238,6 +240,40 @@ describe("pickConjugationExercise and resolveExercise round-trip", () => {
     );
 
     await expect(pickConjugationExercise("all", allIds)).resolves.toBeNull();
+  });
+});
+
+describe("pickKanjiExercise and resolveExercise round-trip", () => {
+  it("picks an unseen kanji and resolves it back", async () => {
+    const entry = JLPT_KANJI.find((candidate) => candidate.kanji === "食")!;
+    const otherIds = JLPT_KANJI.filter((candidate) => candidate.kanji !== entry.kanji).map(
+      (candidate) => `kanji:${candidate.kanji}`,
+    );
+
+    const exercise = await pickKanjiExercise("all", otherIds);
+
+    expect(exercise?.id).toBe(`kanji:${entry.kanji}`);
+    expect(exercise?.french).toBe(entry.meaning);
+    expect(exercise?.level).toBe(entry.level);
+
+    const resolved = await resolveExercise(exercise!.id);
+    expect(resolved).toEqual({
+      french: entry.meaning,
+      japanese: entry.kanji,
+      focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+    });
+  });
+
+  it("filters by JLPT level", async () => {
+    const n4 = await pickKanjiExercise("N4", []);
+    expect(n4).not.toBeNull();
+    expect(n4?.level).toBe("N4");
+  });
+
+  it("returns null once every kanji has been excluded", async () => {
+    const allIds = JLPT_KANJI.map((entry) => `kanji:${entry.kanji}`);
+
+    await expect(pickKanjiExercise("all", allIds)).resolves.toBeNull();
   });
 });
 
