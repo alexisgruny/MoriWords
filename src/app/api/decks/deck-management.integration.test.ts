@@ -26,14 +26,7 @@ import { PATCH as patchCard } from "@/app/api/decks/[deckId]/cards/[cardId]/rout
 import { POST as reviewCard } from "@/app/api/decks/[deckId]/cards/[cardId]/review/route";
 import { POST as undoReview } from "@/app/api/decks/[deckId]/cards/[cardId]/undo-review/route";
 import { GET as getDueCards } from "@/app/api/decks/due/route";
-
-function jsonRequest(url: string, body: unknown, method = "POST") {
-  return new Request(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
+import { jsonRequest } from "./test-helpers";
 
 const deckIdsToCleanUp: string[] = [];
 

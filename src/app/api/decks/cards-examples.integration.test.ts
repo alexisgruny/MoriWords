@@ -20,14 +20,7 @@ import { prisma } from "@/lib/db/prisma";
 import { POST as createDeck } from "@/app/api/decks/route";
 import { POST as addCard } from "@/app/api/decks/[deckId]/cards/route";
 import { POST as generateCardExamples } from "@/app/api/decks/[deckId]/cards/[cardId]/examples/route";
-
-function jsonRequest(url: string, body: unknown) {
-  return new Request(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
+import { jsonRequest } from "./test-helpers";
 
 const sampleExamples = Array.from({ length: 5 }, (_, index) => ({
   japanese: `例文${index}`,

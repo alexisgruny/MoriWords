@@ -1021,6 +1021,37 @@ complements rapides :
   telechargement Anki avec le bon nom de fichier.
 
 
+Priorite 23 - Nettoyage du code (pas de nouvelle fonctionnalite)
+------------------------------------------------------------------
+Audit (agent Explore) sur tout src/, scripts/ et prisma/ pour du code mort,
+de la duplication et des fonctions a simplifier.
+- [TERMINE] shuffle<T>() dupliquee a l'identique dans card-utils.ts et
+  exercises.ts -> extraite dans src/lib/shuffle.ts, les deux imports mis a
+  jour.
+- [TERMINE] jsonRequest() (fabrique une Request JSON pour les tests
+  d'integration) dupliquee dans 4 fichiers de test decks/cards -> extraite
+  dans src/app/api/decks/test-helpers.ts.
+- [TERMINE] Type ExerciseSource jamais importe nulle part -> supprime.
+- [TERMINE] Regle CSS .status-dot { display: none } sans aucun className qui
+  la reference -> supprimee.
+- [TERMINE] Commentaires ajoutes la ou une contrainte n'etait pas expliquee :
+  simplification du palier SM-2 (scheduler.ts), les deux @@unique de Card et
+  WordOccurrence (schema.prisma, commentaire seul, aucune migration), le
+  delai de 1100ms dans le feedback du quiz.
+- Note pour l'utilisateur (pas fait, decision a prendre) : les fonctionnalites
+  images et TTS (src/lib/images/, src/lib/tts/, AudioCache/ImageCache,
+  routes .../audio et .../image) sont entierement codees et testees mais
+  jamais appelees depuis aucune page -> code mort en pratique. A garder en
+  attente d'integration future, ou a supprimer si abandonnees ; suppression
+  non faite ici (implique une migration Prisma qui droppe des tables).
+- Egalement note : SourceText.category est ecrit par 6 endroits mais jamais
+  affiche (seul origin l'est, sur la page Historique) ; laisse en l'etat
+  (le supprimer impliquerait une migration qui droppe une colonne).
+- Verifie : tsc, eslint et les 146 tests passent (deux echecs isoles a la
+  suite complete, confirmes comme la flakiness deja connue de tests
+  d'integration en parallele sur la meme DB locale, pas liee a ce nettoyage).
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

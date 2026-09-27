@@ -35,6 +35,10 @@ export function scheduleReview(
   // fois, puis l'intervalle précédent multiplié par la facilité).
   const nextEaseFactor = Math.max(1.3, state.easeFactor + (0.1 - (5 - normalizedQuality) * (0.08)));
   const nextRepetitions = state.repetitions + 1;
+  // Simplifié par rapport au SM-2 original, qui fixe le deuxième intervalle à
+  // 6 jours avant de passer au multiplicatif : ici la facilité s'applique dès
+  // la deuxième répétition, ce qui espace un peu plus vite mais reste stable
+  // (la facilité ne peut descendre sous 1.3).
   const nextInterval =
     state.repetitions === 0
       ? 1

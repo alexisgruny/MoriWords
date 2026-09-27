@@ -108,10 +108,6 @@ a {
   margin-top: 0;
 }
 
-.status-dot {
-  display: none;
-}
-
 /* Boutons : coins arrondis, grande zone de clic. */
 .primary-button,
 .secondary-button {

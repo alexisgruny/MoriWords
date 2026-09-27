@@ -97,6 +97,8 @@ model Card {
   reviewLogs  ReviewLog[]
   examples    CardExample[]
 
+  // Un seul mot par deck : ajouter un mot déjà présent met à jour la carte
+  // existante (voir POST .../cards) au lieu d'en créer une deuxième.
   @@unique([deckId, lemma, sourceLanguage, targetLanguage])
   @@index([deckId, lemma])
   @@index([deckId, dueAt])
@@ -133,6 +135,9 @@ model WordOccurrence {
   position     Int?
   createdAt    DateTime    @default(now())
 
+  // Un seul enregistrement par (carte, texte) : revoir le même mot plusieurs
+  // fois dans un même texte ne crée pas de doublon, seule la première
+  // position rencontrée est gardée.
   @@unique([cardId, sourceTextId])
   @@index([cardId])
   @@index([sourceTextId])

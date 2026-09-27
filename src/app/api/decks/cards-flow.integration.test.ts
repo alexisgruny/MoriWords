@@ -10,14 +10,7 @@ import { GET as getDeckCards, POST as addCard } from "@/app/api/decks/[deckId]/c
 import { DELETE as deleteCard } from "@/app/api/decks/[deckId]/cards/[cardId]/route";
 import { POST as reviewCard } from "@/app/api/decks/[deckId]/cards/[cardId]/review/route";
 import { GET as getDeckStats } from "@/app/api/decks/[deckId]/stats/route";
-
-function jsonRequest(url: string, body: unknown) {
-  return new Request(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
+import { jsonRequest } from "./test-helpers";
 
 const deckIdsToCleanUp: string[] = [];
 const sourceTextIdsToCleanUp: string[] = [];

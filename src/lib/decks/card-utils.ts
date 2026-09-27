@@ -1,3 +1,5 @@
+import { shuffle } from "@/lib/shuffle";
+
 // Forme brute d'une carte telle qu'elle arrive depuis le client, avant nettoyage.
 export type CardPayload = {
   lemma: string;
@@ -27,18 +29,6 @@ export function normalizeNullable(value: string | null | undefined) {
 
   const cleaned = value.trim();
   return cleaned.length > 0 ? cleaned : null;
-}
-
-// Mélange un tableau (Fisher-Yates) sans modifier l'original.
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-
-  return result;
 }
 
 // Construit les choix du mode quiz : la bonne réponse mélangée avec jusqu'à

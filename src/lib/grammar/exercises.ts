@@ -3,14 +3,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
 import { generateJsonFromClaude } from "@/lib/feeds/claude-json-generator";
+import { shuffle } from "@/lib/shuffle";
 
 import { type GrammarLevel, type GrammarPoint, filterGrammarPoints, grammarPoints } from "./points";
 
 // Nombre de phrases générées par Claude la première fois qu'un point de
 // grammaire est travaillé ; elles sont ensuite réutilisées sans nouvel appel.
 export const GENERATED_EXERCISES_PER_POINT = 10;
-
-export type ExerciseSource = "grammar" | "examples";
 
 // Un exercice de traduction : une phrase française à écrire en japonais.
 // La traduction de référence n'est jamais envoyée au client avant la correction.
@@ -67,18 +66,6 @@ type ExerciseGenerator = typeof generateGrammarExercises;
 
 const STATIC_PREFIX = "static:";
 const EXAMPLE_PREFIX = "ex:";
-
-// Mélange (Fisher-Yates) sans modifier le tableau d'origine.
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-
-  return copy;
-}
 
 type PoolEntry = { id: string; french: string };
 

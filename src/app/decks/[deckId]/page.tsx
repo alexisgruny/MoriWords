@@ -358,6 +358,8 @@ export default function DeckTrainingPage() {
 
     const quality = choice === card.meaning ? QUIZ_CORRECT_QUALITY : QUIZ_INCORRECT_QUALITY;
 
+    // Laisse le temps de voir laquelle des options était la bonne (surlignée
+    // en vert) avant que la carte suivante ne remplace le quiz.
     setTimeout(() => {
       void submitReviewCard(card.id, quality);
     }, 1100);
