@@ -132,37 +132,38 @@ export async function pickGrammarExercise(
 }
 
 // Choisit au hasard une phrase d'exemple des mots sauvegardés dans les decks
-// (déjà traduite), pour s'entraîner sur son propre vocabulaire.
-export async function pickExampleExercise(excludeIds: string[]): Promise<Exercise | null> {
+// (déjà traduite), pour s'entraîner sur son propre vocabulaire. Le niveau du
+// mot n'est pas stocké : il est recalculé ici, donc le filtre par niveau se
+// fait en mémoire plutôt qu'en SQL (acceptable vu la taille d'un vocabulaire
+// personnel).
+export async function pickExampleExercise(
+  level: GrammarLevel | "all",
+  excludeIds: string[],
+): Promise<Exercise | null> {
   const excluded = excludeIds
     .filter((id) => id.startsWith(EXAMPLE_PREFIX))
     .map((id) => id.slice(EXAMPLE_PREFIX.length));
-  const where = { id: { notIn: excluded } };
 
-  const total = await prisma.cardExample.count({ where });
-
-  if (total === 0) {
-    return null;
-  }
-
-  const example = await prisma.cardExample.findFirst({
-    where,
-    orderBy: { id: "asc" },
-    skip: Math.floor(Math.random() * total),
+  const candidates = await prisma.cardExample.findMany({
+    where: { id: { notIn: excluded } },
     include: { card: { select: { lemma: true } } },
   });
 
-  if (!example) {
+  const matching = candidates
+    .map((candidate) => ({ candidate, level: classifyDifficulty(candidate.card.lemma, null, null) }))
+    .filter((entry) => level === "all" || entry.level === level);
+
+  if (matching.length === 0) {
     return null;
   }
 
-  const level = classifyDifficulty(example.card.lemma, null, null);
+  const { candidate, level: matchedLevel } = matching[Math.floor(Math.random() * matching.length)];
 
   return {
-    id: `${EXAMPLE_PREFIX}${example.id}`,
-    french: example.translation,
-    level: level === "unknown" ? null : level,
-    focus: example.card.lemma,
+    id: `${EXAMPLE_PREFIX}${candidate.id}`,
+    french: candidate.translation,
+    level: matchedLevel === "unknown" ? null : matchedLevel,
+    focus: candidate.card.lemma,
   };
 }
 

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     const exercise =
       source === "examples"
-        ? await pickExampleExercise(excludeIds)
+        ? await pickExampleExercise(level, excludeIds)
         : await pickGrammarExercise(level, excludeIds);
 
     if (!exercise) {
@@ -31,7 +31,9 @@ export async function POST(request: Request) {
         exercise: null,
         message:
           source === "examples"
-            ? "Aucune phrase d'exemple disponible : ajoute des mots à un deck pour en générer."
+            ? level === "all"
+              ? "Aucune phrase d'exemple disponible : ajoute des mots à un deck pour en générer."
+              : `Aucune phrase d'exemple de niveau ${level} disponible. Essaie un autre niveau ou ajoute des mots de ce niveau à un deck.`
             : "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
       });
     }

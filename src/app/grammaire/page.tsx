@@ -34,7 +34,7 @@ export default function GrammarPage() {
         </header>
 
         <div className="mb-8">
-          <TranslationExercise level={level === "all" ? "all" : level} />
+          <TranslationExercise />
         </div>
 
         <section className="panel">

@@ -166,7 +166,7 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
       (row) => `ex:${row.id}`,
     );
 
-    const exercise = await pickExampleExercise(others);
+    const exercise = await pickExampleExercise("all", others);
     expect(exercise?.id).toBe(ownId);
     expect(exercise?.focus).toBe("食べる");
 
@@ -174,8 +174,30 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
     expect(resolved).toEqual({ french: "Que manges-tu ?", japanese: "何を食べますか。", focus: "食べる" });
 
     // Une fois exclue, elle ne peut plus être proposée à nouveau.
-    const excludingOwn = await pickExampleExercise([...others, ownId]);
+    const excludingOwn = await pickExampleExercise("all", [...others, ownId]);
     expect(excludingOwn?.id).not.toBe(ownId);
+  });
+
+  it("filters by JLPT level, computed from the card's lemma", async () => {
+    const deck = await prisma.deck.create({ data: { name: `Exercise level test deck ${Date.now()}` } });
+    deckIdsToCleanUp.push(deck.id);
+    // 食べる est classé N5 par le référentiel JLPT local.
+    const card = await prisma.card.create({
+      data: { deckId: deck.id, lemma: "食べる", meaning: "manger", sourceLanguage: "ja", targetLanguage: "fr" },
+    });
+    const example = await prisma.cardExample.create({
+      data: { cardId: card.id, japanese: "何を食べますか。", translation: "Que manges-tu ?" },
+    });
+    const ownId = `ex:${example.id}`;
+    const others = (await prisma.cardExample.findMany({ where: { id: { not: example.id } } })).map(
+      (row) => `ex:${row.id}`,
+    );
+
+    const matching = await pickExampleExercise("N5", others);
+    expect(matching?.id).toBe(ownId);
+
+    const nonMatching = await pickExampleExercise("N2", others);
+    expect(nonMatching).toBeNull();
   });
 });
 

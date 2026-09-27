@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useToast } from "@/components/toast-provider";
-import type { GrammarLevel } from "@/lib/grammar/points";
+import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 
 type Exercise = { id: string; french: string; level: string | null; focus: string };
 
@@ -33,10 +33,13 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
 // Exercice d'écriture : Claude propose une phrase française à traduire en
 // japonais (issue des points de grammaire ou du vocabulaire des decks),
 // l'élève écrit sa traduction, puis Claude la corrige en expliquant chaque
-// erreur. Un composant client autonome, inséré dans la page Grammaire.
-export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) {
+// erreur. Un composant client autonome, inséré dans la page Grammaire, avec
+// son propre sélecteur de niveau JLPT (indépendant du filtre de la liste de
+// référence au-dessus).
+export function TranslationExercise() {
   const { showToast } = useToast();
 
+  const [level, setLevel] = useState<GrammarLevel | "all">("all");
   const [source, setSource] = useState<Source>("grammar");
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [seenIds, setSeenIds] = useState<string[]>([]);
@@ -46,7 +49,7 @@ export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) 
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
 
-  async function loadExercise(nextSource: Source, excludeIds: string[]) {
+  async function loadExercise(nextSource: Source, nextLevel: GrammarLevel | "all", excludeIds: string[]) {
     setIsLoadingExercise(true);
     setInfo(null);
     setCorrection(null);
@@ -56,7 +59,7 @@ export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) 
       const response = await fetch("/api/grammar/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: nextSource, level, excludeIds }),
+        body: JSON.stringify({ source: nextSource, level: nextLevel, excludeIds }),
       });
       const data = (await response.json()) as { exercise: Exercise | null; message?: string; error?: string };
 
@@ -86,8 +89,19 @@ export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) 
 
   function handleStart(nextSource: Source) {
     setSource(nextSource);
-    void loadExercise(nextSource, []);
     setSeenIds([]);
+    void loadExercise(nextSource, level, []);
+  }
+
+  function handleLevelChange(nextLevel: GrammarLevel | "all") {
+    setLevel(nextLevel);
+    setSeenIds([]);
+
+    // Ne relance un exercice que si une session est déjà en cours : sinon, le
+    // niveau choisi ne s'applique qu'au prochain "Commencer".
+    if (exercise || info) {
+      void loadExercise(source, nextLevel, []);
+    }
   }
 
   async function handleSubmit() {
@@ -133,6 +147,36 @@ export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) 
         <p className="text-sm text-[var(--muted)]">Écris ta traduction en japonais, Claude la corrige.</p>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT de l'exercice">
+        <button
+          type="button"
+          onClick={() => handleLevelChange("all")}
+          aria-pressed={level === "all"}
+          className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
+            level === "all"
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+              : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
+          }`}
+        >
+          Tous niveaux
+        </button>
+        {GRAMMAR_LEVELS.map((candidate) => (
+          <button
+            key={candidate}
+            type="button"
+            onClick={() => handleLevelChange(candidate)}
+            aria-pressed={level === candidate}
+            className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
+              level === candidate
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
+            }`}
+          >
+            {candidate}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-5 flex flex-wrap gap-3">
         <button type="button" onClick={() => handleStart("grammar")} className="secondary-button">
           {exercise || info ? "Nouvelle phrase (grammaire)" : "Commencer (grammaire)"}
@@ -175,7 +219,7 @@ export function TranslationExercise({ level }: { level: GrammarLevel | "all" }) 
             </button>
             <button
               type="button"
-              onClick={() => void loadExercise(source, seenIds)}
+              onClick={() => void loadExercise(source, level, seenIds)}
               disabled={isLoadingExercise}
               className="link-button"
             >
