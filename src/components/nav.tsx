@@ -10,6 +10,7 @@ const links = [
   { href: "/decks", label: "Decks" },
   { href: "/vocabulaire", label: "Vocabulaire" },
   { href: "/grammaire", label: "Grammaire" },
+  { href: "/conjugaison", label: "Conjugaison" },
   { href: "/historique", label: "Historique" },
 ];
 

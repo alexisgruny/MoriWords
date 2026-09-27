@@ -1078,6 +1078,22 @@ par la Priorite 23.
   tests a rejouer avant de commiter.
 
 
+Priorite 25 - Page de conjugaison par niveau JLPT
+----------------------------------------------------
+- [TERMINE] Referentiel statique src/lib/conjugation/forms.ts (meme forme que
+  src/lib/grammar/points.ts : id, level, examples...) : 27 formes de
+  conjugaison (verbes et adjectifs) reparties N5(12)/N4(6)/N3(3)/N2(4)/N1(2),
+  chacune avec categorie (verbes / adjectifs en い / adjectifs en な /
+  registre poli / style litteraire), regle de formation, explication et
+  exemples base+lecture+forme conjuguee+sens. filterConjugationForms() filtre
+  par niveau et texte libre (japonais ou francais), teste (forms.test.ts).
+- [TERMINE] Page /conjugaison (src/app/conjugaison/page.tsx), meme structure
+  que /grammaire : filtre par niveau, recherche, cartes depliables. Ajoutee a
+  la navigation entre Grammaire et Historique.
+- Verifie : tsc, eslint et les tests passent ; capture Playwright a 1280 et
+  390px.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
