@@ -88,11 +88,6 @@ model Card {
   dueAt          DateTime @default(now())
   createdAt      DateTime @default(now())
 
-  imageUrl         String?
-  imageAttribution String?
-  audioCacheId     String?
-  audioCache       AudioCache? @relation(fields: [audioCacheId], references: [id], onDelete: SetNull)
-
   occurrences WordOccurrence[]
   reviewLogs  ReviewLog[]
   examples    CardExample[]
@@ -102,28 +97,6 @@ model Card {
   @@unique([deckId, lemma, sourceLanguage, targetLanguage])
   @@index([deckId, lemma])
   @@index([deckId, dueAt])
-}
-
-model AudioCache {
-  id        String   @id @default(cuid())
-  text      String
-  language  String
-  voice     String
-  audioData Bytes
-  mimeType  String   @default("audio/mpeg")
-  createdAt DateTime @default(now())
-
-  cards Card[]
-
-  @@unique([text, language, voice])
-}
-
-model ImageCache {
-  id          String   @id @default(cuid())
-  query       String   @unique
-  imageUrl    String
-  attribution String?
-  createdAt   DateTime @default(now())
 }
 
 model WordOccurrence {

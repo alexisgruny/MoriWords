@@ -23,10 +23,9 @@ verifie en local et en production.
 La deduplication des cartes (WordOccurrence), la recherche/suppression de
 cartes, l'historique des revisions (ReviewLog) et les statistiques de deck
 (cartes dues, taux de reussite) sont implementees.
-Les images de cartes (Unsplash) sont operationnelles et validees en reel.
-L'audio (ElevenLabs) est code-complet mais bloque : le plan gratuit refuse les
-voix de bibliotheque via l'API (402 "paid_plan_required"), meme ajoutees a
-My Voices ; mis de cote pour l'instant (voir Priorite 9).
+Les images et l'audio par carte (Unsplash/ElevenLabs) avaient ete construits
+puis mis de cote ; supprimes du code et de la base le 2026-09-27, jamais
+utilises (voir Priorite 9).
 Le flux RSS NHK Easy est bloque : pas de flux officiel et robots.txt interdit
 les crawlers IA (voir Priorite 11). Source alternative retenue et implementee :
 le flux RSS officiel de nippon.com/ja (depeches Kyodo News), verifie le
@@ -57,8 +56,7 @@ GET /api/decks/[deckId] pour charger un deck seul ; types partages dans
 src/types/shared.ts ; navigation dans src/components/nav.tsx.
 Un export Anki a ete ajoute (voir Priorite 6) : transformer pur en TSV,
 telechargeable depuis la page d'un deck.
-Tests et build passent ; la prochaine etape concerne surtout l'activation
-reelle d'ElevenLabs avec une vraie cle API (Unsplash est deja active).
+Tests et build passent.
 
 Regle de travail
 ----------------
@@ -345,9 +343,16 @@ Validation :
   (garanti par la contrainte d'unicite scoped par sourceLanguage/targetLanguage ;
   non teste manuellement puisque seul ja->fr est utilise pour l'instant).
 
-Priorite 9 - Ajouter images et audio
-------------------------------------
-Objectif : enrichir les cartes sans bloquer leur creation.
+Priorite 9 - Ajouter images et audio [SUPPRIME le 2026-09-27]
+--------------------------------------------------------------
+SUPPRIME le 2026-09-27 a la demande de l'utilisateur ("jamais utilise tts et
+image") : lib/images, lib/tts, routes .../audio et .../image, modeles
+AudioCache/ImageCache et les champs Card.imageUrl/imageAttribution/
+audioCacheId sont retires du code et de la base (migration
+remove_image_and_tts_support). Le detail ci-dessous est garde comme archive
+de ce qui avait ete construit et pourquoi ca a ete abandonne.
+
+Objectif (archive) : enrichir les cartes sans bloquer leur creation.
 
 Progression : IMAGES TERMINEES et validees en reel (Unsplash : cle ajoutee,
 recherche + attribution + URL fonctionnels sur une vraie carte, teste le
@@ -736,10 +741,10 @@ Prochaines priorites recommandees
    titre). Manque encore un vrai lecteur d'ecran materiel (VoiceOver/NVDA/
    TalkBack) sur appareil physique, impossible a executer depuis cet
    environnement.
-3. Reactiver l'UI audio/images quand le moment est venu : le code est pret
-   (src/lib/tts, src/lib/images, routes API) mais masque de l'interface
-   depuis le 2026-09-22 a la demande de l'utilisateur ; l'audio reste bloque
-   sur le plan ElevenLabs gratuit (voir Priorite 9).
+3. [FAIT, autrement] Le point "reactiver l'UI audio/images" est caduc : la
+   fonctionnalite a ete supprimee le 2026-09-27 plutot que reactivee (voir
+   Priorite 9 et Priorite 24), l'utilisateur ayant confirme ne jamais s'en
+   servir.
 4. [TERMINE] Migrer vers le SDK Anthropic officiel (@anthropic-ai/sdk) a la
    place de l'appel HTTP direct, dans les 3 call sites (translation,
    generation de contenu feeds/, gloss d'image) : gestion d'erreurs typee
@@ -1038,12 +1043,9 @@ de la duplication et des fonctions a simplifier.
   simplification du palier SM-2 (scheduler.ts), les deux @@unique de Card et
   WordOccurrence (schema.prisma, commentaire seul, aucune migration), le
   delai de 1100ms dans le feedback du quiz.
-- Note pour l'utilisateur (pas fait, decision a prendre) : les fonctionnalites
-  images et TTS (src/lib/images/, src/lib/tts/, AudioCache/ImageCache,
-  routes .../audio et .../image) sont entierement codees et testees mais
-  jamais appelees depuis aucune page -> code mort en pratique. A garder en
-  attente d'integration future, ou a supprimer si abandonnees ; suppression
-  non faite ici (implique une migration Prisma qui droppe des tables).
+- Images et TTS, signales ici comme code mort jamais appele depuis l'UI :
+  confirmes jamais utilises par l'utilisateur -> supprimes le 2026-09-27,
+  voir Priorite 24.
 - Egalement note : SourceText.category est ecrit par 6 endroits mais jamais
   affiche (seul origin l'est, sur la page Historique) ; laisse en l'etat
   (le supprimer impliquerait une migration qui droppe une colonne).
@@ -1052,14 +1054,36 @@ de la duplication et des fonctions a simplifier.
   d'integration en parallele sur la meme DB locale, pas liee a ce nettoyage).
 
 
+Priorite 24 - Suppression definitive des images et du TTS
+------------------------------------------------------------
+Confirme par l'utilisateur le 2026-09-27 ("jamais utilise tts et image") :
+suppression complete plutot que reactivation, cf. le point en suspens laisse
+par la Priorite 23.
+- [TERMINE] Supprime : src/lib/images/ (search.ts, gloss.ts + tests),
+  src/lib/tts/ (synthesize.ts + tests), routes src/app/api/audio/[cacheId],
+  src/app/api/decks/[deckId]/cards/[cardId]/audio et .../image.
+- [TERMINE] Schema : modeles AudioCache et ImageCache supprimes, et les
+  champs Card.imageUrl/imageAttribution/audioCacheId (+ relation audioCache)
+  retires. Migration remove_image_and_tts_support (applique en local ;
+  s'appliquera en production au prochain deploiement Vercel via
+  `prisma migrate deploy`, ce qui droppe les deux tables et les 3 colonnes -
+  perte de donnees acceptee, l'utilisateur ayant confirme ne jamais les avoir
+  utilisees).
+- [TERMINE] Types partages nettoyes (DeckCard.imageUrl/imageAttribution/
+  audioCacheId retires de src/types/shared.ts).
+- [TERMINE] README.md mis a jour (mention "image + audio par carte" et les
+  entrees src/lib/images//tts/ retirees de la structure documentee).
+- Verifie : plus aucune reference a AudioCache/ImageCache/imageUrl/
+  audioCacheId/synthesizeSpeech/searchImage dans src/ (grep), tsc/eslint/
+  tests a rejouer avant de commiter.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
 - src/lib/translation/ : prompts, appel Claude et cache.
 - src/lib/db/ : Prisma Client et acces aux donnees.
 - src/lib/srs/ : logique SM-2 pure et testee.
-- src/lib/images/ : adaptateurs d'images.
-- src/lib/tts/ : adaptateurs audio.
 - src/lib/difficulty/ : datasets et lookup de niveaux.
 - src/lib/feeds/ : adaptateurs RSS et sources quotidiennes.
 - src/types/ : types partages.

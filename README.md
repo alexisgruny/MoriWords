@@ -1,6 +1,6 @@
 # MoriWords
 
-Pipeline personnel d'apprentissage de langues : texte → tokenization → traduction contextuelle → notebook façon Anki (SM-2) avec image + audio par carte.
+Pipeline personnel d'apprentissage de langues : texte → tokenization → traduction contextuelle → notebook façon Anki (SM-2).
 
 MVP : japonais → français. Architecture pensée pour être multi-directionnelle (voir `src/lib/tokenizer/`).
 
@@ -36,8 +36,6 @@ src/
     db/           client Prisma singleton (étape 3)
     translation/  appel API Claude + cache de traduction (étape 4)
     srs/          algorithme SM-2 (étape 6)
-    images/       recherche d'image complémentaire (étape 7)
-    tts/          synthèse vocale (étape 8)
     difficulty/   estimation JLPT/CEFR (étape 10)
     feeds/        alimentation automatique quotidienne (étape 11)
   types/          types partagés

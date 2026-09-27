@@ -19,9 +19,6 @@ export type DeckCard = {
   reading?: string | null;
   meaning?: string | null;
   dueAt?: string | null;
-  imageUrl?: string | null;
-  imageAttribution?: string | null;
-  audioCacheId?: string | null;
 };
 
 // Un deck avec toutes ses cartes.
