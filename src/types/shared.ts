@@ -59,6 +59,21 @@ export type CardExampleSentence = {
   translation: string;
 };
 
+// Une carte due, avec le deck auquel elle appartient (pour la page « Réviser
+// tout », qui enchaîne les cartes dues de tous les decks sans les séparer).
+export type DueCard = {
+  id: string;
+  deckId: string;
+  deck: { id: string; name: string };
+  lemma: string;
+  reading?: string | null;
+  meaning?: string | null;
+  repetitions: number;
+  interval: number;
+  easeFactor: number;
+  dueAt: string;
+};
+
 // Les statistiques de révision d'un deck.
 export type DeckStats = {
   totalCards: number;

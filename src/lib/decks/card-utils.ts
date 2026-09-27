@@ -20,7 +20,7 @@ export function normalizeCardPayload(input: CardPayload) {
 }
 
 // Transforme une valeur optionnelle en chaîne nettoyée, ou en null si elle est vide.
-function normalizeNullable(value: string | null | undefined) {
+export function normalizeNullable(value: string | null | undefined) {
   if (typeof value !== "string") {
     return null;
   }
@@ -91,4 +91,23 @@ export function pickHardestCards<T extends { repetitions?: number | null; easeFa
     .filter((card) => (card._count?.reviewLogs ?? 0) > 0 && typeof card.easeFactor === "number")
     .sort((a, b) => (a.easeFactor as number) - (b.easeFactor as number))
     .slice(0, limit);
+}
+
+// Le plancher de facilité SM-2 (voir scheduleReview) : une carte n'y tombe
+// qu'après plusieurs échecs consécutifs, jamais après une seule mauvaise réponse.
+export const LEECH_EASE_THRESHOLD = 1.3;
+
+// En dessous de ce nombre de révisions, le plancher peut être atteint par
+// hasard trop tôt pour être un vrai signal de mot à problème ("leech").
+export const LEECH_MIN_REVIEWS = 2;
+
+// Un mot qui résiste : sa facilité est tombée au plancher SM-2 après au moins
+// quelques révisions. Sert à le signaler pour un travail ciblé, plutôt que de
+// le laisser se représenter indéfiniment sans qu'on s'en aperçoive.
+export function isLeechCard(card: { easeFactor?: number | null; _count?: { reviewLogs: number } }): boolean {
+  return (
+    typeof card.easeFactor === "number" &&
+    card.easeFactor <= LEECH_EASE_THRESHOLD &&
+    (card._count?.reviewLogs ?? 0) >= LEECH_MIN_REVIEWS
+  );
 }

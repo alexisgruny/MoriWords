@@ -65,6 +65,10 @@ export default function DeckTrainingPage() {
   const [quizChoices, setQuizChoices] = useState<string[]>([]);
   const [selectedQuizChoice, setSelectedQuizChoice] = useState<string | null>(null);
   const [isLoadingQuizChoices, setIsLoadingQuizChoices] = useState(false);
+  // Carte dont la dernière réponse peut encore être annulée (une seule, la
+  // plus récente : annuler une deuxième fois annulerait celle d'avant).
+  const [undoableCardId, setUndoableCardId] = useState<string | null>(null);
+  const [isUndoing, setIsUndoing] = useState(false);
 
   // Charge le deck et ses cartes à chaque changement de deck.
   useEffect(() => {
@@ -143,6 +147,7 @@ export default function DeckTrainingPage() {
       await loadDeck();
       setReviewCardId(null);
       setShowAnswer(false);
+      setUndoableCardId(cardId);
       showToast("Révision enregistrée.");
     } catch (requestError) {
       setError(
@@ -152,6 +157,37 @@ export default function DeckTrainingPage() {
       );
     } finally {
       setIsReviewing(false);
+    }
+  }
+
+  // Annule la dernière réponse envoyée (voir POST .../undo-review) : la carte
+  // retrouve son état SM-2 précédent et redevient la carte active si elle est
+  // à nouveau due.
+  async function handleUndoReview(cardId: string) {
+    setIsUndoing(true);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/cards/${cardId}/undo-review`, { method: "POST" });
+      const data: unknown = await response.json();
+
+      if (!response.ok || typeof data !== "object" || data === null) {
+        throw new Error("Impossible d’annuler la révision");
+      }
+
+      if ("error" in data && typeof data.error === "string") {
+        throw new Error(data.error);
+      }
+
+      await loadDeck();
+      setUndoableCardId(null);
+      showToast("Révision annulée.");
+    } catch (requestError) {
+      showToast(
+        requestError instanceof Error ? requestError.message : "L’annulation a échoué.",
+        "error",
+      );
+    } finally {
+      setIsUndoing(false);
     }
   }
 
@@ -175,6 +211,11 @@ export default function DeckTrainingPage() {
 
   // La carte actuellement proposée en révision (la plus urgente).
   const activeCard = dueCards[0];
+
+  // N'affiche le bouton d'annulation que si la carte concernée appartient
+  // encore au deck affiché (évite un bouton qui pointerait vers un autre deck
+  // après une navigation directe entre deux decks sans révision entre-temps).
+  const canUndoLastReview = Boolean(undoableCardId && deck?.cards.some((card) => card.id === undoableCardId));
 
   // Cherche une phrase où la carte active est apparue, pour le mode "Contexte".
   const activeCardOccurrences = activeCard
@@ -273,11 +314,23 @@ export default function DeckTrainingPage() {
       ) : null}
 
       <section className="panel">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[var(--ink)]">Entraînement</h2>
-          <span className="count-badge" aria-label={`${dueCards.length} carte(s) à revoir`}>
-            {dueCards.length}
-          </span>
+          <div className="flex items-center gap-3">
+            {canUndoLastReview && undoableCardId ? (
+              <button
+                type="button"
+                onClick={() => void handleUndoReview(undoableCardId)}
+                disabled={isUndoing}
+                className="link-button"
+              >
+                {isUndoing ? "Annulation..." : "Annuler la dernière réponse"}
+              </button>
+            ) : null}
+            <span className="count-badge" aria-label={`${dueCards.length} carte(s) à revoir`}>
+              {dueCards.length}
+            </span>
+          </div>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">

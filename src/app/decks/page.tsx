@@ -149,11 +149,16 @@ export default function DecksPage() {
 
         {decks.length > 0 ? (
           <section className="panel mb-10">
-            <div className="mb-3 flex items-center justify-between gap-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-[var(--ink)]">À réviser aujourd’hui</h2>
-              <span className="count-badge" aria-label={`${totalDueCount} carte(s) à réviser`}>
-                {totalDueCount}
-              </span>
+              <div className="flex items-center gap-3">
+                <Link href="/decks/reviser" className="secondary-button px-4! py-2! text-xs!">
+                  Réviser tout
+                </Link>
+                <span className="count-badge" aria-label={`${totalDueCount} carte(s) à réviser`}>
+                  {totalDueCount}
+                </span>
+              </div>
             </div>
 
             {decksWithDueCount.length > 0 ? (

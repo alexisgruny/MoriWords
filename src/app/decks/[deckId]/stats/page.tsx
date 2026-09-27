@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getCardStatus, pickHardestCards } from "@/lib/decks/card-utils";
+import { getCardStatus, isLeechCard, pickHardestCards } from "@/lib/decks/card-utils";
 import type { DeckCardWithOccurrences, DeckStats } from "@/types/shared";
 
 // Page « Statistiques » d'un deck : chiffres clés, répartition des mots par
@@ -71,6 +71,7 @@ export default function DeckStatsPage() {
     mature: cards.filter((card) => getCardStatus(card) === "mature").length,
   };
   const withoutMeaning = cards.filter((card) => !card.meaning).length;
+  const leechCount = cards.filter((card) => isLeechCard(card)).length;
   const hardestCards = pickHardestCards(cards, 5);
 
   const summary = stats
@@ -138,6 +139,11 @@ export default function DeckStatsPage() {
                   <span className="font-semibold text-[var(--ink)]">{withoutMeaning}</span> sans sens
                 </li>
               ) : null}
+              {leechCount > 0 ? (
+                <li>
+                  <span className="font-semibold text-[var(--accent-dark)]">{leechCount}</span> en difficulté
+                </li>
+              ) : null}
             </ul>
             <p className="mt-2 text-xs text-[var(--muted)]">
               « Maîtrisé » = prochaine révision dans 21 jours ou plus.
@@ -161,6 +167,11 @@ export default function DeckStatsPage() {
                     {card.lemma}
                   </span>
                   <span className="ml-2 text-sm text-[var(--muted)]">{card.meaning ?? "sens à compléter"}</span>
+                  {isLeechCard(card) ? (
+                    <span className="ml-2 rounded-sm border border-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
+                      En difficulté
+                    </span>
+                  ) : null}
                 </span>
                 <span className="text-xs text-[var(--muted)]">
                   {card._count?.reviewLogs ?? 0} révision(s) · facilité {card.easeFactor?.toFixed(2)}

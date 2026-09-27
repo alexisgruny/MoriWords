@@ -23,6 +23,9 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
   const [notFound, setNotFound] = useState(false);
   const [isDeletionPending, setIsDeletionPending] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
 
   // Le layout reste monté quand on passe d'une sous-page à l'autre : le deck
   // n'est rechargé que si on change de deck.
@@ -65,6 +68,37 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [deckId]);
+
+  // Renomme le deck.
+  async function handleRenameDeck() {
+    const name = editedName.trim();
+
+    if (!name) {
+      return;
+    }
+
+    setIsSavingName(true);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        throw new Error("rename failed");
+      }
+
+      setDeck((current) => (current ? { ...current, name } : current));
+      setIsEditingName(false);
+      showToast("Deck renommé.");
+    } catch {
+      showToast("Le renommage du deck a échoué.", "error");
+    } finally {
+      setIsSavingName(false);
+    }
+  }
 
   // Supprime le deck entier (et ses cartes) puis retourne à la liste des decks.
   async function handleDeleteDeck() {
@@ -115,9 +149,57 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
             <Link href="/decks" className="eyebrow">
               ← Decks
             </Link>
-            <h1 className="mt-1 text-[var(--ink)]">
-              {deck?.name ?? "Deck"}
-            </h1>
+            {isEditingName ? (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <input
+                  value={editedName}
+                  onChange={(event) => setEditedName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void handleRenameDeck();
+                    }
+                    if (event.key === "Escape") {
+                      setIsEditingName(false);
+                    }
+                  }}
+                  aria-label="Nom du deck"
+                  autoFocus
+                  className="min-h-9 border border-[var(--ink)] bg-[var(--paper)] px-2 py-1 text-xl font-bold text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleRenameDeck()}
+                  disabled={isSavingName || editedName.trim().length === 0}
+                  className="secondary-button px-3! py-1.5! text-xs!"
+                >
+                  {isSavingName ? "..." : "Enregistrer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName(false)}
+                  className="link-button"
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : (
+              <div className="mt-1 flex flex-wrap items-baseline gap-2">
+                <h1 className="text-[var(--ink)]">{deck?.name ?? "Deck"}</h1>
+                {deck ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditedName(deck.name);
+                      setIsEditingName(true);
+                    }}
+                    aria-label="Renommer le deck"
+                    className="link-button text-sm!"
+                  >
+                    Renommer
+                  </button>
+                ) : null}
+              </div>
+            )}
             {deck ? (
               <p className="mt-2 text-sm text-[var(--muted)]">{deck.cardCount} carte(s)</p>
             ) : null}

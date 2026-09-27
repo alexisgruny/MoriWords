@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildQuizChoices, getCardStatus, normalizeCardPayload, pickHardestCards } from "./card-utils";
+import { buildQuizChoices, getCardStatus, isLeechCard, normalizeCardPayload, pickHardestCards } from "./card-utils";
 
 describe("normalizeCardPayload", () => {
   it("trims and preserves the core identifiers for a card", () => {
@@ -109,5 +109,23 @@ describe("pickHardestCards", () => {
     ];
 
     expect(pickHardestCards(cards, 2).map((card) => card.id)).toEqual(["b", "d"]);
+  });
+});
+
+describe("isLeechCard", () => {
+  it("flags a card that bottomed out after several reviews", () => {
+    expect(isLeechCard({ easeFactor: 1.3, _count: { reviewLogs: 4 } })).toBe(true);
+  });
+
+  it("does not flag a card that just started (too few reviews)", () => {
+    expect(isLeechCard({ easeFactor: 1.3, _count: { reviewLogs: 1 } })).toBe(false);
+  });
+
+  it("does not flag a card with a healthy ease factor", () => {
+    expect(isLeechCard({ easeFactor: 2.1, _count: { reviewLogs: 10 } })).toBe(false);
+  });
+
+  it("does not flag a card with no ease factor at all", () => {
+    expect(isLeechCard({ _count: { reviewLogs: 5 } })).toBe(false);
   });
 });

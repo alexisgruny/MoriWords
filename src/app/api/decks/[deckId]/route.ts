@@ -27,6 +27,54 @@ export async function GET(
   }
 }
 
+// Renomme un deck (et/ou change sa description).
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ deckId: string }> },
+) {
+  try {
+    const { deckId } = await params;
+    const body: unknown = await request.json();
+
+    if (typeof body !== "object" || body === null) {
+      return Response.json({ error: "Le payload est requis." }, { status: 400 });
+    }
+
+    const candidate = body as Record<string, unknown>;
+    const data: { name?: string; description?: string | null } = {};
+
+    if ("name" in candidate) {
+      const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
+
+      if (!name) {
+        return Response.json({ error: "Le nom du deck est requis." }, { status: 400 });
+      }
+
+      data.name = name;
+    }
+
+    if ("description" in candidate) {
+      data.description =
+        typeof candidate.description === "string" && candidate.description.trim().length > 0
+          ? candidate.description.trim()
+          : null;
+    }
+
+    const deck = await prisma.deck.findUnique({ where: { id: deckId } });
+
+    if (!deck) {
+      return Response.json({ error: "Deck introuvable." }, { status: 404 });
+    }
+
+    const updated = await prisma.deck.update({ where: { id: deckId }, data });
+
+    return Response.json({ deck: updated });
+  } catch (error) {
+    console.error("Failed to update deck:", error);
+    return Response.json({ error: "Impossible de mettre à jour le deck." }, { status: 500 });
+  }
+}
+
 // Supprime définitivement un deck ; ses cartes sont supprimées en cascade
 // (voir onDelete: Cascade sur Card.deck dans le schéma Prisma).
 export async function DELETE(

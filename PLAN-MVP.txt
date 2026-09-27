@@ -955,6 +955,37 @@ Priorite 20 - Exemples de mots, exercices de traduction corriges par Claude
   le mot cible, correction de traduction coherente et bien expliquee.
 
 
+Priorite 21 - Systeme de deck : gestion avancee
+--------------------------------------------------
+- [TERMINE] Renommer un deck : PATCH /api/decks/[deckId], edition inline dans
+  l'en-tete de la page deck.
+- [TERMINE] Editer une carte (lecture + sens) via une vraie route PATCH
+  /api/decks/[deckId]/cards/[cardId], au lieu de retaper un ajout. La meme
+  route deplace une carte vers un autre deck (deckId dans le corps), refuse
+  si le deck cible a deja ce mot (409, contrainte @@unique).
+- [TERMINE] Selection multiple sur la page Mots : case a cocher par carte,
+  barre d'actions (deplacer vers un autre deck / supprimer la selection),
+  confirmation avant suppression groupee.
+- [TERMINE] Detection des mots a problème ("leech") : isLeechCard()
+  (facilite SM-2 tombee au plancher 1.3 apres au moins 2 revisions), badge
+  "En difficulte" sur la page Mots (+ filtre dedie) et sur les statistiques.
+- [TERMINE] Annuler la derniere reponse en entrainement : POST
+  /api/decks/[deckId]/cards/[cardId]/undo-review restaure l'etat SM-2
+  precedent (recalcule a partir du ReviewLog precedent) et supprime la
+  derniere ligne d'historique. Bouton "Annuler la derniere reponse" sur
+  l'entrainement (par deck et sur "Reviser tout"), un seul niveau de recul.
+  Le bouton ne s'affiche que si la carte concernee appartient encore au deck
+  affiche (evite un bouton perime apres navigation directe entre decks).
+- [TERMINE] Reviser tous les decks dus d'un coup : GET /api/decks/due (toutes
+  les cartes dues, tous decks confondus, triees par echeance) et une page
+  /decks/reviser dediee (mode standard uniquement ; les modes kanji/contexte/
+  quiz restent propres a chaque deck, ou le pool de leurres et les contextes
+  sont disponibles). Lien "Reviser tout" depuis la liste des decks.
+- Verifie manuellement (Playwright + curl) : renommage, edition, deplacement
+  (succes et conflit 409), annulation apres 1 et 2 revisions, liste due
+  cross-deck, badge leech apres 6 echecs, deplacement en masse via l'UI.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
