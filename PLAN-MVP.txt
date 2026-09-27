@@ -922,6 +922,38 @@ A faire :
 - [PARTIEL] Pas de mode sombre. Les kanji dependent de la mincho du systeme
   (Yu Mincho / Hiragino / Noto Serif CJK) : rendu legerement different selon
   l'appareil.
+- [TERMINE] Retour "trop stricte / typo dure a lire pour un debutant" : polices
+  remplacees par Nunito (texte) + Noto Sans JP (japonais, sans serif), tailles
+  augmentees, cartes blanches arrondies a la place des filets, boutons et
+  puces plus doux (vermillon plein sur l'action principale, rose pale pour la
+  selection/les filtres actifs).
+
+
+Priorite 20 - Exemples de mots, exercices de traduction corriges par Claude
+----------------------------------------------------------------------------
+- [TERMINE] Base videe (dev locale) a la demande de l'utilisateur avant ce
+  chantier.
+- [TERMINE] CardExample (5 phrases simples par carte, niveau JLPT du mot) :
+  generees en parallele de la traduction a l'ajout au deck
+  (src/lib/decks/card-examples.ts, POST /api/decks/[deckId]/cards), jamais
+  regenerees si la carte en a deja ; bouton "Generer 5 exemples" sur la page
+  Mots pour les cartes existantes sans exemples
+  (POST /api/decks/[deckId]/cards/[cardId]/examples). Le prompt exige que le
+  mot apparaisse litteralement dans chaque phrase (verifie manuellement,
+  Claude Haiku suit bien la consigne quand elle est explicite et repetee).
+- [TERMINE] Exercices de traduction sur la page Grammaire
+  (src/lib/grammar/exercises.ts, src/components/translation-exercise.tsx,
+  /api/grammar/exercises, /api/grammar/exercises/correct) : phrase francaise a
+  traduire, deux sources possibles (points de grammaire du niveau choisi, ou
+  vocabulaire deja traduit de l'utilisateur via CardExample). Pour un point de
+  grammaire, ~10 phrases sont generees par Claude la premiere fois qu'il est
+  travaille puis reutilisees (GrammarExercise), avec repli sur les exemples
+  statiques du referentiel si la generation echoue. La correction (Claude)
+  compare a la traduction de reference sans penaliser une formulation
+  differente mais correcte, et explique chaque erreur en francais simple.
+- Verifie en direct (vrai appel Anthropic) : exemples generes contiennent bien
+  le mot cible, correction de traduction coherente et bien expliquee.
+
 
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.

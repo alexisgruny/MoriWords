@@ -95,6 +95,7 @@ model Card {
 
   occurrences WordOccurrence[]
   reviewLogs  ReviewLog[]
+  examples    CardExample[]
 
   @@unique([deckId, lemma, sourceLanguage, targetLanguage])
   @@index([deckId, lemma])
@@ -164,4 +165,30 @@ model TranslationCache {
   @@unique([lemma, sourceLanguage, targetLanguage])
   @@index([sourceLanguage, targetLanguage, lemma])
   @@index([difficulty, lemma])
+}
+// Phrase d'exemple simple (au niveau du mot) générée pour une carte à son ajout au deck.
+model CardExample {
+  id          String   @id @default(cuid())
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  japanese    String
+  reading     String?
+  translation String
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([cardId])
+}
+
+// Phrase à traduire (français -> japonais) pour un point de grammaire, avec sa
+// traduction de référence. Générée par Claude puis réutilisée sans nouvel appel.
+model GrammarExercise {
+  id        String   @id @default(cuid())
+  pointId   String
+  level     String
+  french    String
+  japanese  String
+  createdAt DateTime @default(now())
+
+  @@index([pointId])
 }

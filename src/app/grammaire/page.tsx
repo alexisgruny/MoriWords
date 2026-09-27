@@ -8,6 +8,7 @@ import {
   filterGrammarPoints,
   grammarPoints,
 } from "@/lib/grammar/points";
+import { TranslationExercise } from "@/components/translation-exercise";
 
 // Page de référence de grammaire : points classés par niveau JLPT, avec
 // filtre par niveau, recherche libre et exemples traduits.
@@ -31,6 +32,10 @@ export default function GrammarPage() {
             traduits. Choisis un niveau ou cherche un motif (en japonais ou en français).
           </p>
         </header>
+
+        <div className="mb-8">
+          <TranslationExercise level={level === "all" ? "all" : level} />
+        </div>
 
         <section className="panel">
           <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">

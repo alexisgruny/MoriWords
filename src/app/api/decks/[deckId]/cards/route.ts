@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db/prisma";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
 import { autoTranslateLemma } from "@/lib/decks/auto-translate";
+import { saveExamples, tryGenerateExamples } from "@/lib/decks/card-examples";
+
+// Ajouter un mot peut enchaîner une traduction et la génération d'exemples.
+export const maxDuration = 60;
 
 // Ajoute un mot au deck sous forme de carte. Si une carte existe déjà pour ce
 // mot dans ce deck, on ne crée pas de doublon : on ajoute simplement une
@@ -68,8 +72,15 @@ export async function POST(
 
     // Sens à enregistrer : celui fourni, sinon celui déjà présent sur la carte,
     // sinon une traduction automatique (jamais d'écrasement d'un sens existant).
-    const meaning =
-      normalized.meaning ?? existingCard?.meaning ?? (await autoTranslateLemma(normalized.lemma));
+    // Les 5 phrases d'exemple sont générées en parallèle, seulement si la carte
+    // n'en a pas encore.
+    const hasExamples = existingCard
+      ? (await prisma.cardExample.count({ where: { cardId: existingCard.id } })) > 0
+      : false;
+    const [meaning, generatedExamples] = await Promise.all([
+      normalized.meaning ?? existingCard?.meaning ?? autoTranslateLemma(normalized.lemma),
+      hasExamples ? null : tryGenerateExamples(normalized.lemma),
+    ]);
 
     // Crée la carte si elle n'existe pas encore, sinon met à jour ses champs.
     const card = await prisma.card.upsert({
@@ -100,6 +111,15 @@ export async function POST(
       },
     });
 
+    if (generatedExamples) {
+      await saveExamples(card.id, generatedExamples);
+    }
+
+    const examples = await prisma.cardExample.findMany({
+      where: { cardId: card.id },
+      orderBy: { position: "asc" },
+    });
+
     // Enregistre le texte source comme occurrence de ce mot (sans doublon
     // si ce texte a déjà été enregistré pour cette carte).
     if (sourceTextId) {
@@ -124,7 +144,7 @@ export async function POST(
     });
 
     return Response.json(
-      { card, alreadyExisted: existingCard !== null, occurrenceCount },
+      { card: { ...card, examples }, alreadyExisted: existingCard !== null, occurrenceCount },
       { status: 201 },
     );
   } catch (error) {
@@ -150,6 +170,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { reviewLogs: true } },
+        examples: { orderBy: { position: "asc" } },
         occurrences: {
           include: { sourceText: { select: { id: true, title: true, content: true } } },
           orderBy: { createdAt: "desc" },

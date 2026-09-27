@@ -70,6 +70,7 @@ export default function DeckWordsPage() {
   const [editingValue, setEditingValue] = useState("");
   const [isSavingMeaning, setIsSavingMeaning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatingExamplesId, setGeneratingExamplesId] = useState<string | null>(null);
   const [translateProgress, setTranslateProgress] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
@@ -92,6 +93,31 @@ export default function DeckWordsPage() {
       setError("Impossible de charger les mots du deck.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  // Génère les phrases d'exemple d'une carte qui n'en a pas encore.
+  async function handleGenerateExamples(cardId: string) {
+    setGeneratingExamplesId(cardId);
+
+    try {
+      const response = await fetch(`/api/decks/${deckId}/cards/${cardId}/examples`, { method: "POST" });
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "examples failed");
+      }
+
+      await loadCards();
+    } catch (exampleError) {
+      showToast(
+        exampleError instanceof Error && exampleError.message !== "examples failed"
+          ? exampleError.message
+          : "La génération des exemples a échoué.",
+        "error",
+      );
+    } finally {
+      setGeneratingExamplesId(null);
     }
   }
 
@@ -352,7 +378,38 @@ export default function DeckWordsPage() {
 
                   {isExpanded ? (
                     <div className="mt-3 border-t border-[var(--line)] pt-3">
-                      <p className="eyebrow">Contextes</p>
+                      <p className="eyebrow">Exemples</p>
+                      {card.examples && card.examples.length > 0 ? (
+                        <ul className="mt-2 flex flex-col gap-3">
+                          {card.examples.map((example) => (
+                            <li key={example.id} className="border-l-2 border-[var(--line)] py-1 pl-3">
+                              <p className="text-base text-[var(--ink)]" lang="ja">
+                                {example.japanese}
+                              </p>
+                              {example.reading ? (
+                                <p className="text-sm text-[var(--accent-dark)]" lang="ja">
+                                  {example.reading}
+                                </p>
+                              ) : null}
+                              <p className="mt-0.5 text-sm text-[var(--muted)]">{example.translation}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          <p className="text-sm text-[var(--muted)]">Aucun exemple pour ce mot.</p>
+                          <button
+                            type="button"
+                            onClick={() => void handleGenerateExamples(card.id)}
+                            disabled={generatingExamplesId === card.id}
+                            className="link-button"
+                          >
+                            {generatingExamplesId === card.id ? "Génération..." : "Générer 5 exemples"}
+                          </button>
+                        </div>
+                      )}
+
+                      <p className="eyebrow mt-4">Contextes</p>
                       {contexts.length > 0 ? (
                         <ul className="mt-2 flex flex-col gap-2">
                           {contexts.map((occurrence) => (
@@ -390,7 +447,7 @@ export default function DeckWordsPage() {
                       aria-expanded={isExpanded}
                       className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
                     >
-                      {isExpanded ? "Masquer les contextes" : "Voir les contextes"}
+                      {isExpanded ? "Masquer exemples et contextes" : "Exemples et contextes"}
                     </button>
                     <button
                       type="button"

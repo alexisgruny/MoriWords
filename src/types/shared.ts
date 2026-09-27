@@ -47,6 +47,16 @@ export type DeckCardWithOccurrences = {
   createdAt?: string;
   _count?: { reviewLogs: number };
   occurrences: Array<{ id: string; sourceText: { id: string; title: string | null; content: string } | null }>;
+  // Phrases d'exemple simples générées à l'ajout du mot au deck.
+  examples?: CardExampleSentence[];
+};
+
+// Une phrase d'exemple d'une carte : japonais, lecture en hiragana et traduction.
+export type CardExampleSentence = {
+  id: string;
+  japanese: string;
+  reading: string | null;
+  translation: string;
 };
 
 // Les statistiques de révision d'un deck.
