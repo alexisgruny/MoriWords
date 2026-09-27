@@ -358,11 +358,12 @@ export default function DeckTrainingPage() {
 
     const quality = choice === card.meaning ? QUIZ_CORRECT_QUALITY : QUIZ_INCORRECT_QUALITY;
 
-    // Laisse le temps de voir laquelle des options était la bonne (surlignée
-    // en vert) avant que la carte suivante ne remplace le quiz.
+    // Laisse le temps de lire le verdict (texte "Bonne réponse"/"la bonne
+    // réponse était...", pas seulement la couleur) avant que la carte
+    // suivante ne remplace le quiz.
     setTimeout(() => {
       void submitReviewCard(card.id, quality);
-    }, 1100);
+    }, 1700);
   }
 
   return (
@@ -488,15 +489,31 @@ export default function DeckTrainingPage() {
                   </p>
                 ) : (
                   <>
+                    {selectedQuizChoice ? (
+                      <div
+                        className={`w-full rounded-xl border px-4 py-3 text-sm font-semibold ${
+                          selectedQuizChoice === activeCard.meaning
+                            ? "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]"
+                            : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                        }`}
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {selectedQuizChoice === activeCard.meaning
+                          ? "✓ Bonne réponse !"
+                          : `✗ Pas tout à fait — la bonne réponse était : ${activeCard.meaning}`}
+                      </div>
+                    ) : null}
+
                     <div className="grid w-full gap-2 sm:grid-cols-2">
                       {quizChoices.map((choice, index) => {
                         const isCorrectChoice = choice === activeCard.meaning;
                         const isSelected = selectedQuizChoice === choice;
                         const feedbackClass = selectedQuizChoice
                           ? isCorrectChoice
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                            ? "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]"
                             : isSelected
-                              ? "border-red-200 bg-red-50 text-red-700"
+                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
                               : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
                           : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
 
@@ -508,7 +525,15 @@ export default function DeckTrainingPage() {
                             disabled={selectedQuizChoice !== null}
                             className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${feedbackClass}`}
                           >
-                            <span className="mono text-xs text-[var(--muted)]">{index + 1}</span>
+                            <span className="mono text-xs text-[var(--muted)]">
+                              {selectedQuizChoice
+                                ? isCorrectChoice
+                                  ? "✓"
+                                  : isSelected
+                                    ? "✗"
+                                    : index + 1
+                                : index + 1}
+                            </span>
                             {choice}
                           </button>
                         );

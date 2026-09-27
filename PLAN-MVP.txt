@@ -1185,6 +1185,27 @@ bandeau en front.
   masque, "1 jour(s)" -> "1 jour" bien accorde apres une vraie revision).
 
 
+Priorite 30 - Meilleur feedback correct/incorrect en mode Quiz
+------------------------------------------------------------------
+Le mode Quiz (revision par deck) ne distinguait bon/mauvais que par une
+legere teinte de bordure (les deux etats etaient dans des tons proches,
+accent rose et rouge clair) : demande de l'utilisateur pour un feedback plus
+clair.
+- [TERMINE] Bandeau de verdict explicite au-dessus des choix : "Correct/
+  Bonne reponse !" en vert, ou "Pas tout a fait - la bonne reponse etait :
+  X" en vermillon (meme palette verdict que le widget d'exercice de
+  traduction, VERDICT_STYLES dans translation-exercise.tsx, pour rester
+  coherent dans toute l'appli).
+- [TERMINE] Icones ✓/✗ sur les boutons de choix une fois repondu (a la place
+  du numero, garde pour les options non concernees), pour ne pas dependre
+  uniquement de la couleur (accessibilite daltonisme).
+- [TERMINE] Delai avant de passer a la carte suivante allonge de 1100ms a
+  1700ms : le temps de lire le bandeau, pas seulement la couleur.
+- Verifie : tsc, eslint, tests (161 inchanges, purement visuel), et en
+  direct dans le navigateur (etat correct en vert, etat incorrect en
+  vermillon avec la bonne reponse affichee, icones sur les bons boutons).
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
