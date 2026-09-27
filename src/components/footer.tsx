@@ -18,6 +18,27 @@ export default function Footer() {
             </a>{" "}
             et « egg rolls JLPT 10k ».
           </p>
+          <p className="mt-1 text-xs">
+            Kanji : lectures et sens dérivés de KANJIDIC (
+            <a
+              href="https://www.edrdg.org/edrdg/licence.html"
+              target="_blank"
+              rel="noreferrer"
+              className="underline transition hover:text-[var(--ink)]"
+            >
+              EDRDG
+            </a>
+            ) via le paquet{" "}
+            <a
+              href="https://www.npmjs.com/package/kanji-data"
+              target="_blank"
+              rel="noreferrer"
+              className="underline transition hover:text-[var(--ink)]"
+            >
+              kanji-data
+            </a>{" "}
+            (MIT), sens traduits en français par Claude.
+          </p>
         </div>
         <a
           href="https://github.com/alexisgruny/MoriWords"

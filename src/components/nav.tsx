@@ -11,6 +11,7 @@ const links = [
   { href: "/vocabulaire", label: "Vocabulaire" },
   { href: "/grammaire", label: "Grammaire" },
   { href: "/conjugaison", label: "Conjugaison" },
+  { href: "/kanji", label: "Kanji" },
   { href: "/historique", label: "Historique" },
 ];
 

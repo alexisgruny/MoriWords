@@ -1112,6 +1112,33 @@ de conjugaison.
   correction reelle par Claude).
 
 
+Priorite 27 - Page de kanji par niveau JLPT
+------------------------------------------------
+Troisieme page de reference (apres Grammaire et Conjugaison), a la demande de
+l'utilisateur.
+- [TERMINE] Source de donnees trouvee : paquet npm "kanji-data" (MIT), qui
+  reprend KANJIDIC (licence EDRDG, usage conforme) pour les lectures et les
+  listes JLPT de Jonathan Waller (meme source deja creditee pour le
+  vocabulaire) pour le niveau. 2211 kanji au total (N5:79, N4:166, N3:367,
+  N2:367, N1:1232). scripts/generate-jlpt-kanji.mjs regenere
+  src/lib/kanji/jlpt-kanji-data.ts (meme principe que
+  generate-jlpt-vocabulary.mjs).
+- [TERMINE] Les sens (en anglais dans la source) sont traduits en francais
+  par Claude au moment de la generation, par lots de 150 (~15 appels). 20
+  kanji sur 2211 n'ont jamais ete traduits par Claude sur plusieurs essais
+  (aucune erreur, juste omis) : traduits a la main, ajoutes en dur dans le
+  script (MANUAL_TRANSLATIONS) pour que ça survive a une regeneration.
+- [TERMINE] src/lib/kanji/kanji.ts (KanjiEntry, JLPT_KANJI, filterKanji) et
+  page /kanji : filtre par niveau, recherche (kanji exact, lecture ou sens),
+  pagination locale par 60 (le dataset est bien plus gros que grammaire/
+  conjugaison, tout rendre d'un coup aurait alourdi la page). Ajoutee a la
+  navigation entre Conjugaison et Historique. Attribution ajoutee au pied de
+  page (KANJIDIC/EDRDG + kanji-data).
+- Verifie : tsc, eslint, tests (149, dont 8 nouveaux), et en direct dans le
+  navigateur a 1280/390px (recherche par sens testee : "manger" trouve 食/喫/
+  侑 aux niveaux N5/N2/N1).
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
