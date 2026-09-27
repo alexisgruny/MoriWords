@@ -40,7 +40,7 @@ export default function Nav() {
         {/* min-w-0 laisse ce flex item se réduire sous sa taille de contenu,
             sinon overflow-x-auto n'a aucun effet et la barre déborde de
             l'écran sur mobile (déjà arrivé avec seulement 3 liens). */}
-        <nav ref={navRef} className="flex min-w-0 gap-4 overflow-x-auto sm:gap-6">
+        <nav ref={navRef} className="flex min-w-0 gap-4 overflow-x-auto overflow-y-hidden sm:gap-6">
           {links.map((link) => {
             // Compare l'URL actuelle au lien pour savoir s'il faut le mettre en évidence.
             const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
@@ -50,7 +50,7 @@ export default function Nav() {
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`-mb-px shrink-0 whitespace-nowrap border-b-[3px] pb-3 text-base font-semibold transition ${
+                className={`shrink-0 whitespace-nowrap border-b-[3px] pb-3 text-base font-semibold transition ${
                   isActive
                     ? "border-[var(--accent)] text-[var(--ink)]"
                     : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
