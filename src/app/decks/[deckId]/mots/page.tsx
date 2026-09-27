@@ -223,12 +223,9 @@ export default function DeckWordsPage() {
 
   return (
     <>
-      <section className="panel p-6 sm:p-8">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="eyebrow">Vocabulaire</p>
-            <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Mots du deck</h2>
-          </div>
+      <section className="panel">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="text-[var(--ink)]">Mots du deck</h2>
           <span className="text-sm text-[var(--muted)]">{visibleCards.length} mot(s)</span>
         </div>
 
@@ -257,10 +254,10 @@ export default function DeckWordsPage() {
               type="button"
               onClick={() => setFilter(option.id)}
               aria-pressed={filter === option.id}
-              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+              className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                 filter === option.id
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                  : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
               }`}
             >
               {option.label} ({countFor(option.id)})
@@ -273,7 +270,7 @@ export default function DeckWordsPage() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Rechercher un mot (kanji, lecture, sens)"
           aria-label="Rechercher un mot"
-          className="mb-5 min-h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+          className="mb-5 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
         />
 
         {error ? (
@@ -283,7 +280,7 @@ export default function DeckWordsPage() {
         {isLoading ? (
           <p className="text-sm text-[var(--muted)]">Chargement des mots...</p>
         ) : visibleCards.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid md:grid-cols-2 md:gap-x-10">
             {visibleCards.map((card) => {
               const status = getCardStatus(card);
               const isExpanded = expandedCardId === card.id;
@@ -301,10 +298,10 @@ export default function DeckWordsPage() {
                       </span>
                     </div>
                     <span
-                      className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      className={`shrink-0 whitespace-nowrap rounded-sm border px-2 py-0.5 text-[11px] font-semibold ${
                         status === "mature"
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                          : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                          ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                          : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
                       }`}
                     >
                       {statusLabels[status]}
@@ -324,13 +321,13 @@ export default function DeckWordsPage() {
                         placeholder="Sens en français"
                         aria-label={`Sens de « ${card.lemma} »`}
                         autoFocus
-                        className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+                        className="min-w-0 flex-1 rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
                       />
                       <button
                         type="button"
                         onClick={() => void handleSaveMeaning(card)}
                         disabled={isSavingMeaning || editingValue.trim().length === 0}
-                        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+                        className="rounded-sm bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
                       >
                         {isSavingMeaning ? "..." : "Enregistrer"}
                       </button>
@@ -361,7 +358,7 @@ export default function DeckWordsPage() {
                           {contexts.map((occurrence) => (
                             <li
                               key={occurrence.id}
-                              className="rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--ink)]"
+                              className="border-l-2 border-[var(--line)] py-1 pl-3 text-sm text-[var(--ink)]"
                               lang="ja"
                             >
                               {occurrence.sourceText?.content}
@@ -382,7 +379,7 @@ export default function DeckWordsPage() {
                           setEditingCardId(card.id);
                           setEditingValue(card.meaning ?? "");
                         }}
-                        className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                        className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
                       >
                         Éditer le sens
                       </button>
@@ -391,14 +388,14 @@ export default function DeckWordsPage() {
                       type="button"
                       onClick={() => setExpandedCardId(isExpanded ? null : card.id)}
                       aria-expanded={isExpanded}
-                      className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                      className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)]"
                     >
                       {isExpanded ? "Masquer les contextes" : "Voir les contextes"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setCardPendingDeletion(card)}
-                      className="rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       Supprimer
                     </button>

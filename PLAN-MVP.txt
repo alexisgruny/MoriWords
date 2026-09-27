@@ -890,6 +890,39 @@ A faire :
 - [PARTIEL] La colonne VocabularyEntry.difficulty et TranslationCache.difficulty
   en base gardent d'anciennes valeurs (plus lues, mais toujours ecrites).
 
+
+Priorite 19 - Refonte visuelle : moins "front d'IA"
+---------------------------------------------------
+Constat : l'interface avait tous les tics d'un site genere par IA (fond creme +
+terracotta, enorme accroche, petites etiquettes en capitales, grosses cartes
+arrondies a ombres, boutons pilules, melange francais/anglais).
+
+Direction : un cahier de vocabulaire imprime. Papier blanc casse, encre noire,
+un seul vermillon (sceau hanko) pour la marque et la selection, filets a la
+place des cartes, aucune ombre, coins a 2 px, texte japonais et titres en
+mincho.
+
+A faire :
+- [TERMINE] Polices (next/font, auto-hebergees) : IBM Plex Sans (texte),
+  Shippori Mincho (titres et tout [lang="ja"], kanji via la mincho du systeme),
+  IBM Plex Mono (chiffres, dates, niveaux). Remplace Geist.
+- [TERMINE] src/app/globals.css reecrit : palette, .panel = gros filet noir (plus
+  de carte), boutons rectangulaires (.primary-button encre, .secondary-button
+  contour, .link-button), .token-card = ligne de dictionnaire, toasts et
+  boite de confirmation sobres, sceau de la marque (.seal). Contrastes AA
+  conserves (muted 6.3:1 sur le fond).
+- [TERMINE] Nav : sceau 森 + nom en mincho, onglet actif souligne en vermillon,
+  aligne sur la colonne de contenu ; pied de page aligne.
+- [TERMINE] Accueil : plus de grande accroche ni d'etiquettes ("Source text",
+  "Token map"...), textes en francais, mots detectes en lignes de dictionnaire
+  (lecture au-dessus, niveau JLPT a droite), "ou generer un texte" en liens.
+- [TERMINE] Decks, deck (onglets soulignes), mots, stats (grands chiffres en
+  mincho), vocabulaire, historique, grammaire : memes principes.
+- [TERMINE] Niveau "unknown" affiche "—".
+- [PARTIEL] Pas de mode sombre. Les kanji dependent de la mincho du systeme
+  (Yu Mincho / Hiragino / Noto Serif CJK) : rendu legerement different selon
+  l'appareil.
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

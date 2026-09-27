@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { useToast } from "@/components/toast-provider";
@@ -847,13 +848,13 @@ export default function Home() {
         placeholder="Nom du nouveau deck"
         aria-label="Nom du nouveau deck"
         autoFocus
-        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+        className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
       />
       <button
         type="button"
         onClick={() => void handleCreateDeckInline()}
         disabled={isCreatingDeck}
-        className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+        className="rounded-sm bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
       >
         {isCreatingDeck ? "Création..." : "Créer"}
       </button>
@@ -880,7 +881,7 @@ export default function Home() {
           }
           setSelectedDeckId(event.target.value);
         }}
-        className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+        className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
       >
         {decks.length === 0 ? <option value="">Aucun deck</option> : null}
         {decks.map((deck) => (
@@ -894,34 +895,20 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-12 flex items-end justify-between gap-6">
-          <div>
-            <p className="eyebrow">MoriWords / 01</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-6xl">
-              De la phrase brute au mot compris.
-            </h1>
-          </div>
-          <div className="hidden border-l border-[var(--line)] pl-5 text-right text-sm text-[var(--muted)] sm:block">
-            <span className="block text-[var(--ink)]">日本語 → Français</span>
-            <span>Analyse morphologique</span>
-          </div>
+        <header className="mb-8">
+          <h1 className="text-[var(--ink)]">Analyser un texte</h1>
+          <p className="mt-2 max-w-2xl text-[var(--muted)]">
+            Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t’intéressent.
+          </p>
         </header>
 
-        <section className="flex flex-col gap-6">
-          <form onSubmit={handleSubmit} className="panel flex flex-col p-6 sm:p-8">
-            <div className="mb-8 flex items-start justify-between gap-4">
-              <div>
-                <p className="eyebrow">Source text</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Colle ton japonais
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="whitespace-nowrap text-sm text-[var(--muted)]">{text.length} caractères</span>
-                <span className="status-dot" role="img" aria-label="Tokenizer disponible" />
-              </div>
+        <section className="flex flex-col gap-10">
+          <form onSubmit={handleSubmit} className="panel flex flex-col">
+            <div className="mb-4 flex items-baseline justify-between gap-4">
+              <h2 className="text-[var(--ink)]">Texte japonais</h2>
+              <span className="mono whitespace-nowrap text-xs text-[var(--muted)]">{text.length} caractères</span>
             </div>
 
             <label htmlFor="japanese-text" className="sr-only">
@@ -932,29 +919,30 @@ export default function Home() {
               value={text}
               onChange={(event) => setText(event.target.value)}
               placeholder="日本語の文章をここに貼り付けてください。"
-              className="min-h-72 flex-1 resize-none rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 text-xl leading-relaxed text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+              className="min-h-56 flex-1 resize-y border border-[var(--ink)] bg-[var(--paper)] p-4 text-xl leading-relaxed text-[var(--ink)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
               lang="ja"
             />
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <button
+                type="submit"
+                disabled={isLoading || text.trim().length === 0}
+                className="primary-button"
+              >
+                {isLoading ? "Analyse en cours..." : "Analyser le texte"}
+              </button>
+              <span className="text-sm text-[var(--muted)]">ou générer un texte :</span>
               {GENERATED_SOURCES.map((source) => (
                 <button
                   key={source.key}
                   type="button"
                   onClick={() => void handleGenerateSource(source.key)}
                   disabled={loadingSourceKey !== null || isLoading}
-                  className="secondary-button px-3.5! py-2! text-xs!"
+                  className="link-button"
                 >
                   {loadingSourceKey === source.key ? "Génération..." : source.label}
                 </button>
               ))}
-              <button
-                type="submit"
-                disabled={isLoading || text.trim().length === 0}
-                className="primary-button ml-auto"
-              >
-                {isLoading ? "Analyse en cours..." : "Analyser le texte"}
-              </button>
             </div>
 
             {error ? (
@@ -964,15 +952,10 @@ export default function Home() {
             ) : null}
           </form>
 
-          <section className="panel min-h-[520px] p-6 sm:p-8" aria-live="polite">
-            <div className="mb-8 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Token map</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Mots détectés
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
+          <section className="panel" aria-live="polite">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-[var(--ink)]">Mots détectés</h2>
+              <div className="flex items-center gap-4">
                 <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)]">
                   <input
                     type="checkbox"
@@ -1000,21 +983,21 @@ export default function Home() {
             ) : null}
 
             {tokens.length > 0 ? (
-              <div className="mb-6 rounded-2xl border border-[var(--line)] bg-[var(--background)] p-4">
-                <p className="eyebrow">Source preview</p>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--ink)]" lang="ja">
+              <div className="mb-6 border-l-2 border-[var(--ink)] pl-4">
+                <p className="eyebrow">Phrase analysée</p>
+                <p className="mt-1 line-clamp-3 text-base leading-7 text-[var(--ink)]" lang="ja">
                   {text}
                 </p>
                 <button
                   type="button"
                   onClick={() => void handleTranslateText()}
                   disabled={isTranslating}
-                  className="secondary-button mt-4"
+                  className="link-button mt-2"
                 >
                   {isTranslating ? "Traduction..." : "Traduire la phrase"}
                 </button>
                 {textTranslation ? (
-                  <div className="mt-4 border-t border-[var(--line)] pt-4">
+                  <div className="mt-3">
                     <p className="text-sm text-[var(--muted)]">Traduction de la phrase</p>
                     <p className="mt-1 text-lg font-semibold text-[var(--ink)]">
                       {textTranslation.translation}
@@ -1029,17 +1012,14 @@ export default function Home() {
 
             {tokens.length === 0 ? (
               <div className="empty-state">
-                <span className="mb-4 text-4xl" aria-hidden="true">あ</span>
-                <p className="font-medium text-[var(--ink)]">
-                  Les tokens apparaîtront ici.
-                </p>
-                <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--muted)]">
-                  Chaque mot sera accompagné de sa forme dictionnaire, sa lecture
-                  et sa catégorie grammaticale.
+                <span className="mb-3 text-5xl text-[var(--line)]" lang="ja" aria-hidden="true">あ</span>
+                <p className="font-medium text-[var(--ink)]">Les mots apparaîtront ici.</p>
+                <p className="mt-1 max-w-md text-sm text-[var(--muted)]">
+                  Chacun avec sa lecture, sa forme du dictionnaire, sa catégorie grammaticale et son niveau JLPT.
                 </p>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid sm:grid-cols-2 sm:gap-x-10">
                 {visibleTokens.map((token) => {
                   const isSelected = selectedToken?.position === token.position;
                   const isChecked = selectedTokenPositions.has(token.position);
@@ -1054,45 +1034,43 @@ export default function Home() {
                         type="button"
                         aria-pressed={isChecked}
                         onClick={(event) => handleTokenClick(token, event.shiftKey)}
-                        className="block w-full text-left"
+                        className="flex w-full items-start gap-3 text-left"
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="flex items-center gap-2">
-                            <span
-                              aria-hidden="true"
-                              className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-bold ${
-                                isChecked
-                                  ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                                  : "border-[var(--line)] bg-[var(--paper)] text-transparent"
-                              }`}
-                            >
-                              ✓
-                            </span>
-                            <span className="text-xl font-semibold text-[var(--ink)]" lang="ja">
-                              {token.surface}
-                            </span>
-                          </span>
-                          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--ink)]">
-                            JLPT {token.difficulty}
-                          </span>
-                        </div>
-                        <span className="mt-1 block text-sm text-[var(--accent-dark)]" lang="ja">
-                          {token.reading ?? "lecture inconnue"}
+                        <span
+                          aria-hidden="true"
+                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center border text-[10px] font-bold leading-none ${
+                            isChecked
+                              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                              : "border-[var(--ink)] bg-[var(--paper)] text-transparent"
+                          }`}
+                        >
+                          ✓
                         </span>
-                        <span className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
-                          <span>{token.baseForm}</span>
-                          <span className="part-of-speech">{token.partOfSpeech}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs text-[var(--muted)]" lang="ja">
+                            {token.reading ?? "lecture inconnue"}
+                          </span>
+                          <span className="block text-2xl font-bold leading-tight text-[var(--ink)]" lang="ja">
+                            {token.surface}
+                          </span>
+                          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
+                            {token.baseForm && token.baseForm !== token.surface ? (
+                              <span lang="ja">→ {token.baseForm}</span>
+                            ) : null}
+                            <span className="part-of-speech">{token.partOfSpeech}</span>
+                            {addedLemmas.has(token.baseForm || token.surface) ? (
+                              <span className="font-semibold text-[var(--accent-dark)]">déjà dans un deck</span>
+                            ) : null}
+                          </span>
+                          {tokenTranslation ? (
+                            <span className="mt-1 block text-sm font-medium text-[var(--ink)]">
+                              {tokenTranslation.translation}
+                            </span>
+                          ) : null}
                         </span>
-                        {tokenTranslation ? (
-                          <span className="mt-2 block text-sm font-medium text-[var(--ink)]">
-                            → {tokenTranslation.translation}
-                          </span>
-                        ) : null}
-                        {addedLemmas.has(token.baseForm || token.surface) ? (
-                          <span className="mt-2 inline-block rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--ink)]">
-                            Déjà ajouté
-                          </span>
-                        ) : null}
+                        <span className="mono mt-1 shrink-0 border border-[var(--ink)] px-1.5 py-0.5 text-xs text-[var(--ink)]">
+                          {token.difficulty === "unknown" ? "—" : token.difficulty}
+                        </span>
                       </button>
                     </div>
                   );
@@ -1101,26 +1079,28 @@ export default function Home() {
             )}
 
             {selectedToken ? (
-              <div className="mt-6 border-t border-[var(--line)] pt-5">
+              <div className="mt-8 border-t border-[var(--ink)] pt-5">
                 <p className="eyebrow">
                   {selectedTokenPositions.size > 1
                     ? `${selectedTokenPositions.size} mots sélectionnés`
-                    : "Selected token"}
+                    : "Mot sélectionné"}
                 </p>
-                <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
-                  {selectedToken.surface} <span className="text-[var(--muted)]">·</span>{" "}
-                  {selectedToken.baseForm}
+                <p className="mt-1 text-3xl font-bold text-[var(--ink)]" lang="ja">
+                  {selectedToken.surface}
+                  {selectedToken.baseForm && selectedToken.baseForm !== selectedToken.surface ? (
+                    <span className="ml-3 text-lg font-medium text-[var(--muted)]">→ {selectedToken.baseForm}</span>
+                  ) : null}
                 </p>
 
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-wide text-[var(--muted)]">JLPT</span>
-                  <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs font-medium text-[var(--ink)]">
-                    {selectedToken.difficulty}
+                <div className="mt-2 flex items-center gap-3 text-sm text-[var(--muted)]">
+                  <span>
+                    Niveau JLPT{" "}
+                    <span className="mono border border-[var(--ink)] px-1.5 py-0.5 text-xs text-[var(--ink)]">
+                      {selectedToken.difficulty === "unknown" ? "—" : selectedToken.difficulty}
+                    </span>
                   </span>
                   {addedLemmas.has(selectedToken.baseForm || selectedToken.surface) ? (
-                    <span className="rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--ink)]">
-                      Déjà ajouté
-                    </span>
+                    <span className="font-semibold text-[var(--accent-dark)]">déjà dans un deck</span>
                   ) : null}
                 </div>
 
@@ -1187,7 +1167,7 @@ export default function Home() {
                         setSelectedTokenPositions(new Set());
                         setSelectedToken(null);
                       }}
-                      className="text-xs text-[var(--muted)] underline"
+                      className="link-button"
                     >
                       Désélectionner tout
                     </button>
@@ -1195,13 +1175,8 @@ export default function Home() {
                 </div>
 
                 {translation ? (
-                  <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-[var(--muted)]">Traduction</p>
-                      <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs font-medium text-[var(--ink)]">
-                        {translation.difficulty}
-                      </span>
-                    </div>
+                  <div className="mt-5 border-l-2 border-[var(--ink)] pl-4">
+                    <p className="text-sm text-[var(--muted)]">Traduction</p>
                     <p className="mt-1 text-xl font-semibold text-[var(--ink)]">
                       {translation.translation}
                     </p>
@@ -1216,19 +1191,14 @@ export default function Home() {
         </section>
 
         {recentSourceTexts.length > 0 ? (
-          <section className="mt-8 panel p-6 sm:p-8">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Saved texts</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                  Tes derniers textes
-                </h2>
-              </div>
-              <span className="text-sm text-[var(--muted)]">
-                {recentSourceTexts.length} affiché(s)
-              </span>
+          <section className="panel mt-12">
+            <div className="mb-4 flex items-baseline justify-between gap-4">
+              <h2 className="text-[var(--ink)]">Derniers textes</h2>
+              <Link href="/historique" className="text-sm text-[var(--ink)] underline decoration-[var(--line)] hover:decoration-[var(--accent)]">
+                Tout l’historique
+              </Link>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid md:grid-cols-2 md:gap-x-10">
               {recentSourceTexts.map((sourceText) => (
                 <button
                   key={sourceText.id}
@@ -1236,13 +1206,13 @@ export default function Home() {
                   onClick={() => void loadTokensForText(sourceText.id)}
                   className={`token-card text-left ${selectedSourceTextId === sourceText.id ? "token-card-selected" : ""}`}
                 >
-                  <time className="eyebrow" dateTime={sourceText.createdAt}>
+                  <time className="mono text-xs text-[var(--muted)]" dateTime={sourceText.createdAt}>
                     {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
                   </time>
                   {sourceText.title ? (
-                    <p className="mt-1 text-xs font-medium text-[var(--accent-dark)]">{sourceText.title}</p>
+                    <p className="mt-0.5 text-xs font-medium text-[var(--accent-dark)]">{sourceText.title}</p>
                   ) : null}
-                  <p className="mt-2 line-clamp-2 text-base leading-7 text-[var(--ink)]" lang="ja">
+                  <p className="mt-1 line-clamp-2 text-base leading-7 text-[var(--ink)]" lang="ja">
                     {sourceText.content}
                   </p>
                 </button>

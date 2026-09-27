@@ -123,21 +123,17 @@ export default function HistoriquePage() {
   }
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-10">
-          <p className="eyebrow">MoriWords / Historique</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+        <header className="mb-8">
+          <h1 className="text-[var(--ink)]">
             Tous tes textes analysés
           </h1>
         </header>
 
-        <section className="panel p-6 sm:p-8">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Archive</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Recherche</h2>
-            </div>
+        <section className="panel">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <h2 className="text-[var(--ink)]">Recherche</h2>
             <span className="text-sm text-[var(--muted)]">{total} texte(s)</span>
           </div>
 
@@ -147,7 +143,7 @@ export default function HistoriquePage() {
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Rechercher dans le titre ou le contenu"
               aria-label="Rechercher dans l'historique"
-              className="mb-6 min-h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+              className="mb-6 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
             />
           </form>
 
@@ -163,7 +159,7 @@ export default function HistoriquePage() {
             </div>
           ) : sourceTexts.length > 0 ? (
             <>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid md:grid-cols-2 md:gap-x-10">
                 {sourceTexts.map((sourceText) => (
                   <Link
                     key={sourceText.id}
@@ -175,7 +171,7 @@ export default function HistoriquePage() {
                         {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
                       </time>
                       {sourceText.origin ? (
-                        <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
+                        <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
                           {ORIGIN_LABELS[sourceText.origin] ?? sourceText.origin}
                         </span>
                       ) : null}

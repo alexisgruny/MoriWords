@@ -272,26 +272,23 @@ export default function DeckTrainingPage() {
         </p>
       ) : null}
 
-      <section className="panel p-6 sm:p-8">
+      <section className="panel">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="eyebrow">Daily review</p>
-            <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">Entraînement</h2>
-          </div>
+          <h2 className="text-[var(--ink)]">Entraînement</h2>
           <span className="count-badge" aria-label={`${dueCards.length} carte(s) à revoir`}>
             {dueCards.length}
           </span>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            Total: {deck?.cards.length ?? 0}
+          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            Total : {deck?.cards.length ?? 0}
           </span>
-          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            Due today: {dueCards.length}
+          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            À revoir : {dueCards.length}
           </span>
-          <span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            Nouveau: {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
+          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
+            Nouveaux : {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
           </span>
         </div>
 
@@ -304,10 +301,10 @@ export default function DeckTrainingPage() {
                 setReviewMode(mode.id);
                 setShowAnswer(false);
               }}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition ${
                 reviewMode === mode.id
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                  : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
               }`}
             >
               {mode.label}
@@ -317,7 +314,7 @@ export default function DeckTrainingPage() {
 
         {activeCard ? (
           <>
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
+            <div className="border border-[var(--ink)] bg-[var(--paper)] p-5">
               {reviewMode === "context" ? (
                 activeCardContextSentence ? (
                   <>
@@ -331,7 +328,7 @@ export default function DeckTrainingPage() {
                     <p className="text-sm text-[var(--muted)]">
                       Aucun contexte disponible pour ce mot — mode kanji utilisé à la place
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
+                    <p className="mt-2 text-5xl font-bold text-[var(--ink)]" lang="ja">
                       {activeCard.lemma}
                     </p>
                   </>
@@ -339,7 +336,7 @@ export default function DeckTrainingPage() {
               ) : (
                 <>
                   <p className="text-sm text-[var(--muted)]">Mot à revoir</p>
-                  <p className="mt-2 text-3xl font-semibold text-[var(--ink)]" lang="ja">
+                  <p className="mt-2 text-5xl font-bold text-[var(--ink)]" lang="ja">
                     {activeCard.lemma}
                   </p>
                   {reviewMode === "standard" || reviewMode === "quiz" ? (
@@ -351,8 +348,8 @@ export default function DeckTrainingPage() {
               )}
 
               {reviewMode !== "quiz" && showAnswer ? (
-                <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--background)] p-3">
-                  <p className="text-xs uppercase tracking-[0.14em] text-[var(--accent-dark)]">Réponse</p>
+                <div className="mt-4 border-t border-[var(--ink)] pt-3">
+                  <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
                   {reviewMode !== "standard" ? (
                     <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
                       {activeCard.lemma} · {activeCard.reading ?? "lecture inconnue"}
@@ -383,10 +380,10 @@ export default function DeckTrainingPage() {
                       const isSelected = selectedQuizChoice === choice;
                       const feedbackClass = selectedQuizChoice
                         ? isCorrectChoice
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
+                          ? "border-[var(--ink)] bg-[var(--ink)] text-white"
                           : isSelected
                             ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                            : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
                         : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]";
 
                       return (

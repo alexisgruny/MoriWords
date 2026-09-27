@@ -87,7 +87,7 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
 
   if (notFound) {
     return (
-      <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+      <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-6xl">
           <div className="empty-state">
             <p className="font-medium text-[var(--ink)]">Deck introuvable.</p>
@@ -108,14 +108,14 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <Link href="/decks" className="eyebrow">
               ← Decks
             </Link>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+            <h1 className="mt-1 text-[var(--ink)]">
               {deck?.name ?? "Deck"}
             </h1>
             {deck ? (
@@ -129,14 +129,14 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setIsDeletionPending(true)}
-              className="secondary-button px-4! py-2! text-xs! text-red-700 hover:bg-red-50"
+              className="secondary-button px-4! py-2! text-xs!"
             >
               Supprimer le deck
             </button>
           </div>
         </header>
 
-        <nav aria-label="Sections du deck" className="mb-8 flex flex-wrap gap-2">
+        <nav aria-label="Sections du deck" className="mb-8 flex flex-wrap gap-6 border-b border-[var(--line)]">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
 
@@ -145,10 +145,10 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
                 key={tab.href}
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                className={`-mb-px border-b-[3px] px-1 pb-2 text-sm font-semibold transition ${
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:border-[var(--accent)]"
+                    ? "border-[var(--accent)] text-[var(--ink)]"
+                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
                 }`}
               >
                 {tab.label}

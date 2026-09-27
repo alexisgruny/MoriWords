@@ -63,23 +63,19 @@ export default function VocabularyPage() {
   }, []);
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-10">
-          <p className="eyebrow">MoriWords / Vocabulaire</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+        <header className="mb-8">
+          <h1 className="text-[var(--ink)]">
             Vocabulaire global
           </h1>
         </header>
 
-        <section className="panel p-6 sm:p-8">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Saved vocabulary</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
+        <section className="panel">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <h2 className="text-[var(--ink)]">
                 Mots analysés
               </h2>
-            </div>
             <span className="text-sm text-[var(--muted)]">{filteredVocabularyEntries.length} mots</span>
           </div>
 
@@ -89,10 +85,10 @@ export default function VocabularyPage() {
                 key={level}
                 type="button"
                 onClick={() => setSelectedDifficulty(level)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition ${
                   selectedDifficulty === level
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                    : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
                 }`}
               >
                 {level === "all" ? "Tous" : level}
@@ -101,7 +97,7 @@ export default function VocabularyPage() {
           </div>
 
           {filteredVocabularyEntries.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid md:grid-cols-2 md:gap-x-10 xl:grid-cols-3">
               {filteredVocabularyEntries.map((entry) => (
                 <div key={`${entry.lemma}-${entry.occurrenceCount}`} className="token-card">
                   <div className="flex items-center justify-between gap-3">
@@ -112,12 +108,12 @@ export default function VocabularyPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2 text-sm text-[var(--muted)]">
                     <span>{entry.reading ?? "lecture inconnue"}</span>
-                    <span>{entry.difficulty ?? "N5"}</span>
+                    <span className="mono">{entry.difficulty === "unknown" ? "—" : (entry.difficulty ?? "—")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
                     <span>{entry.partOfSpeech || "—"}</span>
                     {addedLemmas.has(entry.lemma) ? (
-                      <span className="rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--ink)]">
+                      <span className="rounded-sm border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--ink)]">
                         Déjà ajouté
                       </span>
                     ) : null}

@@ -101,15 +101,14 @@ export default function DeckStatsPage() {
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : null}
 
-      <section className="panel p-6 sm:p-8">
-        <p className="eyebrow">Progress</p>
-        <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Vue d’ensemble</h2>
+      <section className="panel">
+        <h2 className="text-[var(--ink)]">Vue d’ensemble</h2>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {summary.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-[var(--line)] bg-[var(--background)] p-4">
-              <p className="text-xs uppercase tracking-wide text-[var(--muted)]">{item.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-[var(--ink)]">{item.value}</p>
+            <div key={item.label} className="border-t border-[var(--ink)] pt-3">
+              <p className="text-sm text-[var(--muted)]">{item.label}</p>
+              <p className="font-display mt-1 text-4xl font-bold text-[var(--ink)]">{item.value}</p>
             </div>
           ))}
         </div>
@@ -118,7 +117,7 @@ export default function DeckStatsPage() {
           <div className="mt-6">
             <p className="eyebrow">Répartition des mots</p>
             <div
-              className="mt-3 flex h-3 overflow-hidden rounded-full border border-[var(--line)]"
+              className="mt-3 flex h-3 overflow-hidden rounded-sm border border-[var(--line)]"
               role="img"
               aria-label={`${breakdown.new} nouveaux, ${breakdown.learning} en cours, ${breakdown.mature} maîtrisés`}
             >
@@ -147,16 +146,15 @@ export default function DeckStatsPage() {
         ) : null}
       </section>
 
-      <section className="panel p-6 sm:p-8">
-        <p className="eyebrow">À travailler</p>
-        <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Mots les plus difficiles</h2>
+      <section className="panel">
+        <h2 className="text-[var(--ink)]">Mots les plus difficiles</h2>
 
         {hardestCards.length > 0 ? (
           <ul className="mt-4 flex flex-col gap-2">
             {hardestCards.map((card) => (
               <li
                 key={card.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-1 py-3"
               >
                 <span>
                   <span className="text-lg font-semibold text-[var(--ink)]" lang="ja">
@@ -177,16 +175,15 @@ export default function DeckStatsPage() {
         )}
       </section>
 
-      <section className="panel p-6 sm:p-8">
-        <p className="eyebrow">Historique</p>
-        <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">Dernières révisions</h2>
+      <section className="panel">
+        <h2 className="text-[var(--ink)]">Dernières révisions</h2>
 
         {stats && stats.recentReviews.length > 0 ? (
           <ul className="mt-4 flex flex-col gap-2">
             {stats.recentReviews.map((review) => (
               <li
                 key={review.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-1 py-2 text-sm"
               >
                 <span className="text-[var(--ink)]" lang="ja">
                   {review.lemma}
@@ -195,7 +192,7 @@ export default function DeckStatsPage() {
                   {new Date(review.reviewedAt).toLocaleString("fr-FR")}
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  className={`rounded-sm px-2 py-0.5 text-xs font-medium ${
                     review.quality >= 3 ? "bg-[var(--accent-soft)] text-[var(--ink)]" : "bg-red-50 text-red-700"
                   }`}
                 >

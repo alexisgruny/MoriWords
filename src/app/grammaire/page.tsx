@@ -20,11 +20,10 @@ export default function GrammarPage() {
     grammarPoints.filter((point) => point.level === candidate).length;
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-10">
-          <p className="eyebrow">MoriWords / Grammaire</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+        <header className="mb-8">
+          <h1 className="text-[var(--ink)]">
             Grammaire par niveau JLPT
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
@@ -33,16 +32,16 @@ export default function GrammarPage() {
           </p>
         </header>
 
-        <section className="panel p-6 sm:p-8">
+        <section className="panel">
           <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
             <button
               type="button"
               onClick={() => setLevel("all")}
               aria-pressed={level === "all"}
-              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+              className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                 level === "all"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                  : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                  : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
               }`}
             >
               Tous ({grammarPoints.length})
@@ -53,10 +52,10 @@ export default function GrammarPage() {
                 type="button"
                 onClick={() => setLevel(candidate)}
                 aria-pressed={level === candidate}
-                className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
                   level === candidate
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
-                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)]"
+                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                    : "border-[var(--line)] bg-transparent text-[var(--muted)] hover:border-[var(--ink)]"
                 }`}
               >
                 {candidate} ({countFor(candidate)})
@@ -69,7 +68,7 @@ export default function GrammarPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Rechercher un motif ou un sens (ex. ながら, parce que)"
             aria-label="Rechercher un point de grammaire"
-            className="mb-6 min-h-12 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+            className="mb-6 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
           />
 
           <p className="mb-4 text-sm text-[var(--muted)]">{results.length} point(s)</p>
@@ -85,7 +84,7 @@ export default function GrammarPage() {
                       </span>
                       <span className="mt-1 block text-sm text-[var(--muted)]">{point.meaning}</span>
                     </span>
-                    <span className="shrink-0 whitespace-nowrap rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--ink)]">
+                    <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-[11px] text-[var(--ink)]">
                       JLPT {point.level}
                     </span>
                   </summary>
@@ -102,7 +101,7 @@ export default function GrammarPage() {
                       {point.examples.map((example) => (
                         <li
                           key={example.ja}
-                          className="rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2"
+                          className="border-l-2 border-[var(--line)] py-1 pl-3"
                         >
                           <p className="text-base text-[var(--ink)]" lang="ja">
                             {example.ja}

@@ -138,39 +138,38 @@ export default function DecksPage() {
   const totalDueCount = decksWithDueCount.reduce((sum, entry) => sum + entry.dueCount, 0);
 
   return (
-    <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-12">
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-10">
-          <p className="eyebrow">MoriWords / Decks</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-            Tes decks de vocabulaire
-          </h1>
+        <header className="mb-8">
+          <h1 className="text-[var(--ink)]">Decks</h1>
+          <p className="mt-2 max-w-2xl text-[var(--muted)]">
+            Tes listes de vocabulaire. Ouvre un deck pour t’entraîner, ou crée-en un nouveau.
+          </p>
         </header>
 
         {decks.length > 0 ? (
-          <section className="mb-8 panel p-6 sm:p-8">
-            <div className="mb-4 flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Today</p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">
-                  À réviser aujourd’hui
-                </h2>
-              </div>
-              <span className="count-badge">{totalDueCount}</span>
+          <section className="panel mb-10">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <h2 className="text-[var(--ink)]">À réviser aujourd’hui</h2>
+              <span className="count-badge" aria-label={`${totalDueCount} carte(s) à réviser`}>
+                {totalDueCount}
+              </span>
             </div>
 
             {decksWithDueCount.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <ul className="flex flex-col">
                 {decksWithDueCount.map(({ deck, dueCount }) => (
-                  <Link
-                    key={deck.id}
-                    href={`/decks/${deck.id}`}
-                    className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] transition hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
-                  >
-                    {deck.name} <span className="text-[var(--accent-dark)]">· {dueCount}</span>
-                  </Link>
+                  <li key={deck.id} className="border-b border-[var(--line)]">
+                    <Link
+                      href={`/decks/${deck.id}`}
+                      className="flex items-baseline justify-between gap-4 px-1 py-3 text-[var(--ink)] hover:bg-[var(--tint)]"
+                    >
+                      <span className="font-medium">{deck.name}</span>
+                      <span className="mono text-sm text-[var(--accent-dark)]">{dueCount} à revoir →</span>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <p className="text-sm text-[var(--muted)]">
                 Rien à réviser pour le moment dans tes {decks.length} deck(s).
@@ -179,24 +178,19 @@ export default function DecksPage() {
           </section>
         ) : null}
 
-        <section className="panel p-6 sm:p-8">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Decks</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--ink)]">
-                Cartes de vocabulaire
-              </h2>
-            </div>
-            <span className="text-sm text-[var(--muted)]">{decks.length} deck(s)</span>
+        <section className="panel">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <h2 className="text-[var(--ink)]">Tous les decks</h2>
+            <span className="mono text-xs text-[var(--muted)]">{decks.length} deck(s)</span>
           </div>
 
           <form onSubmit={(event) => void handleCreateDeck(event)} className="mb-6 flex flex-col gap-3 sm:flex-row">
             <input
               value={deckName}
               onChange={(event) => setDeckName(event.target.value)}
-              placeholder="Nom du deck"
+              placeholder="Nom du nouveau deck"
               aria-label="Nom du deck"
-              className="min-h-12 flex-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+              className="min-h-11 flex-1 border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
             />
             <button type="submit" disabled={isCreatingDeck} className="primary-button">
               {isCreatingDeck ? "Création..." : "Créer le deck"}
@@ -204,24 +198,24 @@ export default function DecksPage() {
           </form>
 
           {error ? (
-            <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="mb-4 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </p>
           ) : null}
 
           {decks.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div>
               {decks.map((deck) => (
-                <div key={deck.id} className="token-card relative block text-left">
-                  <Link href={`/decks/${deck.id}`} className="block pr-8">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-lg font-semibold text-[var(--ink)]">{deck.name}</span>
-                      <span className="count-badge">{deck.cards.length}</span>
-                    </div>
-                    <p className="mt-3 text-sm text-[var(--muted)]">
+                <div key={deck.id} className="token-card relative flex items-start gap-4">
+                  <Link href={`/decks/${deck.id}`} className="block min-w-0 flex-1">
+                    <span className="block text-lg font-bold text-[var(--ink)]" style={{ fontFamily: "var(--font-mincho), serif" }}>
+                      {deck.name}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-[var(--muted)]">
                       {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
-                    </p>
+                    </span>
                   </Link>
+                  <span className="mono mt-1 shrink-0 text-sm text-[var(--ink)]">{deck.cards.length} carte{deck.cards.length > 1 ? "s" : ""}</span>
                   <button
                     type="button"
                     onClick={(event) => {
@@ -230,7 +224,7 @@ export default function DecksPage() {
                       setDeckPendingDeletion(deck);
                     }}
                     aria-label={`Supprimer le deck « ${deck.name} »`}
-                    className="absolute right-3 top-3 rounded-full p-1.5 text-[var(--muted)] transition hover:bg-red-50 hover:text-red-700"
+                    className="shrink-0 px-1.5 text-[var(--muted)] hover:text-[var(--accent-dark)]"
                   >
                     ✕
                   </button>
@@ -240,8 +234,8 @@ export default function DecksPage() {
           ) : (
             <div className="empty-state">
               <p className="font-medium text-[var(--ink)]">Aucun deck pour le moment.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Crée un deck puis ajoute-y quelques mots sélectionnés depuis la page Analyser.
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Crée un deck puis ajoute-y des mots depuis la page Analyser.
               </p>
             </div>
           )}

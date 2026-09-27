@@ -2,8 +2,8 @@
 // de navigation (voir src/components/nav.tsx).
 export default function Footer() {
   return (
-    <footer className="mt-auto border-t border-[var(--line)] bg-[var(--paper)]">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
+    <footer className="mt-16 border-t border-[var(--line)] px-5 sm:px-8 lg:px-12">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 py-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p>MoriWords · Analyse et mémorisation du japonais, mot par mot.</p>
           <p className="mt-1 text-xs">
