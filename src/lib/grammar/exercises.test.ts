@@ -15,7 +15,9 @@ import { conjugationForms } from "@/lib/conjugation/forms";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import {
+  correctKanjiAnswer,
   correctTranslation,
+  isKanjiExerciseId,
   pickConjugationExercise,
   pickExampleExercise,
   pickGrammarExercise,
@@ -274,6 +276,40 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     const allIds = JLPT_KANJI.map((entry) => `kanji:${entry.kanji}`);
 
     await expect(pickKanjiExercise("all", allIds)).resolves.toBeNull();
+  });
+});
+
+describe("correctKanjiAnswer", () => {
+  it("marks an exact match as correct without calling Claude", () => {
+    expect(generateJsonFromClaudeMock).not.toHaveBeenCalled();
+    expect(correctKanjiAnswer({ reference: "食", answer: "食" })).toEqual({
+      verdict: "correct",
+      corrected: "食",
+      summary: "Bonne réponse !",
+      errors: [],
+    });
+  });
+
+  it("marks a wrong kanji as incorrect and shows the expected one", () => {
+    const correction = correctKanjiAnswer({ reference: "食", answer: "飲" });
+
+    expect(correction.verdict).toBe("incorrect");
+    expect(correction.corrected).toBe("食");
+    expect(correction.errors).toEqual([
+      { wrong: "飲", right: "食", explanation: "Le kanji attendu est 食." },
+    ]);
+  });
+
+  it("trims the answer before comparing", () => {
+    expect(correctKanjiAnswer({ reference: "食", answer: " 食 " }).verdict).toBe("correct");
+  });
+});
+
+describe("isKanjiExerciseId", () => {
+  it("recognizes kanji exercise ids and rejects other sources", () => {
+    expect(isKanjiExerciseId("kanji:食")).toBe(true);
+    expect(isKanjiExerciseId("static:n5-wa-desu:0")).toBe(false);
+    expect(isKanjiExerciseId("conj:n5-te-form:0")).toBe(false);
   });
 });
 

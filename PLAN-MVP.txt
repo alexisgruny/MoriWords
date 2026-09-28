@@ -1259,6 +1259,23 @@ meme page. Regroupe sous /exercices, avec une sous-page par type.
   toutes les routes /exercices* et les pages de reference repondent 200.
 
 
+Priorite 33 - Correction locale des exercices de kanji (sans appel Claude)
+------------------------------------------------------------------
+Remarque de l'utilisateur : contrairement a un exercice de traduction (qui a
+de nombreuses formulations valides et a donc besoin de Claude pour juger),
+un exercice de kanji n'a qu'une seule bonne reponse (le caractere lui-meme) ;
+appeler Claude a chaque soumission etait un gaspillage de tokens inutile.
+- [TERMINE] correctKanjiAnswer (src/lib/grammar/exercises.ts) : comparaison
+  exacte locale entre la reponse et le kanji de reference, sans appel API.
+- [TERMINE] La route POST /api/grammar/exercises/correct detecte un
+  exercice de kanji (isKanjiExerciseId, prefixe "kanji:") et utilise cette
+  correction locale a la place de correctTranslation (Claude) ; les autres
+  sources (grammaire, conjugaison, mon vocabulaire) continuent d'appeler
+  Claude comme avant.
+- Verifie : tsc, eslint, vitest (suite complete, 177 tests dont 4 nouveaux
+  sur correctKanjiAnswer/isKanjiExerciseId) tous verts.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

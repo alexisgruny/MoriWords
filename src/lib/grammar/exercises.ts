@@ -70,7 +70,7 @@ type ExerciseGenerator = typeof generateGrammarExercises;
 const STATIC_PREFIX = "static:";
 const EXAMPLE_PREFIX = "ex:";
 const CONJUGATION_PREFIX = "conj:";
-const KANJI_PREFIX = "kanji:";
+export const KANJI_PREFIX = "kanji:";
 
 type PoolEntry = { id: string; french: string };
 
@@ -286,6 +286,33 @@ const correctionSchema = z.object({
 });
 
 export type Correction = z.infer<typeof correctionSchema>;
+
+// Un exercice de kanji n'a qu'une seule bonne réponse (le caractère lui-même),
+// contrairement à une traduction qui a de nombreuses formulations valides :
+// pas besoin d'appeler Claude, une comparaison locale suffit et ne coûte
+// aucun token.
+export function isKanjiExerciseId(id: string): boolean {
+  return id.startsWith(KANJI_PREFIX);
+}
+
+export function correctKanjiAnswer(params: { reference: string; answer: string }): Correction {
+  if (params.answer.trim() === params.reference) {
+    return { verdict: "correct", corrected: params.reference, summary: "Bonne réponse !", errors: [] };
+  }
+
+  return {
+    verdict: "incorrect",
+    corrected: params.reference,
+    summary: "Ce n'est pas le bon kanji.",
+    errors: [
+      {
+        wrong: params.answer.trim(),
+        right: params.reference,
+        explanation: `Le kanji attendu est ${params.reference}.`,
+      },
+    ],
+  };
+}
 
 // Fait corriger la traduction de l'élève par Claude : il compare avec la
 // référence (sans pénaliser une autre traduction valide), explique chaque
