@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedCard } from "@/lib/decks/ownership";
 import { scheduleReview } from "@/lib/srs/scheduler";
 
 // Enregistre le résultat d'une révision (note de 0 à 5) : calcule le
@@ -8,6 +10,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId, cardId } = await params;
     const body: unknown = await request.json();
@@ -28,11 +35,9 @@ export async function POST(
       );
     }
 
-    const card = await prisma.card.findUnique({
-      where: { id: cardId },
-    });
+    const card = await findOwnedCard(deckId, cardId, user.id);
 
-    if (!card || card.deckId !== deckId) {
+    if (!card) {
       return Response.json(
         { error: "Carte introuvable pour ce deck." },
         { status: 404 },

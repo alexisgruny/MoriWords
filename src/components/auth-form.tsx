@@ -28,7 +28,16 @@ function errorMessage(error: { code?: string; status?: number } | null | undefin
 
 // Formulaire de connexion ou d'inscription (email + mot de passe), avec le
 // bouton Google si le serveur l'a configuré.
-export function AuthForm({ mode, googleEnabled }: { mode: Mode; googleEnabled: boolean }) {
+export function AuthForm({
+  mode,
+  googleEnabled,
+  redirectTo,
+}: {
+  mode: Mode;
+  googleEnabled: boolean;
+  // Chemin interne déjà validé (voir safeRedirectPath).
+  redirectTo: string;
+}) {
   const router = useRouter();
   const isSignup = mode === "signup";
 
@@ -53,7 +62,7 @@ export function AuthForm({ mode, googleEnabled }: { mode: Mode; googleEnabled: b
         return;
       }
 
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Le service de connexion est injoignable pour le moment.");
@@ -64,7 +73,7 @@ export function AuthForm({ mode, googleEnabled }: { mode: Mode; googleEnabled: b
 
   async function handleGoogle() {
     setError(null);
-    const result = await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+    const result = await authClient.signIn.social({ provider: "google", callbackURL: redirectTo });
 
     if (result?.error) {
       setError(errorMessage(result.error, "La connexion avec Google a échoué."));
@@ -153,7 +162,10 @@ export function AuthForm({ mode, googleEnabled }: { mode: Mode; googleEnabled: b
 
       <p className="mt-5 text-center text-sm text-[var(--muted)]">
         {isSignup ? "Déjà un compte ? " : "Pas encore de compte ? "}
-        <Link href={isSignup ? "/connexion" : "/inscription"} className="link-button text-sm!">
+        <Link
+          href={`${isSignup ? "/connexion" : "/inscription"}${redirectTo === "/" ? "" : `?suivant=${encodeURIComponent(redirectTo)}`}`}
+          className="link-button text-sm!"
+        >
           {isSignup ? "Se connecter" : "Créer un compte"}
         </Link>
       </p>

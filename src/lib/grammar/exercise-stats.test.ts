@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { getExerciseStats } from "./exercise-stats";
 
@@ -9,9 +10,21 @@ const RUN_ID = `test-stats-${Date.now()}`;
 
 async function seedAttempts(rows: Array<{ source: string; focus: string; level: string | null; correct: boolean }>) {
   await prisma.exerciseAttempt.createMany({
-    data: rows.map((row) => ({ ...row, focus: `${RUN_ID}:${row.focus}` })),
+    data: rows.map((row) => ({ ...row, userId, focus: `${RUN_ID}:${row.focus}` })),
   });
 }
+
+// Les statistiques sont propres à chaque compte : un compte jetable isole ce
+// fichier des autres tests et des vraies données.
+let userId = "";
+
+beforeAll(async () => {
+  userId = (await createTestUser("exercise-stats")).id;
+});
+
+afterAll(async () => {
+  await deleteTestUser(userId);
+});
 
 afterEach(async () => {
   await prisma.exerciseAttempt.deleteMany({ where: { focus: { startsWith: RUN_ID } } });
@@ -26,7 +39,7 @@ describe("getExerciseStats", () => {
       { source: "kanji", focus: "食", level: "N5", correct: true },
     ]);
 
-    const stats = await getExerciseStats();
+    const stats = await getExerciseStats(userId);
 
     const grammar = stats.bySource.find((entry) => entry.source === "grammar")!;
     expect(grammar.total).toBeGreaterThanOrEqual(3);
@@ -44,7 +57,7 @@ describe("getExerciseStats", () => {
       { source: "conjugation", focus: "n1-literary-negative", level: "N1", correct: true },
     ]);
 
-    const stats = await getExerciseStats();
+    const stats = await getExerciseStats(userId);
 
     const weak = stats.weakPoints.find((point) => point.focus === `${RUN_ID}:n1-literary-negative`);
     expect(weak).toBeDefined();
@@ -56,7 +69,7 @@ describe("getExerciseStats", () => {
   it("does not flag a point with a single attempt, even a wrong one", async () => {
     await seedAttempts([{ source: "kanji", focus: "単発", level: "N3", correct: false }]);
 
-    const stats = await getExerciseStats();
+    const stats = await getExerciseStats(userId);
 
     expect(stats.weakPoints.some((point) => point.focus === `${RUN_ID}:単発`)).toBe(false);
   });
@@ -67,7 +80,7 @@ describe("getExerciseStats", () => {
       { source: "grammar", focus: "toujours-bon", level: "N5", correct: true },
     ]);
 
-    const stats = await getExerciseStats();
+    const stats = await getExerciseStats(userId);
 
     expect(stats.weakPoints.some((point) => point.focus === `${RUN_ID}:toujours-bon`)).toBe(false);
   });

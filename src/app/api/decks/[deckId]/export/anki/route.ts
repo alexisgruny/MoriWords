@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { cardsToAnkiTsv } from "@/lib/export/anki";
 
@@ -20,11 +21,16 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId } = await params;
 
-    const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
+    const deck = await prisma.deck.findFirst({
+      where: { id: deckId, userId: user.id },
       include: { cards: { orderBy: { createdAt: "desc" } } },
     });
 

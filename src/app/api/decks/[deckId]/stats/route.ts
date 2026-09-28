@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedDeck } from "@/lib/decks/ownership";
 
 // Calcule les statistiques d'un deck : nombre total de cartes, cartes dues,
 // nombre de révisions, taux de réussite et les 20 dernières révisions.
@@ -6,10 +8,15 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId } = await params;
 
-    const deck = await prisma.deck.findUnique({ where: { id: deckId } });
+    const deck = await findOwnedDeck(deckId, user.id);
 
     if (!deck) {
       return Response.json({ error: "Deck introuvable." }, { status: 404 });

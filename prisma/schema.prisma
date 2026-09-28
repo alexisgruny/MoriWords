@@ -62,8 +62,11 @@ model VocabularyEntry {
   occurrenceCount Int     @default(1)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  // Chaque compte a son propre vocabulaire (mots rencontrés dans ses textes).
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([lemma, sourceLanguage, targetLanguage])
+  @@unique([userId, lemma, sourceLanguage, targetLanguage])
   @@index([sourceLanguage, targetLanguage, occurrenceCount])
   @@index([difficulty, occurrenceCount])
 }
@@ -264,6 +267,7 @@ model User {
   decks            Deck[]
   sourceTexts      SourceText[]
   exerciseAttempts ExerciseAttempt[]
+  vocabularyEntries VocabularyEntry[]
 
   @@map("user")
 }

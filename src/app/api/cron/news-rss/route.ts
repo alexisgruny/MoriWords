@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db/prisma";
 import { NewsRssServiceError, ingestNextNewsArticle } from "@/lib/feeds/news-rss";
 
 // Nombre d'articles importés au maximum par déclenchement du cron, pour ne
@@ -23,10 +24,19 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Les textes appartiennent à un compte : l'import automatique alimente
+    // celui du propriétaire du site (OWNER_EMAIL).
+    const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
+    const owner = ownerEmail ? await prisma.user.findUnique({ where: { email: ownerEmail } }) : null;
+
+    if (!owner) {
+      return Response.json({ imported: 0, sourceTextIds: [] });
+    }
+
     const imported: string[] = [];
 
     for (let i = 0; i < MAX_ARTICLES_PER_RUN; i += 1) {
-      const sourceText = await ingestNextNewsArticle();
+      const sourceText = await ingestNextNewsArticle(owner.id);
 
       if (!sourceText) {
         break;

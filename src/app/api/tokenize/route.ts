@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { MAX_ANALYSIS_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -22,6 +23,11 @@ function isTokenizeRequest(value: unknown): value is TokenizeRequest {
 
 // Découpe un texte japonais en mots analysés (tokens), sans le sauvegarder.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const body: unknown = await request.json();
 

@@ -1,9 +1,15 @@
+import { requireUser } from "@/lib/auth/session";
 import { getDistractorTranslations } from "@/lib/translation/translate";
 
 // Renvoie un échantillon de traductions déjà connues, pour servir de leurres
 // dans le mode quiz du deck. exclude est une liste de sens séparés par "|"
 // (au minimum la bonne réponse, pour ne jamais la proposer deux fois).
 export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const excludeParam = searchParams.get("exclude") ?? "";

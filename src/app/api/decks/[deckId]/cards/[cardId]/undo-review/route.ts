@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedCard } from "@/lib/decks/ownership";
 
 // Annule la dernière révision d'une carte : restaure l'état SM-2 (répétitions,
 // intervalle, facilité, échéance) tel qu'il était juste avant, et supprime
@@ -9,12 +11,17 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId, cardId } = await params;
 
-    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    const card = await findOwnedCard(deckId, cardId, user.id);
 
-    if (!card || card.deckId !== deckId) {
+    if (!card) {
       return Response.json({ error: "Carte introuvable pour ce deck." }, { status: 404 });
     }
 

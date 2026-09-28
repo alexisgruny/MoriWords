@@ -130,11 +130,11 @@ export async function fetchNewsRssItems(): Promise<NewsRssItem[]> {
   return items;
 }
 
-// Prend le premier article du flux qui n'a pas déjà été importé (dédoublonné
-// par sourceUrl) et le sauvegarde comme SourceText. Renvoie null si tous les
+// Prend le premier article du flux que cet utilisateur n'a pas déjà importé
+// (dédoublonné par sourceUrl) et le sauvegarde comme SourceText à son nom. Renvoie null si tous les
 // articles actuellement dans le flux ont déjà été importés (le flux se
 // renouvelle au fil de la journée ; il suffit de réessayer plus tard).
-export async function ingestNextNewsArticle() {
+export async function ingestNextNewsArticle(userId: string) {
   const items = await fetchNewsRssItems();
 
   if (items.length === 0) {
@@ -144,6 +144,7 @@ export async function ingestNextNewsArticle() {
   const alreadyImported = await prisma.sourceText.findMany({
     where: {
       origin: NEWS_RSS_ORIGIN,
+      userId,
       sourceUrl: { in: items.map((item) => item.sourceUrl) },
     },
     select: { sourceUrl: true },
@@ -158,6 +159,7 @@ export async function ingestNextNewsArticle() {
 
   return prisma.sourceText.create({
     data: {
+      userId,
       // Comme pour les autres sources générées, title reste une métadonnée
       // distincte du contenu (jamais dupliquée dedans) : elle est déjà
       // affichée séparément dans l'historique, et un doublon y serait à la

@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { NewsSummaryServiceError, generateNewsSummary } from "@/lib/feeds/news-summary";
@@ -6,6 +7,11 @@ import { NewsSummaryServiceError, generateNewsSummary } from "@/lib/feeds/news-s
 // l'enregistre comme nouveau texte source, prêt à être analysé comme
 // n'importe quel autre texte.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;
@@ -14,7 +20,7 @@ export async function POST(request: Request) {
   try {
     // Récupère les sujets récents pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({
-      where: { origin: "news-summary" },
+      where: { origin: "news-summary", userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 15,
       select: { title: true },
@@ -26,6 +32,7 @@ export async function POST(request: Request) {
 
     const sourceText = await prisma.sourceText.create({
       data: {
+        userId: user.id,
         content: summary.content,
         title: summary.topic,
         origin: "news-summary",

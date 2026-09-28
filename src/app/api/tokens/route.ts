@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedSourceText } from "@/lib/decks/ownership";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
 import type { TokenResult } from "@/lib/tokenizer/types";
 
@@ -25,6 +27,11 @@ function isSaveTokensBody(value: unknown): value is SaveTokensBody {
 
 // Récupère les tokens d'un texte donné pour les réafficher depuis la DB.
 export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const sourceTextId = searchParams.get("sourceTextId");
@@ -39,6 +46,7 @@ export async function GET(request: Request) {
     const tokens = await prisma.token.findMany({
       where: {
         sourceTextId,
+        sourceText: { userId: user.id },
       },
       orderBy: {
         position: "asc",
@@ -69,6 +77,11 @@ export async function GET(request: Request) {
 
 // Enregistre la liste de tokens liée à un SourceText.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -77,6 +90,10 @@ export async function POST(request: Request) {
         { error: "sourceTextId et tokens sont requis." },
         { status: 400 },
       );
+    }
+
+    if (!(await findOwnedSourceText(body.sourceTextId, user.id))) {
+      return Response.json({ error: "Texte introuvable." }, { status: 404 });
     }
 
     const created = await prisma.token.createMany({

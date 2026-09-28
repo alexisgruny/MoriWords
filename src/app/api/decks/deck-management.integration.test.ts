@@ -2,7 +2,11 @@
 // aucun appel réel à Anthropic. Couvre le renommage de deck, l'édition et le
 // déplacement de carte, l'annulation de révision et la liste des cartes dues
 // tous decks confondus.
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { testUser } = vi.hoisted(() => ({ testUser: { id: "", email: "" } }));
+
+vi.mock("@/lib/auth/session", () => ({ requireUser: async () => testUser }));
 
 const { translateTextMock, generateJsonFromClaudeMock } = vi.hoisted(() => ({
   translateTextMock: vi.fn(),
@@ -18,6 +22,7 @@ vi.mock("@/lib/feeds/claude-json-generator", () => ({
   generateJsonFromClaude: generateJsonFromClaudeMock,
 }));
 
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { POST as createDeck } from "@/app/api/decks/route";
 import { PATCH as patchDeckRename } from "@/app/api/decks/[deckId]/route";
@@ -45,7 +50,12 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+beforeAll(async () => {
+  Object.assign(testUser, await createTestUser("deck-management"));
+});
+
 afterAll(async () => {
+  await deleteTestUser(testUser.id);
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
   await prisma.$disconnect();
 });
@@ -247,7 +257,7 @@ describe("GET /api/decks/due", () => {
     );
     const { card: cardB } = (await addB.json()) as { card: { id: string } };
 
-    const response = await getDueCards();
+    const response = await getDueCards(new Request("http://localhost/api/decks/due"));
     const body = (await response.json()) as {
       cards: Array<{ id: string; deckId: string; deck: { name: string } }>;
     };

@@ -1,6 +1,10 @@
 // Vraie DB Postgres, mais translateText et generateJsonFromClaude sont mockés :
 // aucun appel réel à Anthropic.
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { testUser } = vi.hoisted(() => ({ testUser: { id: "", email: "" } }));
+
+vi.mock("@/lib/auth/session", () => ({ requireUser: async () => testUser }));
 
 const { translateTextMock, generateJsonFromClaudeMock } = vi.hoisted(() => ({
   translateTextMock: vi.fn(),
@@ -16,6 +20,7 @@ vi.mock("@/lib/feeds/claude-json-generator", () => ({
   generateJsonFromClaude: generateJsonFromClaudeMock,
 }));
 
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { POST as createDeck } from "@/app/api/decks/route";
 import { POST as addCard } from "@/app/api/decks/[deckId]/cards/route";
@@ -47,7 +52,12 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+beforeAll(async () => {
+  Object.assign(testUser, await createTestUser("examples"));
+});
+
 afterAll(async () => {
+  await deleteTestUser(testUser.id);
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
   // Le cache par mot (LemmaExampleCache) n'est pas lié à un deck : à nettoyer
   // explicitement pour ne pas fausser une future exécution de ces tests (qui

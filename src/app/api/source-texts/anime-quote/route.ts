@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { QuoteServiceError, generateAnimeQuote } from "@/lib/feeds/anime-quote";
@@ -5,6 +6,11 @@ import { QuoteServiceError, generateAnimeQuote } from "@/lib/feeds/anime-quote";
 // Génère une citation d'anime via Claude et l'enregistre comme nouveau
 // texte source, prêt à être analysé comme n'importe quel autre texte.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;
@@ -13,7 +19,7 @@ export async function POST(request: Request) {
   try {
     // Récupère les citations récentes pour éviter que Claude se répète.
     const recentQuotes = await prisma.sourceText.findMany({
-      where: { origin: "anime-quote" },
+      where: { origin: "anime-quote", userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 15,
       select: { content: true },
@@ -23,6 +29,7 @@ export async function POST(request: Request) {
 
     const sourceText = await prisma.sourceText.create({
       data: {
+        userId: user.id,
         content: quote.content,
         title: quote.character ? `${quote.source} — ${quote.character}` : quote.source,
         origin: "anime-quote",

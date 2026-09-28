@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { MAX_TRANSLATION_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { TranslationServiceError, translateText } from "@/lib/translation/translate";
@@ -26,6 +27,11 @@ function isTranslateRequest(value: unknown): value is TranslateRequest {
 
 // Traduit un mot ou une phrase (japonais vers français par défaut).
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;

@@ -1,8 +1,13 @@
 // Runs against the real local Postgres DB (same DATABASE_URL as `npm run dev`),
 // exercising the actual route handlers end to end instead of mocked Prisma calls.
 // This mirrors the manual flow already validated by hand during development.
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
+const { testUser } = vi.hoisted(() => ({ testUser: { id: "", email: "" } }));
+
+vi.mock("@/lib/auth/session", () => ({ requireUser: async () => testUser }));
+
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { POST as createSourceText } from "@/app/api/source-texts/route";
 import { POST as createDeck } from "@/app/api/decks/route";
@@ -15,7 +20,12 @@ import { jsonRequest } from "./test-helpers";
 const deckIdsToCleanUp: string[] = [];
 const sourceTextIdsToCleanUp: string[] = [];
 
+beforeAll(async () => {
+  Object.assign(testUser, await createTestUser("cards-flow"));
+});
+
 afterAll(async () => {
+  await deleteTestUser(testUser.id);
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
   await prisma.sourceText.deleteMany({ where: { id: { in: sourceTextIdsToCleanUp } } });
   await prisma.$disconnect();

@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -21,10 +22,16 @@ function isSaveVocabularyBody(value: unknown): value is SaveVocabularyBody {
   return Array.isArray(candidate.tokens);
 }
 
-// Renvoie les 20 mots les plus fréquents du vocabulaire global.
-export async function GET() {
+// Renvoie les 20 mots les plus fréquents du vocabulaire de l'utilisateur.
+export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const entries = await prisma.vocabularyEntry.findMany({
+      where: { userId: user.id },
       orderBy: {
         occurrenceCount: "desc",
       },
@@ -48,9 +55,14 @@ export async function GET() {
   }
 }
 
-// Regroupe une liste de tokens par mot et met à jour le vocabulaire global :
+// Regroupe une liste de tokens par mot et met à jour le vocabulaire de l'utilisateur :
 // crée les mots nouveaux, incrémente le compteur des mots déjà connus.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -69,7 +81,8 @@ export async function POST(request: Request) {
       vocabulary.map((entry) =>
         prisma.vocabularyEntry.upsert({
           where: {
-            lemma_sourceLanguage_targetLanguage: {
+            userId_lemma_sourceLanguage_targetLanguage: {
+              userId: user.id,
               lemma: entry.lemma,
               sourceLanguage,
               targetLanguage,
@@ -85,6 +98,7 @@ export async function POST(request: Request) {
             difficulty: entry.difficulty,
           },
           create: {
+            userId: user.id,
             lemma: entry.lemma,
             surface: entry.lemma,
             reading: entry.reading ?? null,

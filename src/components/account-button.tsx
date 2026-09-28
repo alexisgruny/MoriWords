@@ -58,7 +58,7 @@ export function AccountButton() {
   async function handleSignOut() {
     setIsOpen(false);
     await authClient.signOut();
-    router.push("/");
+    router.push("/connexion");
     router.refresh();
   }
 

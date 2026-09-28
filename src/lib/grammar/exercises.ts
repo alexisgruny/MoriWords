@@ -131,11 +131,12 @@ export async function pickGrammarExercise(
 }
 
 // Choisit au hasard une phrase d'exemple des mots sauvegardés dans les decks
-// (déjà traduite), pour s'entraîner sur son propre vocabulaire. Le niveau du
+// de l'utilisateur (déjà traduite), pour s'entraîner sur son propre vocabulaire. Le niveau du
 // mot n'est pas stocké : il est recalculé ici, donc le filtre par niveau se
 // fait en mémoire plutôt qu'en SQL (acceptable vu la taille d'un vocabulaire
 // personnel). focusIn restreint aux lemmes listés (points faibles).
 export async function pickExampleExercise(
+  userId: string,
   level: GrammarLevel | "all",
   excludeIds: string[],
   focusIn?: string[],
@@ -145,7 +146,7 @@ export async function pickExampleExercise(
     .map((id) => id.slice(EXAMPLE_PREFIX.length));
 
   const candidates = await prisma.cardExample.findMany({
-    where: { id: { notIn: excluded } },
+    where: { id: { notIn: excluded }, card: { deck: { userId } } },
     include: { card: { select: { lemma: true } } },
   });
 
@@ -233,9 +234,11 @@ export async function pickKanjiExercise(
 
 // Retrouve la phrase française et sa traduction japonaise de référence à
 // partir de l'identifiant d'un exercice, avec son niveau JLPT (pour les
-// statistiques de progression, voir logExerciseAttempt).
+// statistiques de progression, voir logExerciseAttempt). userId limite les
+// phrases d'exemple (issues des decks) à celles de l'utilisateur.
 export async function resolveExercise(
   id: string,
+  userId: string,
 ): Promise<{ french: string; japanese: string; focus: string; level: string | null } | null> {
   if (id.startsWith(STATIC_PREFIX)) {
     const [pointId, indexText] = id.slice(STATIC_PREFIX.length).split(":");
@@ -275,8 +278,8 @@ export async function resolveExercise(
   }
 
   if (id.startsWith(EXAMPLE_PREFIX)) {
-    const example = await prisma.cardExample.findUnique({
-      where: { id: id.slice(EXAMPLE_PREFIX.length) },
+    const example = await prisma.cardExample.findFirst({
+      where: { id: id.slice(EXAMPLE_PREFIX.length), card: { deck: { userId } } },
       include: { card: { select: { lemma: true } } },
     });
 
@@ -332,6 +335,7 @@ export function getExerciseSource(id: string): ExerciseSource {
 // correction : une écriture de log manquée n'est pas grave, juste un point
 // de moins dans les statistiques.
 export async function logExerciseAttempt(params: {
+  userId: string;
   exerciseId: string;
   focus: string;
   level: string | null;
@@ -340,6 +344,7 @@ export async function logExerciseAttempt(params: {
   try {
     await prisma.exerciseAttempt.create({
       data: {
+        userId: params.userId,
         source: getExerciseSource(params.exerciseId),
         focus: params.focus,
         level: params.level,

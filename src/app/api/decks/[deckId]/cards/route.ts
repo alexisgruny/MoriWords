@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedDeck, findOwnedSourceText } from "@/lib/decks/ownership";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
 import { autoTranslateLemma } from "@/lib/decks/auto-translate";
 import { saveExamples, tryGenerateExamples } from "@/lib/decks/card-examples";
@@ -15,6 +17,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;
@@ -49,7 +56,12 @@ export async function POST(
       return tooLongResponse("Le sens", MAX_MEANING_LENGTH);
     }
 
-    const sourceTextId = typeof candidate.sourceTextId === "string" ? candidate.sourceTextId : null;
+    // Une occurrence ne peut pointer que vers un texte de l'utilisateur.
+    const requestedSourceTextId = typeof candidate.sourceTextId === "string" ? candidate.sourceTextId : null;
+    const sourceTextId =
+      requestedSourceTextId && (await findOwnedSourceText(requestedSourceTextId, user.id))
+        ? requestedSourceTextId
+        : null;
     const position = typeof candidate.position === "number" && Number.isInteger(candidate.position)
       ? candidate.position
       : null;
@@ -61,9 +73,7 @@ export async function POST(
       meaning: typeof candidate.meaning === "string" ? candidate.meaning : null,
     });
 
-    const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
-    });
+    const deck = await findOwnedDeck(deckId, user.id);
 
     if (!deck) {
       return Response.json(
@@ -177,11 +187,16 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId } = await params;
 
     const cards = await prisma.card.findMany({
-      where: { deckId },
+      where: { deckId, deck: { userId: user.id } },
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { reviewLogs: true } },

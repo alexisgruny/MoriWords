@@ -1,5 +1,9 @@
 // Vraie DB Postgres, mais translateText est mocké : aucun appel réel à Anthropic.
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { testUser } = vi.hoisted(() => ({ testUser: { id: "", email: "" } }));
+
+vi.mock("@/lib/auth/session", () => ({ requireUser: async () => testUser }));
 
 const { translateTextMock } = vi.hoisted(() => ({ translateTextMock: vi.fn() }));
 
@@ -8,13 +12,14 @@ vi.mock("@/lib/translation/translate", async (importOriginal) => {
   return { ...actual, translateText: translateTextMock };
 });
 
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { POST as translateMissing } from "@/app/api/decks/[deckId]/cards/translate-missing/route";
 
 const deckIdsToCleanUp: string[] = [];
 
 async function createDeckWithCards(cards: Array<{ lemma: string; meaning: string | null }>) {
-  const deck = await prisma.deck.create({ data: { name: `Translate-missing test deck ${Date.now()}` } });
+  const deck = await prisma.deck.create({ data: { userId: testUser.id, name: `Translate-missing test deck ${Date.now()}` } });
   deckIdsToCleanUp.push(deck.id);
 
   for (const card of cards) {
@@ -47,7 +52,12 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+beforeAll(async () => {
+  Object.assign(testUser, await createTestUser("translate-missing"));
+});
+
 afterAll(async () => {
+  await deleteTestUser(testUser.id);
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
   await prisma.$disconnect();
 });

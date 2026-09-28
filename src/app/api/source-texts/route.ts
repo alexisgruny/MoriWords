@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { MAX_ANALYSIS_TEXT_LENGTH, MAX_TITLE_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 
@@ -21,6 +22,11 @@ function isCreateSourceTextBody(
 
 // Enregistre un nouveau texte source (collé manuellement ou généré) en base.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -45,6 +51,7 @@ export async function POST(request: Request) {
 
     const sourceText = await prisma.sourceText.create({
       data: {
+        userId: user.id,
         content: body.content,
         title: body.title,
         origin: body.origin ?? "manual",
@@ -75,6 +82,11 @@ const MAX_LIMIT = 50;
 // avec limit/offset, permet de parcourir tout l'historique par pages
 // (utilisé par /historique).
 export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.trim() ?? "";
@@ -89,12 +101,13 @@ export async function GET(request: Request) {
 
     const where = query
       ? {
+          userId: user.id,
           OR: [
             { title: { contains: query, mode: "insensitive" as const } },
             { content: { contains: query, mode: "insensitive" as const } },
           ],
         }
-      : {};
+      : { userId: user.id };
 
     const [sourceTexts, total] = await Promise.all([
       prisma.sourceText.findMany({

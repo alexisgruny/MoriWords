@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedDeck } from "@/lib/decks/ownership";
 import { autoTranslateLemma } from "@/lib/decks/auto-translate";
 
 // Petits lots : chaque appel reste court (limite de durée des fonctions
@@ -13,6 +15,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId } = await params;
     const body: unknown = await request.json().catch(() => ({}));
@@ -22,7 +29,7 @@ export async function POST(
       ? rawExcluded.filter((id): id is string => typeof id === "string")
       : [];
 
-    const deck = await prisma.deck.findUnique({ where: { id: deckId } });
+    const deck = await findOwnedDeck(deckId, user.id);
 
     if (!deck) {
       return Response.json({ error: "Deck introuvable." }, { status: 404 });

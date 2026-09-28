@@ -1,7 +1,10 @@
 import { AuthForm } from "@/components/auth-form";
 import { isGoogleConfigured } from "@/lib/auth/auth";
+import { safeRedirectPath } from "@/lib/auth/redirect";
 
-export default function SignUpPage() {
+export default async function SignUpPage({ searchParams }: PageProps<"/inscription">) {
+  const redirectTo = safeRedirectPath((await searchParams).suivant);
+
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-md">
@@ -11,7 +14,7 @@ export default function SignUpPage() {
             Tes decks, ta série de jours et tes statistiques, sur tous tes appareils.
           </p>
         </header>
-        <AuthForm mode="signup" googleEnabled={isGoogleConfigured} />
+        <AuthForm mode="signup" googleEnabled={isGoogleConfigured} redirectTo={redirectTo} />
       </div>
     </main>
   );

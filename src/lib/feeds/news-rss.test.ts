@@ -113,9 +113,12 @@ describe("ingestNextNewsArticle", () => {
     ] as never);
     vi.mocked(prisma.sourceText.create).mockResolvedValue({ id: "created-1" } as never);
 
-    const result = await ingestNextNewsArticle();
+    const result = await ingestNextNewsArticle("user-1");
 
     expect(result).toEqual({ id: "created-1" });
+    expect(prisma.sourceText.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "user-1" }) }),
+    );
     expect(prisma.sourceText.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         // content ne doit pas répéter le titre (déjà affiché séparément
@@ -126,6 +129,7 @@ describe("ingestNextNewsArticle", () => {
         sourceUrl: "https://www.nippon.com/ja/news/article-3/",
         origin: "nippon-news-rss",
         category: "news",
+        userId: "user-1",
       }),
     });
   });
@@ -140,7 +144,7 @@ describe("ingestNextNewsArticle", () => {
       { sourceUrl: "https://www.nippon.com/ja/news/article-3/" },
     ] as never);
 
-    const result = await ingestNextNewsArticle();
+    const result = await ingestNextNewsArticle("user-1");
 
     expect(result).toBeNull();
     expect(prisma.sourceText.create).not.toHaveBeenCalled();

@@ -110,6 +110,15 @@ Decisions et contraintes a connaitre
   ExerciseAttempt ; le premier compte cree avec OWNER_EMAIL recupere les
   donnees existantes. Installe avec legacy-peer-deps (.npmrc) a cause d'un
   peer optionnel Vite 8.
+- Comptes, phase 2 (Priorite 48) : chaque route API exige une session
+  (requireUser, 401 sinon) et ne voit que les donnees du compte (decks,
+  cartes, revisions, textes, tokens, vocabulaire, exercices, stats) ; une
+  ressource d'un autre compte repond 404. src/proxy.ts renvoie les pages
+  privees vers /connexion?suivant=... ; restent publiques /kana, /kanji,
+  /grammaire, /conjugaison, /exercices/kana. Vocabulaire par compte
+  (VocabularyEntry.userId). Le cron nippon.com importe pour le compte
+  OWNER_EMAIL. Connexion/inscription limitees a 20 essais / 15 min par IP.
+  Tests : un compte jetable par fichier (src/lib/auth/test-user.ts).
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -119,9 +128,9 @@ Decisions et contraintes a connaitre
 
 Points ouverts
 --------------
-- [A FAIRE] Comptes, phase 2 : chaque route filtre par l'utilisateur
-  connecte (decks, cartes, textes, tentatives), pages protegees, puis
-  retrait de la protection OWNER_SECRET.
+- [A DECIDER par l'utilisateur] Mode proprietaire (OWNER_SECRET) : toujours
+  actif en plus des comptes ; a retirer quand les comptes sont en place en
+  production (les DELETE/PATCH sont deja limites au proprietaire du deck).
 - [A FAIRE par l'utilisateur] Variables Vercel pour les comptes :
   BETTER_AUTH_SECRET (aleatoire, 32+ caracteres), BETTER_AUTH_URL
   (https://moriwords.vercel.app), OWNER_EMAIL (son email, AVANT de creer son
@@ -204,3 +213,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       actions destructrices reservees au proprietaire.
 46    Page Kana (hiragana/katakana) et exercice de lecture des kana.
 47    Comptes utilisateurs, phase 1 (Better Auth : email et Google).
+48    Comptes, phase 2 : donnees isolees par compte, pages privees.

@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { limitByIp } from "@/lib/security/rate-limit";
 import {
   ExerciseServiceError,
@@ -14,6 +15,11 @@ export const maxDuration = 60;
 // Corrige la traduction japonaise envoyée par l'élève pour un exercice et
 // renvoie la correction expliquée, avec la traduction de référence.
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;
@@ -41,7 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const exercise = await resolveExercise(exerciseId);
+    const exercise = await resolveExercise(exerciseId, user.id);
 
     if (!exercise) {
       return Response.json({ error: "Exercice introuvable." }, { status: 404 });
@@ -58,6 +64,7 @@ export async function POST(request: Request) {
         });
 
     await logExerciseAttempt({
+      userId: user.id,
       exerciseId,
       focus: exercise.focus,
       level: exercise.level,

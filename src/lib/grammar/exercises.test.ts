@@ -2,7 +2,7 @@
 // Les assertions évitent volontairement tout état global de la DB (pas de
 // "aucune ligne n'existe"), car d'autres fichiers de test peuvent tourner en
 // parallèle sur la même base (voir cards-examples.integration.test.ts).
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { generateJsonFromClaudeMock } = vi.hoisted(() => ({ generateJsonFromClaudeMock: vi.fn() }));
 
@@ -10,6 +10,7 @@ vi.mock("@/lib/feeds/claude-json-generator", () => ({
   generateJsonFromClaude: generateJsonFromClaudeMock,
 }));
 
+import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { prisma } from "@/lib/db/prisma";
 import { conjugationForms } from "@/lib/conjugation/forms";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
@@ -44,7 +45,16 @@ afterEach(async () => {
   });
 });
 
+// Compte jetable : les phrases d'exemple et les tentatives sont propres à
+// chaque compte, ce qui isole aussi ce fichier des tests parallèles.
+let userId = "";
+
+beforeAll(async () => {
+  userId = (await createTestUser("exercises")).id;
+});
+
 afterAll(async () => {
+  await deleteTestUser(userId);
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
   await prisma.$disconnect();
 });
@@ -152,7 +162,7 @@ describe("pickGrammarExercise", () => {
 
 describe("resolveExercise", () => {
   it("resolves a static example by its point and index", async () => {
-    const resolved = await resolveExercise(`static:${testPoint.id}:0`);
+    const resolved = await resolveExercise(`static:${testPoint.id}:0`, userId);
 
     expect(resolved).toEqual({
       french: testPoint.examples[0].fr,
@@ -163,13 +173,13 @@ describe("resolveExercise", () => {
   });
 
   it("returns null for an unknown id", async () => {
-    await expect(resolveExercise("static:unknown-point:0")).resolves.toBeNull();
+    await expect(resolveExercise("static:unknown-point:0", userId)).resolves.toBeNull();
   });
 });
 
 describe("pickExampleExercise and resolveExercise round-trip", () => {
   it("picks a freshly created card example and resolves it back, then excludes it", async () => {
-    const deck = await prisma.deck.create({ data: { name: `Exercise test deck ${Date.now()}` } });
+    const deck = await prisma.deck.create({ data: { userId, name: `Exercise test deck ${Date.now()}` } });
     deckIdsToCleanUp.push(deck.id);
     const card = await prisma.card.create({
       data: { deckId: deck.id, lemma: "食べる", meaning: "manger", sourceLanguage: "ja", targetLanguage: "fr" },
@@ -185,11 +195,11 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
       (row) => `ex:${row.id}`,
     );
 
-    const exercise = await pickExampleExercise("all", others);
+    const exercise = await pickExampleExercise(userId, "all", others);
     expect(exercise?.id).toBe(ownId);
     expect(exercise?.focus).toBe("食べる");
 
-    const resolved = await resolveExercise(ownId);
+    const resolved = await resolveExercise(ownId, userId);
     expect(resolved).toEqual({
       french: "Que manges-tu ?",
       japanese: "何を食べますか。",
@@ -198,12 +208,12 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
     });
 
     // Une fois exclue, elle ne peut plus être proposée à nouveau.
-    const excludingOwn = await pickExampleExercise("all", [...others, ownId]);
+    const excludingOwn = await pickExampleExercise(userId, "all", [...others, ownId]);
     expect(excludingOwn?.id).not.toBe(ownId);
   });
 
   it("filters by JLPT level, computed from the card's lemma", async () => {
-    const deck = await prisma.deck.create({ data: { name: `Exercise level test deck ${Date.now()}` } });
+    const deck = await prisma.deck.create({ data: { userId, name: `Exercise level test deck ${Date.now()}` } });
     deckIdsToCleanUp.push(deck.id);
     // 食べる est classé N5 par le référentiel JLPT local.
     const card = await prisma.card.create({
@@ -217,15 +227,15 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
       (row) => `ex:${row.id}`,
     );
 
-    const matching = await pickExampleExercise("N5", others);
+    const matching = await pickExampleExercise(userId, "N5", others);
     expect(matching?.id).toBe(ownId);
 
-    const nonMatching = await pickExampleExercise("N2", others);
+    const nonMatching = await pickExampleExercise(userId, "N2", others);
     expect(nonMatching).toBeNull();
   });
 
   it("restricts to the lemmas listed in focusIn", async () => {
-    const deck = await prisma.deck.create({ data: { name: `Exercise focusIn test deck ${Date.now()}` } });
+    const deck = await prisma.deck.create({ data: { userId, name: `Exercise focusIn test deck ${Date.now()}` } });
     deckIdsToCleanUp.push(deck.id);
     const wantedCard = await prisma.card.create({
       data: { deckId: deck.id, lemma: "食べる", meaning: "manger", sourceLanguage: "ja", targetLanguage: "fr" },
@@ -241,7 +251,7 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
     });
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      const exercise = await pickExampleExercise("all", [], ["食べる"]);
+      const exercise = await pickExampleExercise(userId, "all", [], ["食べる"]);
       expect(exercise?.focus).toBe("食べる");
     }
   });
@@ -260,7 +270,7 @@ describe("pickConjugationExercise and resolveExercise round-trip", () => {
     expect(exercise?.focus).toBe(form.name);
     expect(exercise?.level).toBe("N5");
 
-    const resolved = await resolveExercise(exercise!.id);
+    const resolved = await resolveExercise(exercise!.id, userId);
     const index = Number(exercise!.id.split(":")[2]);
     expect(resolved).toEqual({
       french: form.examples[index].meaning,
@@ -307,7 +317,7 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     expect(exercise?.french).toBe(entry.kanji);
     expect(exercise?.level).toBe(entry.level);
 
-    const resolved = await resolveExercise(exercise!.id);
+    const resolved = await resolveExercise(exercise!.id, userId);
     expect(resolved).toEqual({
       french: entry.kanji,
       japanese: entry.meaning,
@@ -400,11 +410,11 @@ describe("logExerciseAttempt", () => {
   });
 
   it("records the attempt with the source derived from the exercise id", async () => {
-    await logExerciseAttempt({ exerciseId, focus: exerciseId, level: "N5", correct: true });
+    await logExerciseAttempt({ userId, exerciseId, focus: exerciseId, level: "N5", correct: true });
 
     const rows = await prisma.exerciseAttempt.findMany({ where: { focus: exerciseId } });
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ source: "grammar", focus: exerciseId, level: "N5", correct: true });
+    expect(rows[0]).toMatchObject({ userId, source: "grammar", focus: exerciseId, level: "N5", correct: true });
   });
 });
 

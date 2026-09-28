@@ -1,9 +1,16 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
-// Renvoie tous les decks avec leurs cartes, du plus récent au plus ancien.
-export async function GET() {
+// Renvoie les decks de l'utilisateur avec leurs cartes, du plus récent au plus ancien.
+export async function GET(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const decks = await prisma.deck.findMany({
+      where: { userId: user.id },
       orderBy: {
         createdAt: "desc",
       },
@@ -27,6 +34,11 @@ export async function GET() {
 
 // Crée un nouveau deck vide avec un nom (et une description optionnelle).
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -39,6 +51,7 @@ export async function POST(request: Request) {
 
     const deck = await prisma.deck.create({
       data: {
+        userId: user.id,
         name: (body as Record<string, unknown>).name as string,
         description: typeof (body as Record<string, unknown>).description === "string"
           ? ((body as Record<string, unknown>).description as string)

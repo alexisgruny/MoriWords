@@ -1,4 +1,6 @@
+import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { findOwnedCard, findOwnedDeck } from "@/lib/decks/ownership";
 import { requireOwner } from "@/lib/security/owner";
 import { normalizeNullable } from "@/lib/decks/card-utils";
 
@@ -15,6 +17,11 @@ export async function PATCH(
     return denied;
   }
 
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId, cardId } = await params;
     const body: unknown = await request.json();
@@ -25,16 +32,16 @@ export async function PATCH(
 
     const candidate = body as Record<string, unknown>;
 
-    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    const card = await findOwnedCard(deckId, cardId, user.id);
 
-    if (!card || card.deckId !== deckId) {
+    if (!card) {
       return Response.json({ error: "Carte introuvable pour ce deck." }, { status: 404 });
     }
 
     const targetDeckId = typeof candidate.deckId === "string" ? candidate.deckId : null;
 
     if (targetDeckId && targetDeckId !== card.deckId) {
-      const targetDeck = await prisma.deck.findUnique({ where: { id: targetDeckId } });
+      const targetDeck = await findOwnedDeck(targetDeckId, user.id);
 
       if (!targetDeck) {
         return Response.json({ error: "Deck de destination introuvable." }, { status: 404 });
@@ -92,12 +99,17 @@ export async function DELETE(
     return denied;
   }
 
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
     const { deckId, cardId } = await params;
 
-    const card = await prisma.card.findUnique({ where: { id: cardId } });
+    const card = await findOwnedCard(deckId, cardId, user.id);
 
-    if (!card || card.deckId !== deckId) {
+    if (!card) {
       return Response.json(
         { error: "Carte introuvable pour ce deck." },
         { status: 404 },

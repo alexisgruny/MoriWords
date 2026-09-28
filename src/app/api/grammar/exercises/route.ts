@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import { limitByIp } from "@/lib/security/rate-limit";
 import {
   ExerciseServiceError,
@@ -25,6 +26,11 @@ const SOURCES: Source[] = ["examples", "conjugation", "kanji"];
 // listés (voir /exercices/revision, qui s'entraîne sur les points faibles
 // remontés par les statistiques).
 export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   const limited = await limitByIp(request, "claude");
   if (limited) {
     return limited;
@@ -47,7 +53,7 @@ export async function POST(request: Request) {
 
     const pickers: Record<Source, () => Promise<Awaited<ReturnType<typeof pickGrammarExercise>>>> = {
       grammar: () => pickGrammarExercise(level, excludeIds, undefined, focusIn),
-      examples: () => pickExampleExercise(level, excludeIds, focusIn),
+      examples: () => pickExampleExercise(user.id, level, excludeIds, focusIn),
       conjugation: () => pickConjugationExercise(level, excludeIds, focusIn),
       kanji: () => pickKanjiExercise(level, excludeIds, focusIn),
     };

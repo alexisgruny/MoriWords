@@ -1,11 +1,17 @@
+import { requireUser } from "@/lib/auth/session";
 import { NewsRssServiceError, ingestNextNewsArticle } from "@/lib/feeds/news-rss";
 
 // Importe le prochain article non encore vu depuis le flux RSS de
 // nippon.com (voir src/lib/feeds/news-rss.ts) et l'enregistre comme nouveau
 // texte source, prêt à être analysé comme n'importe quel autre texte.
-export async function POST() {
+export async function POST(request: Request) {
+  const user = await requireUser(request);
+  if (user instanceof Response) {
+    return user;
+  }
+
   try {
-    const sourceText = await ingestNextNewsArticle();
+    const sourceText = await ingestNextNewsArticle(user.id);
 
     if (!sourceText) {
       return Response.json(

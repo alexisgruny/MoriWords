@@ -53,14 +53,14 @@ function mergeCounts<K extends string>(
 // /exercices/stats. Deux requêtes groupées (total, puis correct=true)
 // plutôt qu'un comptage conditionnel : plus simple et portable que du SQL
 // brut, et le volume de tentatives d'un usage personnel reste petit.
-export async function getExerciseStats(): Promise<ExerciseStats> {
+export async function getExerciseStats(userId: string): Promise<ExerciseStats> {
   const [totalsBySource, correctsBySource, totalsByFocus, correctsByFocus] = await Promise.all([
-    prisma.exerciseAttempt.groupBy({ by: ["source"], _count: { _all: true } }),
-    prisma.exerciseAttempt.groupBy({ by: ["source"], where: { correct: true }, _count: { _all: true } }),
-    prisma.exerciseAttempt.groupBy({ by: ["source", "focus", "level"], _count: { _all: true } }),
+    prisma.exerciseAttempt.groupBy({ by: ["source"], where: { userId }, _count: { _all: true } }),
+    prisma.exerciseAttempt.groupBy({ by: ["source"], where: { userId, correct: true }, _count: { _all: true } }),
+    prisma.exerciseAttempt.groupBy({ by: ["source", "focus", "level"], where: { userId }, _count: { _all: true } }),
     prisma.exerciseAttempt.groupBy({
       by: ["source", "focus", "level"],
-      where: { correct: true },
+      where: { userId, correct: true },
       _count: { _all: true },
     }),
   ]);
