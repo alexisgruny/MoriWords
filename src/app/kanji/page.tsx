@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { TranslationExercise } from "@/components/translation-exercise";
 import { useToast } from "@/components/toast-provider";
 import { filterKanji, JLPT_KANJI } from "@/lib/kanji/kanji";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
@@ -15,10 +14,10 @@ import type { DeckSummary } from "@/types/shared";
 const PAGE_SIZE = 60;
 
 // Page de référence de kanji : classés par niveau JLPT, avec filtre par
-// niveau, recherche libre (kanji, lecture ou sens), pagination locale, un
-// exercice d'écriture (composant partagé, defaultSource="kanji") et un ajout
-// direct au deck (même route que la page Analyser : POST .../cards, lemme =
-// le kanji lui-même).
+// niveau, recherche libre (kanji, lecture ou sens), pagination locale et un
+// ajout direct au deck (même route que la page Analyser : POST .../cards,
+// lemme = le kanji lui-même). L'exercice d'écriture associé vit sur sa
+// propre sous-page (/exercices/kanji).
 export default function KanjiPage() {
   const { showToast } = useToast();
 
@@ -123,18 +122,19 @@ export default function KanjiPage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <h1 className="text-[var(--ink)]">Kanji par niveau JLPT</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Les kanji à connaître de N5 à N1, avec leurs lectures on&apos;yomi et
-            kun&apos;yomi et leur sens. Choisis un niveau ou cherche un kanji, une
-            lecture ou un sens.
-          </p>
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[var(--ink)]">Kanji par niveau JLPT</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              Les kanji à connaître de N5 à N1, avec leurs lectures on&apos;yomi et
+              kun&apos;yomi et leur sens. Choisis un niveau ou cherche un kanji, une
+              lecture ou un sens.
+            </p>
+          </div>
+          <Link href="/exercices/kanji" className="secondary-button shrink-0">
+            S&apos;exercer
+          </Link>
         </header>
-
-        <div className="mb-8">
-          <TranslationExercise defaultSource="kanji" />
-        </div>
 
         <section className="panel">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

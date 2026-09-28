@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import {
@@ -8,10 +9,10 @@ import {
   filterGrammarPoints,
   grammarPoints,
 } from "@/lib/grammar/points";
-import { TranslationExercise } from "@/components/translation-exercise";
 
 // Page de référence de grammaire : points classés par niveau JLPT, avec
-// filtre par niveau, recherche libre et exemples traduits.
+// filtre par niveau, recherche libre et exemples traduits. L'exercice de
+// traduction associé vit sur sa propre sous-page (/exercices/grammaire).
 export default function GrammarPage() {
   const [level, setLevel] = useState<GrammarLevel | "all">("N5");
   const [query, setQuery] = useState("");
@@ -23,19 +24,20 @@ export default function GrammarPage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <h1 className="text-[var(--ink)]">
-            Grammaire par niveau JLPT
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Les structures à connaître de N5 à N1, avec leur formation et des exemples
-            traduits. Choisis un niveau ou cherche un motif (en japonais ou en français).
-          </p>
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[var(--ink)]">
+              Grammaire par niveau JLPT
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              Les structures à connaître de N5 à N1, avec leur formation et des exemples
+              traduits. Choisis un niveau ou cherche un motif (en japonais ou en français).
+            </p>
+          </div>
+          <Link href="/exercices/grammaire" className="secondary-button shrink-0">
+            S&apos;exercer
+          </Link>
         </header>
-
-        <div className="mb-8">
-          <TranslationExercise />
-        </div>
 
         <section className="panel">
           <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">

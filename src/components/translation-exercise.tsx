@@ -16,7 +16,7 @@ type Correction = {
   errors: ExerciseError[];
 };
 
-type Source = "grammar" | "examples" | "conjugation" | "kanji";
+export type Source = "grammar" | "examples" | "conjugation" | "kanji";
 
 const SOURCE_LABELS: Record<Source, string> = {
   grammar: "grammaire",
@@ -38,16 +38,15 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
 };
 
 // Exercice d'écriture : Claude propose une phrase française à traduire en
-// japonais (issue des points de grammaire, du vocabulaire des decks, ou du
-// référentiel de conjugaison), l'élève écrit sa traduction, puis Claude la
-// corrige en expliquant chaque erreur. Un composant client autonome, inséré
-// dans les pages Grammaire et Conjugaison, avec son propre sélecteur de
-// niveau JLPT (indépendant du filtre de la liste de référence au-dessus).
-export function TranslationExercise({ defaultSource = "grammar" }: { defaultSource?: Source }) {
+// japonais (issue des points de grammaire, du vocabulaire des decks, du
+// référentiel de conjugaison ou d'un kanji), l'élève écrit sa traduction,
+// puis Claude la corrige en expliquant chaque erreur. Un composant client
+// autonome, une instance par type sur ses propres sous-pages (/exercices/...),
+// chacune avec un source fixe et son propre sélecteur de niveau JLPT.
+export function TranslationExercise({ source }: { source: Source }) {
   const { showToast } = useToast();
 
   const [level, setLevel] = useState<GrammarLevel | "all">("all");
-  const [source, setSource] = useState<Source>(defaultSource);
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [seenIds, setSeenIds] = useState<string[]>([]);
   const [answer, setAnswer] = useState("");
@@ -56,7 +55,7 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
 
-  async function loadExercise(nextSource: Source, nextLevel: GrammarLevel | "all", excludeIds: string[]) {
+  async function loadExercise(nextLevel: GrammarLevel | "all", excludeIds: string[]) {
     setIsLoadingExercise(true);
     setInfo(null);
     setCorrection(null);
@@ -66,7 +65,7 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
       const response = await fetch("/api/grammar/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: nextSource, level: nextLevel, excludeIds }),
+        body: JSON.stringify({ source, level: nextLevel, excludeIds }),
       });
       const data = (await response.json()) as { exercise: Exercise | null; message?: string; error?: string };
 
@@ -94,10 +93,9 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
     }
   }
 
-  function handleStart(nextSource: Source) {
-    setSource(nextSource);
+  function handleStart() {
     setSeenIds([]);
-    void loadExercise(nextSource, level, []);
+    void loadExercise(level, []);
   }
 
   function handleLevelChange(nextLevel: GrammarLevel | "all") {
@@ -107,7 +105,7 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
     // Ne relance un exercice que si une session est déjà en cours : sinon, le
     // niveau choisi ne s'applique qu'au prochain "Commencer".
     if (exercise || info) {
-      void loadExercise(source, nextLevel, []);
+      void loadExercise(nextLevel, []);
     }
   }
 
@@ -150,8 +148,12 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
   return (
     <section className="panel">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-[var(--ink)]">Exercice de traduction</h2>
-        <p className="text-sm text-[var(--muted)]">Écris ta traduction en japonais, Claude la corrige.</p>
+        <h2 className="text-[var(--ink)]">
+          {source === "examples" ? "Exercice sur mon vocabulaire" : `Exercice de ${SOURCE_LABELS[source]}`}
+        </h2>
+        <p className="text-sm text-[var(--muted)]">
+          {source === "kanji" ? "Écris le kanji, Claude vérifie." : "Écris ta traduction en japonais, Claude la corrige."}
+        </p>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT de l'exercice">
@@ -184,19 +186,10 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
         ))}
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-3">
-        {(Object.keys(SOURCE_LABELS) as Source[]).map((candidate) => (
-          <button
-            key={candidate}
-            type="button"
-            onClick={() => handleStart(candidate)}
-            className="secondary-button"
-          >
-            {source === candidate && (exercise || info)
-              ? `Nouvelle phrase (${SOURCE_LABELS[candidate]})`
-              : `Commencer (${SOURCE_LABELS[candidate]})`}
-          </button>
-        ))}
+      <div className="mb-5">
+        <button type="button" onClick={handleStart} className="secondary-button">
+          {exercise || info ? "Nouvelle phrase" : "Commencer"}
+        </button>
       </div>
 
       {isLoadingExercise ? <p className="text-sm text-[var(--muted)]">Préparation de la phrase...</p> : null}
@@ -241,7 +234,7 @@ export function TranslationExercise({ defaultSource = "grammar" }: { defaultSour
             <span className="text-xs text-[var(--muted)]">Ctrl/Cmd + Entrée pour envoyer</span>
             <button
               type="button"
-              onClick={() => void loadExercise(source, level, seenIds)}
+              onClick={() => void loadExercise(level, seenIds)}
               disabled={isLoadingExercise}
               className="link-button"
             >

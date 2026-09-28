@@ -1235,6 +1235,30 @@ de kanji generes par Claude contenaient des restes d'anglais ou des fautes
   nouveaux tests d'orthographe) tous verts.
 
 
+Priorite 32 - Page Exercices avec une sous-page par type
+------------------------------------------------------------------
+Demande de l'utilisateur : le composant d'exercice de traduction etait
+duplique (avec un source par defaut different) sur les pages Grammaire,
+Conjugaison et Kanji, ce qui melangeait reference et entrainement sur la
+meme page. Regroupe sous /exercices, avec une sous-page par type.
+- [TERMINE] TranslationExercise (src/components/translation-exercise.tsx)
+  n'a plus de switch interne de source ; il prend maintenant un source fixe
+  en prop et n'affiche plus qu'un bouton Commencer/Nouvelle phrase.
+- [TERMINE] /exercices : page d'accueil avec un lien-carte par type
+  (grammaire, conjugaison, kanji, mon vocabulaire).
+- [TERMINE] /exercices/grammaire, /exercices/conjugaison, /exercices/kanji,
+  /exercices/vocabulaire : une sous-page par type, chacune une instance de
+  TranslationExercise avec son source fixe, plus un lien vers la page de
+  reference correspondante.
+- [TERMINE] Widget d'exercice retire des pages Grammaire, Conjugaison et
+  Kanji ; remplace par un bouton "S'exercer" vers la sous-page /exercices
+  correspondante.
+- [TERMINE] Lien "Exercices" ajoute a la barre de navigation.
+- Verifie : tsc, eslint, vitest (suite complete, 170 tests inchanges car la
+  logique de src/app/api/grammar/exercises est restee la meme) tous verts ;
+  toutes les routes /exercices* et les pages de reference repondent 200.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.
