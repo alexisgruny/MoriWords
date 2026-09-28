@@ -150,7 +150,7 @@ export default function ExerciseStatsPage() {
               {stats.weakPoints.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">
                   Rien à signaler pour l&apos;instant : un point apparaît ici à partir de 2 tentatives
-                  et sous 80% de bonnes réponses.
+                  et sous 80 % de bonnes réponses.
                 </p>
               ) : (
                 <ul className="flex flex-col gap-2">

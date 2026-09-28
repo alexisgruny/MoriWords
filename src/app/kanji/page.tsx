@@ -115,7 +115,7 @@ export default function KanjiPage() {
       setExistingLemmas((current) => new Set(current).add(kanji));
       showToast(`« ${kanji} » ajouté au deck.`);
     } catch {
-      showToast("L’ajout au deck a échoué.", "error");
+      showToast("L'ajout au deck a échoué.", "error");
     } finally {
       setAddingKanji(null);
     }

@@ -38,8 +38,8 @@ export default function ExercisesPage() {
             <p className="eyebrow mb-1">S&apos;entraîner</p>
             <h1 className="text-[var(--ink)]">Exercices</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              Choisis un type d&apos;exercice. Claude propose une phrase à traduire (ou un
-              kanji à reconnaître), et corrige ta réponse.
+              Choisis un type d&apos;exercice : traduis une phrase en japonais (corrigée par
+              Claude) ou retrouve le sens d&apos;un kanji.
             </p>
           </div>
           <Link href="/exercices/stats" className="secondary-button shrink-0">

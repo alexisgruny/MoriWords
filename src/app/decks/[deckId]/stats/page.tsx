@@ -108,7 +108,7 @@ export default function DeckStatsPage() {
       ) : null}
 
       <section className="panel">
-        <h2 className="text-[var(--ink)]">Vue d’ensemble</h2>
+        <h2 className="text-[var(--ink)]">Vue d&apos;ensemble</h2>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {summary.map((item, index) => (

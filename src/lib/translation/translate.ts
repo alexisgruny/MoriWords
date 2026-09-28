@@ -221,7 +221,7 @@ export async function translateText(
   if (!apiKey || apiKey.trim().length === 0) {
     return {
       translation: MISSING_TRANSLATION_PLACEHOLDER,
-      explanation: `Anthropic API key manquante. La traduction réelle arrivera quand la clé sera configurée pour ${sourceLanguage} → ${targetLanguage}.`,
+      explanation: `Clé API Anthropic manquante. La traduction réelle arrivera quand la clé sera configurée pour ${sourceLanguage} → ${targetLanguage}.`,
       difficulty: classifyDifficulty(cleanedText, null, null),
     };
   }

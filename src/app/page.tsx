@@ -541,7 +541,7 @@ export default function Home() {
     const data: unknown = await response.json();
 
     if (!response.ok || typeof data !== "object" || data === null) {
-      throw new Error("Impossible de créer le deck avant d’ajouter la carte");
+      throw new Error("Impossible de créer le deck avant d'ajouter la carte");
     }
 
     if ("error" in data && typeof data.error === "string") {
@@ -562,7 +562,7 @@ export default function Home() {
   // deck n'existe encore, en crée un par défaut avant d'ajouter la carte.
   async function handleAddCardToDeck() {
     if (!selectedToken) {
-      setError("Sélectionne d’abord un mot.");
+      setError("Sélectionne d'abord un mot.");
       return;
     }
 
@@ -584,7 +584,7 @@ export default function Home() {
       const data: unknown = await response.json();
 
       if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible d’ajouter la carte au deck");
+        throw new Error("Impossible d'ajouter la carte au deck");
       }
 
       if ("error" in data && typeof data.error === "string") {
@@ -599,7 +599,7 @@ export default function Home() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Une erreur est survenue pendant l’ajout au deck.",
+          : "Une erreur est survenue pendant l'ajout au deck.",
       );
     } finally {
       setIsSavingCard(false);
@@ -674,13 +674,13 @@ export default function Home() {
       }
 
       if (failedCount > 0) {
-        showToast(`${failedCount} mot(s) n’ont pas pu être ajoutés.`, "error");
+        showToast(`${failedCount} mot(s) n'ont pas pu être ajoutés.`, "error");
       }
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Une erreur est survenue pendant l’ajout en masse.",
+          : "Une erreur est survenue pendant l'ajout en masse.",
       );
     } finally {
       setIsBulkAdding(false);
@@ -785,10 +785,10 @@ export default function Home() {
       const failedCount = results.length - succeeded.length;
 
       if (succeeded.length > 0) {
-        showToast(`${succeeded.length} mot(s) traduits.`);
+        showToast(`${succeeded.length} mot(s) traduit(s).`);
       }
       if (failedCount > 0) {
-        showToast(`${failedCount} mot(s) n’ont pas pu être traduits.`, "error");
+        showToast(`${failedCount} mot(s) n'ont pas pu être traduits.`, "error");
       }
     } catch (requestError) {
       setError(
@@ -873,7 +873,7 @@ export default function Home() {
         showToast(`${parts.join(", ")} ajouté(s) au deck avec traduction.`);
       }
       if (failedCount > 0) {
-        showToast(`${failedCount} mot(s) n’ont pas pu être ajoutés.`, "error");
+        showToast(`${failedCount} mot(s) n'ont pas pu être ajoutés.`, "error");
       }
 
       setSelectedTokenPositions(new Set());
@@ -882,7 +882,7 @@ export default function Home() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Une erreur est survenue pendant l’ajout de la sélection.",
+          : "Une erreur est survenue pendant l'ajout de la sélection.",
       );
     } finally {
       setIsAddingSelectionToDeck(false);
@@ -956,7 +956,7 @@ export default function Home() {
           <p className="eyebrow mb-1">MoriWords</p>
           <h1 className="text-[var(--ink)]">Analyser un texte</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
-            Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t’intéressent.
+            Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t&apos;intéressent.
           </p>
           <ol className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Étapes">
             {STEPS.map((label, index) => {
@@ -1299,7 +1299,7 @@ export default function Home() {
             <div className="mb-4 flex items-baseline justify-between gap-4">
               <h2 className="text-[var(--ink)]">Derniers textes</h2>
               <Link href="/historique" className="link-button text-sm!">
-                Tout l’historique →
+                Tout l&apos;historique →
               </Link>
             </div>
             <div className="grid md:grid-cols-2 md:gap-x-10">

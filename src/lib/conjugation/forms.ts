@@ -336,11 +336,11 @@ export const conjugationForms: ConjugationForm[] = [
     level: "N1",
     category: "Style littéraire",
     name: "Négation littéraire ~ぬ / ~ざる",
-    formation: "Forme en ない : retirer le い final + ぬ (fin de phrase) ou ざる (devant un nom).",
+    formation: "Forme en ない : remplacer ない par ぬ (fin de phrase) ou par ざる (devant un nom).",
     explanation: "Un style à l'écrit, plutôt formel, ou des expressions toutes faites ; ぬ remplace ない tel quel, ざる s'utilise devant un nom ou を得ない.",
     examples: [
       { base: "知る", reading: "しる", conjugated: "知らぬ", meaning: "ne pas savoir (littéraire)" },
-      { base: "知る", reading: "しる", conjugated: "知らざるを得ない", meaning: "ne pas pouvoir faire autrement que de savoir" },
+      { base: "行く", reading: "いく", conjugated: "行かざるを得ない", meaning: "être obligé d'y aller" },
     ],
   },
   {

@@ -221,7 +221,7 @@ export default function DeckWordsPage() {
       }
 
       if (failedIds.size > 0) {
-        showToast(`${failedIds.size} mot(s) n’ont pas pu être traduits.`, "error");
+        showToast(`${failedIds.size} mot(s) n'ont pas pu être traduits.`, "error");
       }
     } catch {
       showToast("La traduction des mots a échoué.", "error");
@@ -305,7 +305,7 @@ export default function DeckWordsPage() {
         // Un refus "propriétaire" vaut pour tout le lot : autant le dire.
         const ownerRefusal = failures.find((failure) => (failure.reason as Error).message.includes("propriétaire"));
         showToast(
-          ownerRefusal ? (ownerRefusal.reason as Error).message : `${failures.length} mot(s) n’ont pas pu être supprimés.`,
+          ownerRefusal ? (ownerRefusal.reason as Error).message : `${failures.length} mot(s) n'ont pas pu être supprimés.`,
           "error",
         );
       }
@@ -365,7 +365,7 @@ export default function DeckWordsPage() {
             result.status === "rejected" && (result.reason as Error).message.includes("propriétaire"),
         );
         showToast(
-          ownerRefusal ? (ownerRefusal.reason as Error).message : `${otherFailedCount} mot(s) n’ont pas pu être déplacés.`,
+          ownerRefusal ? (ownerRefusal.reason as Error).message : `${otherFailedCount} mot(s) n'ont pas pu être déplacés.`,
           "error",
         );
       }
@@ -459,7 +459,7 @@ export default function DeckWordsPage() {
             <p className="text-sm text-[var(--ink)]">
               {translateProgress
                 ? `Traduction en cours… ${translateProgress.done}/${translateProgress.total}`
-                : `${missingMeaningCount} mot(s) n’ont pas encore de sens.`}
+                : `${missingMeaningCount} mot(s) n'ont pas encore de sens.`}
             </p>
             <button
               type="button"

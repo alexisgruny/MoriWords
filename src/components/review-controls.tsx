@@ -101,7 +101,7 @@ export function ReviewDone({ reviewed, emptyHint }: { reviewed: number; emptyHin
           <path d="M12 7.5V12l3 2" />
         </svg>
       </span>
-      <p className="font-medium text-[var(--ink)]">Aucune carte à revoir pour l’instant.</p>
+      <p className="font-medium text-[var(--ink)]">Aucune carte à revoir pour l&apos;instant.</p>
       <p className="mt-2 text-sm text-[var(--muted)]">{emptyHint}</p>
     </div>
   );

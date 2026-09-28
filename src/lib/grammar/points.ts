@@ -233,7 +233,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "je pense que ～",
     formation: "Forme neutre + と思う",
     explanation:
-      "Sert à donner son avis ou une supposition. Ce qui vient avant と思う se met à la forme simple/familière (celle du dictionnaire), même dans une phrase par ailleurs polie.",
+      "Sert à donner son avis ou une supposition. Ce qui vient avant と思う se met à la forme neutre (dictionnaire, ない, た…), même dans une phrase par ailleurs polie.",
     examples: [
       { ja: "明日は雨が降ると思います。", fr: "Je pense qu'il pleuvra demain." },
       { ja: "彼は来ないと思います。", fr: "Je pense qu'il ne viendra pas." },
@@ -256,7 +256,7 @@ export const grammarPoints: GrammarPoint[] = [
     level: "N4",
     pattern: "～なければならない",
     meaning: "devoir ～ (obligation)",
-    formation: "Verbe (forme ない sans い) + なければならない",
+    formation: "Verbe (forme ない sans ない) + なければならない",
     explanation:
       "Exprime une obligation. Variante courante à l'oral : ～なきゃ. Avec なくてもいい, on dit qu'il n'est pas nécessaire.",
     examples: [
@@ -499,7 +499,7 @@ export const grammarPoints: GrammarPoint[] = [
     level: "N3",
     pattern: "～させる",
     meaning: "faire faire ～ / laisser faire ～ (causatif)",
-    formation: "Verbe (forme ない) + せる／させる",
+    formation: "Verbe (forme ない sans ない) + せる／させる",
     explanation:
       "Le sujet fait faire l'action à quelqu'un (ordre) ou lui permet de la faire. La personne qui agit est marquée par に ou を.",
     examples: [
@@ -694,7 +694,7 @@ export const grammarPoints: GrammarPoint[] = [
     explanation: "On est forcé par les circonstances, sans autre choix possible. Plutôt utilisé à l'écrit.",
     examples: [
       { ja: "台風のため、試合は中止を余儀なくされた。", fr: "À cause du typhon, le match a dû être annulé." },
-      { ja: "不況で、会社は縮小を余儀なくされた。", fr: "En raison de la récession, l'entreprise a été forcée de se réduire." },
+      { ja: "不況で、会社は縮小を余儀なくされた。", fr: "En raison de la récession, l'entreprise a dû réduire son activité." },
     ],
   },
   {
@@ -790,7 +790,7 @@ export const grammarPoints: GrammarPoint[] = [
     formation: "Nom (statut, moment) + ともなると",
     explanation: "Quand on atteint un certain statut ou stade, il est naturel que la conséquence suive.",
     examples: [
-      { ja: "大学生ともなると、責任も重くなる。", fr: "Arrivé à l'université, les responsabilités s'alourdissent." },
+      { ja: "大学生ともなると、責任も重くなる。", fr: "Une fois à l'université, on a des responsabilités plus lourdes." },
       { ja: "年末ともなると、街は賑やかになる。", fr: "À la fin de l'année, la ville s'anime." },
     ],
   },

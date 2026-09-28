@@ -58,6 +58,6 @@ export async function POST(
     return Response.json({ card: restoredCard });
   } catch (error) {
     console.error("Failed to undo review:", error);
-    return Response.json({ error: "Impossible d’annuler la révision." }, { status: 500 });
+    return Response.json({ error: "Impossible d'annuler la révision." }, { status: 500 });
   }
 }

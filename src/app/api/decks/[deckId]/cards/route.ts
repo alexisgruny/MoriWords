@@ -165,7 +165,7 @@ export async function POST(
   } catch (error) {
     console.error("Failed to add card to deck:", error);
     return Response.json(
-      { error: "Impossible d’ajouter la carte au deck." },
+      { error: "Impossible d'ajouter la carte au deck." },
       { status: 500 },
     );
   }
