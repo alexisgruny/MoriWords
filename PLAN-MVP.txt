@@ -50,12 +50,18 @@ Decks et revision
   de revision (streak) sur l'accueil et les decks.
 
 Reference
+- /kana : hiragana et katakana (46 de base, 25 voises, 33 combines par
+  ecriture) avec romaji, filtre par groupe, recherche par son ou par kana.
+  Pas d'ajout au deck (une carte declencherait traduction + exemples Claude).
 - /grammaire (61 points N5-N1), /conjugaison (27 formes), /kanji (2 211
   kanji, sens traduits en francais) : filtre par niveau, recherche, barre
   collee en haut sur tablette/ordinateur ; ajout direct d'un kanji au deck.
 - /vocabulaire : tous les mots rencontres, avec recherche et niveau.
 
 Exercices (/exercices)
+- Kana (/exercices/kana) : lire un kana, taper son romaji ; corrige
+  localement (variantes shi/si, tsu/tu... acceptees), score et reprise des
+  erreurs. Pas d'appel serveur, donc pas encore dans /exercices/stats.
 - Sous-pages grammaire, conjugaison, kanji (on montre le kanji, l'eleve
   donne le sens), mon vocabulaire. Correction par Claude, sauf kanji
   (comparaison locale aux synonymes).
@@ -181,3 +187,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       revision, accueil, pages de reference, menu mobile et pages restantes.
 45    Securite : limites de taille, limitation par IP, budget Claude global,
       actions destructrices reservees au proprietaire.
+46    Page Kana (hiragana/katakana) et exercice de lecture des kana.

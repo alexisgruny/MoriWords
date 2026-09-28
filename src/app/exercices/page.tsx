@@ -2,6 +2,12 @@ import Link from "next/link";
 
 const EXERCISE_TYPES = [
   {
+    href: "/exercices/kana",
+    glyph: "あ",
+    title: "Hiragana et katakana",
+    description: "Lis un kana et tape sa prononciation en romaji. Idéal pour débuter.",
+  },
+  {
     href: "/exercices/grammaire",
     glyph: "文",
     title: "Grammaire",
