@@ -174,12 +174,14 @@ a {
   font-weight: 600;
 }
 
-/* Une section : une carte blanche discrète. */
+/* Une section : une carte blanche discrète, avec un peu de profondeur pour
+   la détacher du fond plutôt qu'un simple contour plat. */
 .panel {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper);
   padding: 1.25rem 1.1rem 1rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03), 0 6px 20px -12px rgb(0 0 0 / 0.08);
 }
 
 @media (min-width: 640px) {
@@ -306,7 +308,79 @@ textarea:focus {
   text-align: left;
 }
 
-/* Une entrée de liste : petite carte blanche, qui se met en évidence au survol. */
+/* Icône décorative optionnelle en tête d'un empty-state (voir le sceau 森
+   utilisé en exemple sur la page d'accueil). */
+.empty-state-icon {
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 0.85rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--muted);
+  font-size: 1.4rem;
+}
+
+/* Bandeau d'erreur : remplace les classes Tailwind rouges codées en dur
+   (bg-red-50/text-red-700...), qui ne suivaient pas le thème sombre. */
+.error-banner {
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 12%, var(--paper));
+  color: var(--accent-dark);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Effet de chargement (skeleton) : un rectangle qui pulse doucement, pour
+   remplacer un texte "Chargement..." nu pendant un fetch. */
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--tint) 25%, var(--line) 50%, var(--tint) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Apparition douce d'une section au montage (voir components/fade-in.tsx). */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 320ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up,
+  .skeleton,
+  .token-card,
+  .primary-button,
+  .secondary-button,
+  .link-button {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Une entrée de liste : petite carte blanche, qui se soulève légèrement au
+   survol (une astuce tactile discrète, pas un effet tape-à-l'œil). */
 .token-card {
   width: 100%;
   margin-bottom: 0.5rem;
@@ -314,12 +388,14 @@ textarea:focus {
   border-radius: 12px;
   background: var(--paper);
   padding: 0.9rem 1rem;
-  transition: background 100ms ease, border-color 100ms ease;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
 .token-card:hover {
   border-color: var(--line-strong);
-  background: #fafaf7;
+  background: var(--tint);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -8px rgb(0 0 0 / 0.18);
 }
 
 .token-card-selected,
@@ -327,6 +403,56 @@ textarea:focus {
   border-color: var(--accent);
   background: var(--accent-soft);
   box-shadow: inset 4px 0 0 var(--accent);
+  transform: none;
+}
+
+/* Lien de la barre de navigation : un petit trait qui grandit depuis le
+   centre au survol, plutôt qu'un changement de couleur de bordure abrupt.
+   Reste toujours visible pour la page active. */
+.nav-link {
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 200ms ease;
+}
+
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* Sceau du logo : une légère bascule au survol, un clin d'œil discret. */
+a:hover > .seal {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+/* Barre de progression (taux de réussite d'un exercice, voir
+   /exercices/stats) : la couleur du remplissage vient d'une variable posée
+   en style inline (--progress-color), pas d'une classe par palier. */
+.progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--tint);
+  overflow: hidden;
+}
+
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--progress-color, var(--accent));
+  transition: width 500ms ease;
 }
 
 .part-of-speech {
@@ -429,6 +555,7 @@ textarea:focus {
   font-size: 1.2rem;
   font-weight: 700;
   line-height: 1;
+  transition: transform 200ms ease;
 }
 
 .font-display {

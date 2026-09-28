@@ -159,14 +159,17 @@ export default function HistoriquePage() {
           </form>
 
           {error ? (
-            <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="error-banner mb-4">
               {error}
             </p>
           ) : null}
 
           {isLoading ? (
-            <div className="empty-state">
-              <p className="font-medium text-[var(--ink)]">Chargement...</p>
+            <div className="grid gap-3 md:grid-cols-2 md:gap-x-10">
+              <div className="skeleton h-28" />
+              <div className="skeleton h-28" />
+              <div className="skeleton h-28" />
+              <div className="skeleton h-28" />
             </div>
           ) : sourceTexts.length > 0 ? (
             <>

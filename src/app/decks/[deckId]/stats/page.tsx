@@ -99,7 +99,7 @@ export default function DeckStatsPage() {
   return (
     <div className="flex flex-col gap-8">
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p className="error-banner">{error}</p>
       ) : null}
 
       <section className="panel">
@@ -204,7 +204,9 @@ export default function DeckStatsPage() {
                 </span>
                 <span
                   className={`rounded-sm px-2 py-0.5 text-xs font-medium ${
-                    review.quality >= 3 ? "bg-[var(--accent-soft)] text-[var(--ink)]" : "bg-red-50 text-red-700"
+                    review.quality >= 3
+                      ? "bg-[var(--accent-soft)] text-[var(--ink)]"
+                      : "bg-[var(--warning-soft)] text-[var(--warning-dark)]"
                   }`}
                 >
                   {review.quality}/5

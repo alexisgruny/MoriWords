@@ -432,7 +432,7 @@ export default function DeckWordsPage() {
               type="button"
               onClick={() => setBulkDeletionPending(true)}
               disabled={selectedIds.size === 0 || isBulkWorking}
-              className="secondary-button px-3! py-1.5! text-xs! border-red-200! text-red-600! hover:bg-red-50!"
+              className="secondary-button px-3! py-1.5! text-xs! border-[var(--danger)]! text-[var(--danger)]! hover:bg-[var(--accent-soft)]!"
             >
               Supprimer la sélection
             </button>
@@ -484,7 +484,7 @@ export default function DeckWordsPage() {
         />
 
         {error ? (
-          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+          <p className="error-banner mb-4">{error}</p>
         ) : null}
 
         {isLoading ? (
@@ -674,7 +674,7 @@ export default function DeckWordsPage() {
                     <button
                       type="button"
                       onClick={() => setCardPendingDeletion(card)}
-                      className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      className="rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--danger)] hover:bg-[var(--accent-soft)]"
                     >
                       Supprimer
                     </button>

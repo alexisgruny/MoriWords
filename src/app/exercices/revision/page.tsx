@@ -82,12 +82,17 @@ export default function RevisionPage() {
           </p>
         </header>
 
-        {isLoading ? <p className="text-sm text-[var(--muted)]">Chargement...</p> : null}
+        {isLoading ? <div className="skeleton h-40" /> : null}
 
         {!isLoading && error ? <div className="empty-state">{error}</div> : null}
 
         {!isLoading && !error && sourcesWithWeakPoints.length === 0 ? (
           <div className="empty-state">
+            <span className="empty-state-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
             <p className="font-medium text-[var(--ink)]">Rien à revoir pour l&apos;instant.</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Continue à t&apos;entraîner sur{" "}

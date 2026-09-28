@@ -55,10 +55,8 @@ export default function Nav() {
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`shrink-0 whitespace-nowrap border-b-[3px] pb-3 text-base font-semibold transition ${
-                  isActive
-                    ? "border-[var(--accent)] text-[var(--ink)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                className={`nav-link shrink-0 whitespace-nowrap text-base font-semibold transition-colors ${
+                  isActive ? "text-[var(--ink)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
                 }`}
               >
                 {link.label}

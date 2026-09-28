@@ -1411,6 +1411,35 @@ reussite par type et les points les plus rates.
   level) tous verts.
 
 
+Priorite 40 - Passe design/UX, etape 1 : fondations et coherence
+------------------------------------------------------------------
+Demande de l'utilisateur : ameliorer au maximum UX, design et attractivite
+(polish + refonte + parcours), sur tout le site progressivement. Cette
+premiere etape pose les fondations communes, qui profitent a toutes les
+pages via les classes deja partagees (.panel, .token-card, .empty-state).
+- [TERMINE] Profondeur : ombre douce sur .panel, soulevement leger + ombre
+  au survol de .token-card (fond de survol code en dur #fafaf7 remplace par
+  var(--tint), il cassait le mode sombre).
+- [TERMINE] Coherence mode sombre : 10 classes Tailwind rouges codees en dur
+  (bandeaux d'erreur, boutons de suppression, badge de note basse) dans 7
+  fichiers remplacees par une classe .error-banner et les variables
+  --danger/--warning.
+- [TERMINE] Primitives d'animation : .fade-in-up (+ components/fade-in.tsx
+  pour un delai echelonne), .skeleton (chargement anime a la place des
+  textes "Chargement..." sur stats, revision, reviser, historique),
+  .empty-state-icon ; tout respecte prefers-reduced-motion.
+- [TERMINE] Navigation : trait de lien actif qui grandit depuis le centre
+  (au survol aussi), sceau du logo qui bascule legerement au survol.
+- [TERMINE] Page d'accueil : apparition douce de l'en-tete et des panneaux.
+- [TERMINE] /exercices/stats : barres de progression colorees (vert/ambre/
+  vermillon) pour chaque taux, apparition echelonnee des listes.
+- Verifie : tsc, eslint, vitest (193 tests) tous verts ; pages principales
+  en 200.
+- [A FAIRE] Etapes suivantes : decks et revision (retournement de carte,
+  progression de session), page d'accueil (parcours d'analyse), pages de
+  reference (grammaire/conjugaison/kanji), mobile.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

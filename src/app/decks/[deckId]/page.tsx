@@ -369,7 +369,7 @@ export default function DeckTrainingPage() {
   return (
     <>
       {error ? (
-        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="error-banner mb-6">
           {error}
         </p>
       ) : null}

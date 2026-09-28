@@ -161,7 +161,7 @@ export default function ReviewAllDuePage() {
         </header>
 
         {error ? (
-          <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+          <p className="error-banner mb-6">{error}</p>
         ) : null}
 
         <section className="panel">
@@ -185,7 +185,7 @@ export default function ReviewAllDuePage() {
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-[var(--muted)]">Chargement...</p>
+            <div className="skeleton h-64 rounded-2xl" />
           ) : activeCard ? (
             <>
               <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6">

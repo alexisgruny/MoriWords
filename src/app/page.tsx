@@ -936,7 +936,8 @@ export default function Home() {
       <div className="mx-auto max-w-6xl">
         <StreakBanner />
 
-        <header className="mb-8">
+        <header className="mb-8 fade-in-up">
+          <p className="eyebrow mb-1">MoriWords</p>
           <h1 className="text-[var(--ink)]">Analyser un texte</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
             Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t’intéressent.
@@ -944,7 +945,7 @@ export default function Home() {
         </header>
 
         <section className="flex flex-col gap-10">
-          <form onSubmit={handleSubmit} className="panel flex flex-col">
+          <form onSubmit={handleSubmit} className="panel fade-in-up flex flex-col">
             <div className="mb-4 flex items-baseline justify-between gap-4">
               <h2 className="text-[var(--ink)]">Texte japonais</h2>
               <span className="mono whitespace-nowrap text-xs text-[var(--muted)]">{text.length} caractères</span>
@@ -985,13 +986,13 @@ export default function Home() {
             </div>
 
             {error ? (
-              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="error-banner mt-4">
                 {error}
               </p>
             ) : null}
           </form>
 
-          <section className="panel" aria-live="polite">
+          <section className="panel fade-in-up" style={{ animationDelay: "80ms" }} aria-live="polite">
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-[var(--ink)]">Mots détectés</h2>
               <div className="flex items-center gap-4">

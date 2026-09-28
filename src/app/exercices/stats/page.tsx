@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { FadeIn } from "@/components/fade-in";
+import { ProgressBar } from "@/components/progress-bar";
+
 type ExerciseSource = "grammar" | "conjugation" | "kanji" | "examples";
 
 type SourceStats = { source: ExerciseSource; total: number; correct: number; rate: number };
@@ -84,12 +87,22 @@ export default function ExerciseStatsPage() {
           </p>
         </header>
 
-        {isLoading ? <p className="text-sm text-[var(--muted)]">Chargement...</p> : null}
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            <div className="skeleton h-24" />
+            <div className="skeleton h-24" />
+          </div>
+        ) : null}
 
         {!isLoading && error ? <div className="empty-state">{error}</div> : null}
 
         {!isLoading && !error && stats && totalAttempts === 0 ? (
           <div className="empty-state">
+            <span className="empty-state-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 20V10M12 20V4M20 20v-7" />
+              </svg>
+            </span>
             <p className="font-medium text-[var(--ink)]">Pas encore de tentative enregistrée.</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Fais quelques exercices pour voir tes statistiques apparaître ici.
@@ -104,17 +117,22 @@ export default function ExerciseStatsPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {stats.bySource
                   .filter((entry) => entry.total > 0)
-                  .map((entry) => (
-                    <Link key={entry.source} href={EXERCISE_LINKS[entry.source]} className="token-card block">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-[var(--ink)]">{SOURCE_LABELS[entry.source]}</span>
-                        <span className="mono text-lg font-bold text-[var(--ink)]">{formatRate(entry.rate)}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-[var(--muted)]">
-                        {entry.correct} / {entry.total} bonne{entry.correct > 1 ? "s" : ""} réponse
-                        {entry.correct > 1 ? "s" : ""}
-                      </p>
-                    </Link>
+                  .map((entry, index) => (
+                    <FadeIn key={entry.source} delayMs={index * 60}>
+                      <Link href={EXERCISE_LINKS[entry.source]} className="token-card block">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-[var(--ink)]">{SOURCE_LABELS[entry.source]}</span>
+                          <span className="mono text-lg font-bold text-[var(--ink)]">{formatRate(entry.rate)}</span>
+                        </div>
+                        <div className="mt-2">
+                          <ProgressBar rate={entry.rate} />
+                        </div>
+                        <p className="mt-2 text-sm text-[var(--muted)]">
+                          {entry.correct} / {entry.total} bonne{entry.correct > 1 ? "s" : ""} réponse
+                          {entry.correct > 1 ? "s" : ""}
+                        </p>
+                      </Link>
+                    </FadeIn>
                   ))}
               </div>
             </section>
@@ -136,19 +154,26 @@ export default function ExerciseStatsPage() {
                 </p>
               ) : (
                 <ul className="flex flex-col gap-2">
-                  {stats.weakPoints.map((point) => (
+                  {stats.weakPoints.map((point, index) => (
                     <li
                       key={`${point.source}-${point.focus}-${point.level ?? ""}`}
-                      className="token-card flex items-center justify-between gap-3"
+                      className="token-card fade-in-up flex items-center gap-4"
+                      style={{ animationDelay: `${index * 40}ms` }}
                     >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[var(--ink)]" lang={point.source === "kanji" ? "ja" : undefined}>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="truncate font-medium text-[var(--ink)]"
+                          lang={point.source === "kanji" ? "ja" : undefined}
+                        >
                           {point.focus}
                         </p>
                         <p className="mt-1 text-sm text-[var(--muted)]">
                           {SOURCE_LABELS[point.source]}
                           {point.level ? ` · ${point.level}` : ""} · {point.correct} / {point.total}
                         </p>
+                        <div className="mt-2 max-w-40">
+                          <ProgressBar rate={point.rate} />
+                        </div>
                       </div>
                       <span className="mono shrink-0 text-lg font-bold text-[var(--accent-dark)]">
                         {formatRate(point.rate)}
