@@ -23,6 +23,21 @@ const GENERATED_SOURCES = [
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
 
+function jlptBadgeClass(level: string): string {
+  if (level === "N5" || level === "N4") {
+    return "jlpt-badge jlpt-easy";
+  }
+  if (level === "N3") {
+    return "jlpt-badge jlpt-mid";
+  }
+  if (level === "N2" || level === "N1") {
+    return "jlpt-badge jlpt-hard";
+  }
+  return "jlpt-badge";
+}
+
+const STEPS = ["Colle ou génère un texte", "Choisis les mots", "Traduis-les ou garde-les dans un deck"];
+
 // Page d'accueil : coller un texte japonais, l'analyser mot par mot, le
 // traduire et ajouter des mots à un deck. C'est le cœur du parcours d'apprentissage.
 export default function Home() {
@@ -31,6 +46,7 @@ export default function Home() {
   const [tokens, setTokens] = useState<TokenResult[]>([]);
   const [selectedToken, setSelectedToken] = useState<TokenResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingAnalysis, setIsSavingAnalysis] = useState(false);
   const [loadingSourceKey, setLoadingSourceKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
@@ -68,6 +84,10 @@ export default function Home() {
 
   // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
+
+  // Étape du parcours mise en avant dans le guide sous le titre (1 : pas
+  // encore de texte analysé, 2 : des mots à choisir, 3 : un mot choisi).
+  const currentStep = selectedToken || selectedTokenPositions.size > 0 ? 3 : tokens.length > 0 ? 2 : 1;
 
   // Charge l'historique des textes et la liste des decks dès l'affichage de la page.
   useEffect(() => {
@@ -277,36 +297,43 @@ export default function Home() {
 
     const analyzedTokens = tokenizeData.tokens as TokenResult[];
     setTokens(analyzedTokens);
+    // Les mots sont déjà affichés : le reste n'est que de l'enregistrement
+    // (historique, vocabulaire), le bouton ne doit plus dire "Analyse en cours".
+    setIsSavingAnalysis(true);
 
-    const tokenSaveResponse = await fetch("/api/tokens", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sourceTextId,
-        tokens: analyzedTokens,
-      }),
-    });
-    const tokenSaveData: unknown = await tokenSaveResponse.json();
+    try {
+      const tokenSaveResponse = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceTextId,
+          tokens: analyzedTokens,
+        }),
+      });
+      const tokenSaveData: unknown = await tokenSaveResponse.json();
 
-    if (!tokenSaveResponse.ok || typeof tokenSaveData !== "object" || tokenSaveData === null) {
-      throw new Error("Impossible de sauvegarder les tokens");
+      if (!tokenSaveResponse.ok || typeof tokenSaveData !== "object" || tokenSaveData === null) {
+        throw new Error("Impossible de sauvegarder les tokens");
+      }
+
+      if ("error" in tokenSaveData && typeof tokenSaveData.error === "string") {
+        throw new Error(tokenSaveData.error);
+      }
+
+      await fetch("/api/vocabulary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tokens: analyzedTokens,
+          sourceLanguage: "ja",
+          targetLanguage: "fr",
+        }),
+      });
+
+      await loadTokensForText(sourceTextId);
+    } finally {
+      setIsSavingAnalysis(false);
     }
-
-    if ("error" in tokenSaveData && typeof tokenSaveData.error === "string") {
-      throw new Error(tokenSaveData.error);
-    }
-
-    await fetch("/api/vocabulary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tokens: analyzedTokens,
-        sourceLanguage: "ja",
-        targetLanguage: "fr",
-      }),
-    });
-
-    await loadTokensForText(sourceTextId);
   }
 
   // Gère le clic sur "Analyser le texte" : sauvegarde le texte collé puis
@@ -885,13 +912,13 @@ export default function Home() {
         placeholder="Nom du nouveau deck"
         aria-label="Nom du nouveau deck"
         autoFocus
-        className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+        className="min-h-9 rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
       />
       <button
         type="button"
         onClick={() => void handleCreateDeckInline()}
         disabled={isCreatingDeck}
-        className="rounded-sm bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-55"
+        className="primary-button px-3.5! py-2! text-sm!"
       >
         {isCreatingDeck ? "Création..." : "Créer"}
       </button>
@@ -901,13 +928,13 @@ export default function Home() {
           setIsCreatingNewDeck(false);
           setNewDeckName("");
         }}
-        className="text-xs text-[var(--muted)] underline"
+        className="link-button text-sm!"
       >
         Annuler
       </button>
     </div>
   ) : (
-    <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
+    <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
       Ajouter dans
       <select
         value={selectedDeckId ?? ""}
@@ -918,7 +945,7 @@ export default function Home() {
           }
           setSelectedDeckId(event.target.value);
         }}
-        className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+        className="min-h-9 cursor-pointer rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
       >
         {decks.length === 0 ? <option value="">Aucun deck</option> : null}
         {decks.map((deck) => (
@@ -942,6 +969,19 @@ export default function Home() {
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
             Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t’intéressent.
           </p>
+          <ol className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Étapes">
+            {STEPS.map((label, index) => {
+              const step = index + 1;
+              const state = step === currentStep ? "step-active" : step < currentStep ? "step-done" : "";
+
+              return (
+                <li key={label} className={`step ${state}`} aria-current={step === currentStep ? "step" : undefined}>
+                  <span className="step-number">{step < currentStep ? "✓" : step}</span>
+                  {label}
+                </li>
+              );
+            })}
+          </ol>
         </header>
 
         <section className="flex flex-col gap-10">
@@ -963,26 +1003,31 @@ export default function Home() {
               lang="ja"
             />
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div className="mt-4">
               <button
                 type="submit"
                 disabled={isLoading || text.trim().length === 0}
-                className="primary-button"
+                className="primary-button w-full sm:w-auto"
               >
-                {isLoading ? "Analyse en cours..." : "Analyser le texte"}
+                {isSavingAnalysis ? "Enregistrement..." : isLoading ? "Analyse en cours..." : "Analyser le texte →"}
               </button>
-              <span className="text-sm text-[var(--muted)]">ou générer un texte :</span>
-              {GENERATED_SOURCES.map((source) => (
-                <button
-                  key={source.key}
-                  type="button"
-                  onClick={() => void handleGenerateSource(source.key)}
-                  disabled={loadingSourceKey !== null || isLoading}
-                  className="link-button"
-                >
-                  {loadingSourceKey === source.key ? "Génération..." : source.label}
-                </button>
-              ))}
+            </div>
+
+            <div className="mt-5 border-t border-dashed border-[var(--line-strong)] pt-4">
+              <p className="mb-2.5 text-sm text-[var(--muted)]">Pas de texte sous la main ? Génère-en un :</p>
+              <div className="flex flex-wrap gap-2">
+                {GENERATED_SOURCES.map((source) => (
+                  <button
+                    key={source.key}
+                    type="button"
+                    onClick={() => void handleGenerateSource(source.key)}
+                    disabled={loadingSourceKey !== null || isLoading}
+                    className="chip"
+                  >
+                    {loadingSourceKey === source.key ? "Génération..." : source.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error ? (
@@ -1089,7 +1134,7 @@ export default function Home() {
                       >
                         <span
                           aria-hidden="true"
-                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center border text-xs font-bold leading-none ${
+                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-xs font-bold leading-none transition-colors ${
                             isChecked
                               ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                               : "border-[var(--ink)] bg-[var(--paper)] text-transparent"
@@ -1119,7 +1164,7 @@ export default function Home() {
                             </span>
                           ) : null}
                         </span>
-                        <span className="mono mt-1 shrink-0 rounded-md bg-[var(--tint)] px-2 py-0.5 text-xs font-bold text-[var(--ink)]">
+                        <span className={`mt-1 shrink-0 ${jlptBadgeClass(token.difficulty)}`}>
                           {token.difficulty === "unknown" ? "—" : token.difficulty}
                         </span>
                       </button>
@@ -1130,12 +1175,30 @@ export default function Home() {
             )}
 
             {selectedToken ? (
-              <div className="mt-8 rounded-2xl bg-[var(--tint)] p-5">
-                <p className="eyebrow">
-                  {selectedTokenPositions.size > 1
-                    ? `${selectedTokenPositions.size} mots sélectionnés`
-                    : "Mot sélectionné"}
-                </p>
+              // Collé en bas de l'écran : avant, ce panneau apparaissait sous
+              // toute la grille de mots, souvent hors de vue sur un long texte,
+              // et il fallait défiler pour trouver "Traduire"/"Ajouter au deck".
+              <div
+                className="fade-in-up sticky bottom-3 z-20 mt-8 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--line-strong)] bg-[var(--paper)] p-5 shadow-[0_12px_40px_-12px_rgb(0_0_0_/_0.35)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="eyebrow">
+                    {selectedTokenPositions.size > 1
+                      ? `${selectedTokenPositions.size} mots sélectionnés`
+                      : "Mot sélectionné"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTokenPositions(new Set());
+                      setSelectedToken(null);
+                    }}
+                    aria-label="Fermer et tout désélectionner"
+                    className="-mt-1 -mr-1 grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--tint)] hover:text-[var(--ink)]"
+                  >
+                    ✕
+                  </button>
+                </div>
                 <p className="mt-1 text-3xl font-bold text-[var(--ink)]" lang="ja">
                   {selectedToken.surface}
                   {selectedToken.baseForm && selectedToken.baseForm !== selectedToken.surface ? (
@@ -1146,7 +1209,7 @@ export default function Home() {
                 <div className="mt-2 flex items-center gap-3 text-sm text-[var(--muted)]">
                   <span>
                     Niveau JLPT{" "}
-                    <span className="mono rounded-md bg-[var(--tint)] px-2 py-0.5 text-xs font-bold text-[var(--ink)]">
+                    <span className={jlptBadgeClass(selectedToken.difficulty)}>
                       {selectedToken.difficulty === "unknown" ? "—" : selectedToken.difficulty}
                     </span>
                   </span>
@@ -1226,7 +1289,7 @@ export default function Home() {
                 </div>
 
                 {translation ? (
-                  <div className="mt-5 border-l-4 border-[var(--line-strong)] pl-4">
+                  <div className="fade-in-up mt-5 border-l-4 border-[var(--accent)] pl-4">
                     <p className="text-sm text-[var(--muted)]">Traduction</p>
                     <p className="mt-1 text-xl font-semibold text-[var(--ink)]">
                       {translation.translation}
@@ -1245,8 +1308,8 @@ export default function Home() {
           <section className="panel mt-12">
             <div className="mb-4 flex items-baseline justify-between gap-4">
               <h2 className="text-[var(--ink)]">Derniers textes</h2>
-              <Link href="/historique" className="text-sm text-[var(--ink)] underline decoration-[var(--line)] hover:decoration-[var(--accent)]">
-                Tout l’historique
+              <Link href="/historique" className="link-button text-sm!">
+                Tout l’historique →
               </Link>
             </div>
             <div className="grid md:grid-cols-2 md:gap-x-10">

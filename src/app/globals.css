@@ -372,6 +372,7 @@ textarea:focus {
   .skeleton,
   .token-card,
   .grade-button,
+  .chip,
   .primary-button,
   .secondary-button,
   .link-button {
@@ -517,6 +518,101 @@ a:hover > .seal {
 .grade-good:hover:not(:disabled) {
   border-color: var(--success);
   background: var(--success-soft);
+}
+
+/* Pastille cliquable (générateurs de texte de la page d'accueil) : plus
+   lisible comme "choix parmi plusieurs" qu'une rangée de liens soulignés. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Badge de niveau JLPT, teinté par palier (N5-N4 faciles en vert, N3 en
+   ambre, N2-N1 en vermillon) pour repérer d'un coup d'œil les mots durs. */
+.jlpt-badge {
+  display: inline-block;
+  border-radius: 6px;
+  background: var(--tint);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+}
+
+.jlpt-easy {
+  background: var(--success-soft);
+  color: var(--success-dark);
+}
+
+.jlpt-mid {
+  background: var(--warning-soft);
+  color: var(--warning-dark);
+}
+
+.jlpt-hard {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+/* Étapes du parcours d'analyse (page d'accueil). */
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color 200ms ease;
+}
+
+.step-number {
+  display: inline-grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+.step-active {
+  color: var(--ink);
+}
+
+.step-active .step-number {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.step-done .step-number {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success-dark);
 }
 
 /* Touche de raccourci clavier affichée dans un texte d'aide. */

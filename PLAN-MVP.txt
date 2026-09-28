@@ -1436,9 +1436,9 @@ pages via les classes deja partagees (.panel, .token-card, .empty-state).
 - Verifie : tsc, eslint, vitest (193 tests) tous verts ; pages principales
   en 200.
 - [TERMINE] Etape 2 (decks et revision) : voir Priorite 41.
-- [A FAIRE] Etapes suivantes : page d'accueil (parcours d'analyse), pages
-  de reference (grammaire/conjugaison/kanji), liste des mots d'un deck,
-  mobile.
+- [TERMINE] Etape 3 (page d'accueil) : voir Priorite 42.
+- [A FAIRE] Etapes suivantes : pages de reference (grammaire/conjugaison/
+  kanji), liste des mots d'un deck, vocabulaire/historique, mobile.
 
 
 Priorite 41 - Passe design/UX, etape 2 : decks et revision
@@ -1473,6 +1473,30 @@ Priorite 41 - Passe design/UX, etape 2 : decks et revision
 - Verifie : tsc, eslint, vitest (193 tests ; les 3 tests d'integration
   connus pour expirer sous charge passent seuls), pages en 200 sur un deck
   jetable "safe to delete" supprime ensuite.
+
+
+Priorite 42 - Passe design/UX, etape 3 : page d'accueil (analyse)
+------------------------------------------------------------------
+- [TERMINE] Panneau d'actions du mot choisi (Traduire / Ajouter au deck)
+  colle en bas de l'ecran : il apparaissait sous toute la grille de mots,
+  souvent hors de vue sur un long texte. Bouton de fermeture (tout
+  deselectionner), hauteur max 70vh avec defilement interne.
+- [TERMINE] Guide en 3 etapes sous le titre (texte -> mots -> deck), qui
+  avance tout seul avec le parcours (etapes faites cochees en vert).
+- [TERMINE] Generateurs de texte en pastilles (.chip) sur leur propre ligne
+  ("Pas de texte sous la main ?") au lieu d'une rangee de liens.
+- [TERMINE] Badges JLPT colores par palier (N5-N4 vert, N3 ambre, N2-N1
+  vermillon) sur les cartes de mots et le panneau.
+- [TERMINE] Le bouton affichait "Analyse en cours..." encore plusieurs
+  secondes apres l'affichage des mots (3 enregistrements successifs apres
+  la tokenisation) : passe a "Enregistrement..." des que les mots sont la.
+- [TERMINE] Selecteur de deck, case a cocher des mots et lien "Tout
+  l'historique" alignes sur le reste du style.
+- Verifie : tsc, eslint, vitest (193 tests) ; parcours reel dans Edge
+  (Playwright) en clair, sombre et mobile 390px : le panneau reste visible
+  apres defilement, le guide avance, aucune erreur console venant de
+  l'app. Textes et vocabulaire crees par ce test supprimes de la base
+  locale ensuite.
 
 
 Architecture cible
