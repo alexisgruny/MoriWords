@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
 import type { DeckSummary, VocabularyEntry } from "@/types/shared";
 
 // Page qui affiche tout le vocabulaire rencontré, avec un filtre par niveau JLPT.
@@ -111,7 +112,7 @@ export default function VocabularyPage() {
                     <span className="mono">{entry.difficulty === "unknown" ? "—" : (entry.difficulty ?? "—")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
-                    <span>{entry.partOfSpeech || "—"}</span>
+                    <span>{translatePartOfSpeech(entry.partOfSpeech) || "—"}</span>
                     {addedLemmas.has(entry.lemma) ? (
                       <span className="rounded-sm border border-[var(--line)] bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--ink)]">
                         Déjà ajouté

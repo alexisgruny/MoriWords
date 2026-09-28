@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
+import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
 import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
@@ -1106,7 +1107,7 @@ export default function Home() {
                             {token.baseForm && token.baseForm !== token.surface ? (
                               <span lang="ja">→ {token.baseForm}</span>
                             ) : null}
-                            <span className="part-of-speech">{token.partOfSpeech}</span>
+                            <span className="part-of-speech">{translatePartOfSpeech(token.partOfSpeech)}</span>
                             {addedLemmas.has(token.baseForm || token.surface) ? (
                               <span className="font-semibold text-[var(--accent-dark)]">déjà dans un deck</span>
                             ) : null}
