@@ -3,6 +3,11 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/prisma";
 import { CLAUDE_BUDGET_EXCEEDED_MESSAGE, consumeClaudeBudget } from "@/lib/security/claude-budget";
+import {
+  USER_QUOTA_EXCEEDED_MESSAGE,
+  consumeUserClaudeQuota,
+  recordClaudeUsage,
+} from "@/lib/security/claude-usage";
 
 import { classifyDifficulty } from "../difficulty/classify";
 import type { JLPTLevel } from "../difficulty/classify";
@@ -226,6 +231,10 @@ export async function translateText(
     };
   }
 
+  if (!(await consumeUserClaudeQuota())) {
+    throw new TranslationServiceError(USER_QUOTA_EXCEEDED_MESSAGE);
+  }
+
   if (!(await consumeClaudeBudget())) {
     throw new TranslationServiceError(CLAUDE_BUDGET_EXCEEDED_MESSAGE);
   }
@@ -273,6 +282,8 @@ export async function translateText(
 
     throw apiError;
   }
+
+  await recordClaudeUsage(message.usage);
 
   const result = parseAnthropicResponse(message.content, cleanedText);
 

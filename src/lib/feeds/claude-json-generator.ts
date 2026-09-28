@@ -2,6 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { CLAUDE_BUDGET_EXCEEDED_MESSAGE, consumeClaudeBudget } from "@/lib/security/claude-budget";
+import {
+  USER_QUOTA_EXCEEDED_MESSAGE,
+  consumeUserClaudeQuota,
+  recordClaudeUsage,
+} from "@/lib/security/claude-usage";
 
 // Délai maximum d'attente de la réponse de Claude avant d'abandonner.
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -68,6 +73,11 @@ export async function generateJsonFromClaude<T>({
     throw createError(messages.missingApiKey);
   }
 
+  // Quota du compte d'abord : un compte au plafond n'entame pas le budget global.
+  if (!(await consumeUserClaudeQuota())) {
+    throw createError(USER_QUOTA_EXCEEDED_MESSAGE);
+  }
+
   if (!(await consumeClaudeBudget())) {
     throw createError(CLAUDE_BUDGET_EXCEEDED_MESSAGE);
   }
@@ -102,6 +112,8 @@ export async function generateJsonFromClaude<T>({
 
     throw apiError;
   }
+
+  await recordClaudeUsage(message.usage);
 
   const rawText = message.content.find((entry) => entry.type === "text")?.text;
 

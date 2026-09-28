@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { setClaudeContext } from "@/lib/security/claude-usage";
 import { MAX_TRANSLATION_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { TranslationServiceError, translateText } from "@/lib/translation/translate";
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
   if (user instanceof Response) {
     return user;
   }
+
+  setClaudeContext({ userId: user.id, action: "translate" });
 
   const limited = await limitByIp(request, "claude");
   if (limited) {

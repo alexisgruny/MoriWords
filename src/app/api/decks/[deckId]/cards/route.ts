@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { setClaudeContext } from "@/lib/security/claude-usage";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedDeck, findOwnedSourceText } from "@/lib/decks/ownership";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
@@ -21,6 +22,8 @@ export async function POST(
   if (user instanceof Response) {
     return user;
   }
+
+  setClaudeContext({ userId: user.id, action: "card-add" });
 
   const limited = await limitByIp(request, "claude");
   if (limited) {

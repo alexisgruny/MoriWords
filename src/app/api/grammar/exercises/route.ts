@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import {
   ExerciseServiceError,
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
   if (user instanceof Response) {
     return user;
   }
+
+  setClaudeContext({ userId: user.id, action: "exercise" });
 
   const limited = await limitByIp(request, "claude");
   if (limited) {

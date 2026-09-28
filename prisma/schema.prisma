@@ -228,6 +228,22 @@ model RateLimitCounter {
   @@index([windowStart])
 }
 
+// Un appel réel à Claude (cache manqué) : tokens consommés, par compte et
+// par action, pour suivre le coût réel par utilisateur (voir
+// src/lib/security/claude-usage.ts). Jamais relu pour une réponse.
+model ClaudeUsage {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  inputTokens  Int
+  outputTokens Int
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
 // Historique des tentatives d'exercice (grammaire/conjugaison/kanji/mon
 // vocabulaire), pour calculer un taux de réussite par point/forme/kanji/mot
 // et repérer ce qui mérite d'être revu (page /exercices/stats). Écrit après
@@ -268,6 +284,7 @@ model User {
   sourceTexts      SourceText[]
   exerciseAttempts ExerciseAttempt[]
   vocabularyEntries VocabularyEntry[]
+  claudeUsages     ClaudeUsage[]
 
   @@map("user")
 }

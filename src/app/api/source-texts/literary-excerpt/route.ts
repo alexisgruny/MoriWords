@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { LiteraryExcerptServiceError, generateLiteraryExcerpt } from "@/lib/feeds/literary-excerpt";
@@ -11,6 +12,8 @@ export async function POST(request: Request) {
   if (user instanceof Response) {
     return user;
   }
+
+  setClaudeContext({ userId: user.id, action: "literary-excerpt" });
 
   const limited = await limitByIp(request, "claude");
   if (limited) {

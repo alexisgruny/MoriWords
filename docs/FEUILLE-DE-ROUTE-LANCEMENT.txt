@@ -102,13 +102,13 @@ Open source :
     (la supprimer du code ne suffit pas, elle reste dans l'historique Git)
 
 Avec les comptes et les paiements :
-  [ ] Librairie d'auth éprouvée (Auth.js, Better Auth, Clerk), ne jamais
+  [x] Librairie d'auth éprouvée (Auth.js, Better Auth, Clerk), ne jamais
       stocker de mots de passe soi-même
-  [ ] Vérifier dans chaque route que la ressource appartient à l'utilisateur
+  [x] Vérifier dans chaque route que la ressource appartient à l'utilisateur
   [ ] Stripe Checkout (page hébergée) : aucune carte ne passe par le serveur
   [ ] Vérifier la signature des webhooks Stripe
   [ ] Sauvegardes automatiques de la base
-  [ ] En-têtes de sécurité dans next.config.ts (CSP, X-Frame-Options...)
+  [x] En-têtes de sécurité dans next.config.ts (CSP, X-Frame-Options...)
 
 
 ------------------------------------------------------------------
@@ -116,12 +116,12 @@ Avec les comptes et les paiements :
 ------------------------------------------------------------------
 
 NÉCESSAIRES avant de faire payer :
-  [ ] Comptes utilisateurs : aucun modèle User aujourd'hui, l'appli est
+  [x] Comptes utilisateurs : aucun modèle User aujourd'hui, l'appli est
       mono-utilisateur. Rattacher Deck, Card, SourceText, ExerciseAttempt...
       à un userId dans prisma/schema.prisma
   [ ] Paiement Stripe (Checkout + webhooks + statut d'abonnement)
-  [ ] Quotas par utilisateur sur toutes les routes qui appellent Claude
-  [ ] Enregistrer response.usage (tokens) par utilisateur et par action
+  [x] Quotas par utilisateur sur toutes les routes qui appellent Claude
+  [x] Enregistrer response.usage (tokens) par utilisateur et par action
       (nouvelle table ClaudeUsage, dans claude-json-generator.ts et translate.ts)
   [ ] Passer sur Vercel Pro (le plan Hobby interdit l'usage commercial)
   [ ] Mentions légales, CGV, politique de confidentialité (RGPD)

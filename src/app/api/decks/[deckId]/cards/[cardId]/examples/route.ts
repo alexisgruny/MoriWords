@@ -1,5 +1,6 @@
 import { limitByIp } from "@/lib/security/rate-limit";
 import { requireUser } from "@/lib/auth/session";
+import { setClaudeContext } from "@/lib/security/claude-usage";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedCard } from "@/lib/decks/ownership";
 import { ExampleServiceError, generateExamples, saveExamples } from "@/lib/decks/card-examples";
@@ -16,6 +17,8 @@ export async function POST(
   if (user instanceof Response) {
     return user;
   }
+
+  setClaudeContext({ userId: user.id, action: "card-examples" });
 
   const limited = await limitByIp(request, "claude");
   if (limited) {

@@ -119,6 +119,13 @@ Decisions et contraintes a connaitre
   (VocabularyEntry.userId). Le cron nippon.com importe pour le compte
   OWNER_EMAIL. Connexion/inscription limitees a 20 essais / 15 min par IP.
   Tests : un compte jetable par fichier (src/lib/auth/test-user.ts).
+- Cout Claude par compte (Priorite 49) : quota de 150 appels reels / jour
+  par compte (CLAUDE_MAX_CALLS_PER_USER_PER_DAY), verifie avant le budget
+  global ; chaque appel reel enregistre ses tokens dans ClaudeUsage (compte,
+  action). Contexte de requete (AsyncLocalStorage, setClaudeContext dans les
+  10 routes qui peuvent appeler Claude) : pas besoin de passer userId aux
+  fonctions profondes. En-tetes de securite dans next.config.ts (CSP legere
+  sans restriction de scripts, anti-iframe, nosniff, HSTS...).
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -214,3 +221,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 46    Page Kana (hiragana/katakana) et exercice de lecture des kana.
 47    Comptes utilisateurs, phase 1 (Better Auth : email et Google).
 48    Comptes, phase 2 : donnees isolees par compte, pages privees.
+49    Quota Claude par compte, suivi des tokens (ClaudeUsage), en-tetes HTTP.
