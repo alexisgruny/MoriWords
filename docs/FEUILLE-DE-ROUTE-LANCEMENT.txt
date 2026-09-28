@@ -1,0 +1,256 @@
+FEUILLE DE ROUTE - LANCEMENT DE MORIWORDS
+==========================================
+
+Résumé de la discussion du 2026-09-28 : coûts Claude, prix de l'abonnement,
+prévisionnel, optimisations, communication, sécurité et positionnement.
+À relire avant chaque grosse étape, et à cocher au fur et à mesure.
+
+Légende : [ ] à faire   [x] fait   (!) urgent
+
+
+------------------------------------------------------------------
+1. COÛTS CLAUDE (état actuel du code)
+------------------------------------------------------------------
+
+Modèle utilisé partout : Claude Haiku 4.5 (claude-haiku-4-5-20251001)
+Tarif : 1 $ / million de tokens en entrée, 5 $ / million en sortie.
+
+Coût estimé par appel (d'après les prompts du code, pas encore mesuré) :
+  - Traduction mot / phrase ............ ~0,0008 $  (cache partagé : oui)
+  - 5 exemples pour une carte .......... ~0,0033 $  (cache par mot : oui)
+  - Correction d'exercice .............. ~0,0025 $  (cache : seulement si réponse identique)
+  - Texte généré (citation, dialogue...) ~0,002 $   (cache : non)
+  - 10 exercices de grammaire / point .. ~0,005 $   (une seule fois pour tous)
+  - Cron RSS nippon.com ................ 0 $        (pas de Claude)
+
+Coût Claude par utilisateur et par mois :
+  - Léger ....... ~0,25 $
+  - Régulier .... ~0,85 $
+  - Intensif .... ~2,90 $
+
+Plus il y a d'utilisateurs, moins chacun coûte : les caches sont partagés.
+
+
+------------------------------------------------------------------
+2. PRIX ET RENTABILITÉ
+------------------------------------------------------------------
+
+Prix conseillé : 4,99 €/mois, ou ~39 €/an.
+  - À 2,99 €, un utilisateur intensif fait perdre de l'argent.
+  - Offre de lancement possible : 2,99 € à vie pour les 100 premiers.
+
+Frais fixes estimés : ~45 €/mois
+  (Vercel Pro ~20 $, base PostgreSQL ~19-25 $, domaine, divers)
+
+Frais variables : Stripe ~1,5 % + 0,25 € par paiement,
+URSSAF ~22-25 % du CA en micro-entreprise (à vérifier, ACRE la 1re année).
+
+Résultats du prévisionnel (hypothèses de départ) :
+  - Marge par abonné après Claude : ~2,89 €
+  - Seuil de rentabilité : ~15 abonnés payants
+  - Premier mois dans le vert : mois 6
+  - Pertes du début remboursées : mois 10
+  - Au bout de 24 mois : ~310 abonnés, ~4 660 € de bénéfice cumulé
+  - Claude = ~19 % du CA. La plus grosse charge, c'est l'URSSAF.
+
+Fichier détaillé et modifiable : docs/previsionnel-moriwords.xlsx
+  -> Remplacer mes hypothèses par les vrais chiffres dès qu'ils existent
+     (taux de conversion, désabonnements, coût réel par action).
+
+
+------------------------------------------------------------------
+3. SÉCURITÉ
+------------------------------------------------------------------
+
+Déjà bien :
+  [x] Aucun secret dans l'historique Git, .env* ignoré
+  [x] Cron protégé par CRON_SECRET
+  [x] Prisma = pas d'injection SQL (ne jamais utiliser $queryRawUnsafe)
+  [x] Les messages d'erreur ne révèlent pas les détails internes
+  [x] Longueur limitée sur les réponses d'exercices
+
+(!) À FAIRE AUJOURD'HUI (sans code) :
+  [ ] Console Anthropic : plafond de dépense mensuel (ex. 20 $) + alerte
+  [ ] Vercel : Spend Management (plafond de facture)
+  [ ] Double authentification (2FA) : GitHub, Vercel, Anthropic, base de données, Stripe
+  [ ] GitHub > Settings > Code security : Secret scanning + Push protection
+  [ ] GitHub : activer Dependabot (alertes + mises à jour)
+  [ ] GitHub : protéger la branche main
+
+(!) À FAIRE CETTE SEMAINE (code) :
+  [ ] Limiter la taille des textes sur /api/translate et /api/tokenize
+      (ex. 2 000 caractères pour une traduction, 10 000 pour l'analyse)
+  [ ] Limiter le nombre de requêtes par IP sur les routes qui appellent Claude
+      (Upstash Ratelimit ou règles du pare-feu Vercel)
+  [ ] Protéger temporairement les routes qui modifient ou suppriment
+      (DELETE decks/cartes) tant qu'il n'y a pas de comptes
+
+Problème actuel : toutes les routes API sont publiques. N'importe qui peut
+appeler Claude en boucle (attaque « au portefeuille ») ou supprimer des decks.
+
+DDoS : Vercel filtre déjà les grosses attaques. Le vrai risque, c'est la
+facture. En cas d'attaque : mode « Attack Challenge » dans Vercel.
+
+Dépendances : npm audit signale 4 failles « high » (mysql2, deepmerge-ts),
+qui viennent des outils CLI de Prisma et pas du code qui tourne sur le site.
+Risque faible. Mettre Prisma à jour quand un correctif sort.
+
+Open source :
+  [ ] Choisir une licence exprès (AGPL = décourage les copies hébergées)
+      ou passer le dépôt en privé
+  - Si une clé fuite : la RÉVOQUER tout de suite dans la console concernée
+    (la supprimer du code ne suffit pas, elle reste dans l'historique Git)
+
+Avec les comptes et les paiements :
+  [ ] Librairie d'auth éprouvée (Auth.js, Better Auth, Clerk), ne jamais
+      stocker de mots de passe soi-même
+  [ ] Vérifier dans chaque route que la ressource appartient à l'utilisateur
+  [ ] Stripe Checkout (page hébergée) : aucune carte ne passe par le serveur
+  [ ] Vérifier la signature des webhooks Stripe
+  [ ] Sauvegardes automatiques de la base
+  [ ] En-têtes de sécurité dans next.config.ts (CSP, X-Frame-Options...)
+
+
+------------------------------------------------------------------
+4. OPTIMISATIONS DU SYSTÈME
+------------------------------------------------------------------
+
+NÉCESSAIRES avant de faire payer :
+  [ ] Comptes utilisateurs : aucun modèle User aujourd'hui, l'appli est
+      mono-utilisateur. Rattacher Deck, Card, SourceText, ExerciseAttempt...
+      à un userId dans prisma/schema.prisma
+  [ ] Paiement Stripe (Checkout + webhooks + statut d'abonnement)
+  [ ] Quotas par utilisateur sur toutes les routes qui appellent Claude
+  [ ] Enregistrer response.usage (tokens) par utilisateur et par action
+      (nouvelle table ClaudeUsage, dans claude-json-generator.ts et translate.ts)
+  [ ] Passer sur Vercel Pro (le plan Hobby interdit l'usage commercial)
+  [ ] Mentions légales, CGV, politique de confidentialité (RGPD)
+  [ ] Vérifier le droit des citations d'anime (src/lib/feeds/anime-quote.ts)
+
+OPTIONNELLES mais rentables :
+  [ ] Un seul texte du jour pour tout le monde au lieu d'un appel Claude
+      à chaque clic (src/app/api/source-texts/*)
+  [ ] Pré-remplir les caches avec l'API Batch (-50 %) : exemples des mots
+      N5-N3 et tous les points de grammaire (~8 $ une seule fois)
+  [ ] Sorties structurées (output_config.format) à la place de
+      extractJsonPayload, pour avoir moins de réponses inexploitables
+  [ ] Mieux normaliser la clé du cache de corrections (espaces, 。)
+  [ ] Offre annuelle (moins de frais Stripe, moins de désabonnements)
+  [ ] Page /admin pour suivre coût Claude / CA / marge
+
+À ÉVITER :
+  - Le prompt caching Anthropic : prompts trop courts, aucun gain
+  - Un modèle plus gros par défaut : Haiku 4.5 suffit
+    (éventuellement Sonnet pour les corrections d'une offre premium)
+
+
+------------------------------------------------------------------
+5. SE FAIRE CONNAÎTRE
+------------------------------------------------------------------
+
+Cible : francophones débutants à intermédiaires (JLPT N5 à N3), souvent
+fans d'anime et de manga, lassés des applis en anglais.
+
+Message clé : « Colle n'importe quel texte japonais et MoriWords en fait
+des fiches de révision en français, adaptées à ton niveau. »
+
+Préparer le terrain :
+  [ ] Nom de domaine (moriwords.fr ou .com) à la place de .vercel.app
+  [ ] Page d'accueil + liste d'attente (Brevo pour les emails)
+  [ ] Statistiques de visite : Plausible ou Umami (pas de bandeau cookies)
+  [ ] Parcours utilisateur : PostHog
+  [ ] Référencement de base : titres, descriptions, image de partage,
+      sitemap, Google Search Console
+
+Canaux, par ordre de priorité :
+  1. SEO : des pages publiques à partir de la base (grammaire, kanji,
+     vocabulaire JLPT). Qualité plutôt que quantité : 50 bonnes pages
+     valent mieux que 10 000 creuses.
+  2. Vidéos courtes (TikTok, Reels, Shorts)
+  3. Communautés : Discord et groupes Facebook francophones, Reddit
+  4. Partenariats : petits créateurs japonais FR, profs, clubs, Japan Expo
+  5. Raconter la construction du projet (X, Bluesky, LinkedIn)
+  6. Dans l'appli : offre fondateur, parrainage, emails de série (streak)
+  7. Pub payante : PLUS TARD, seulement quand la rétention est bonne
+
+Méthode « zéro expérience » :
+  - Un seul canal au début : vidéos courtes + une communauté
+  - Outils gratuits : enregistreur d'écran / OBS, CapCut, Canva
+  - Pas besoin de visage ni de voix : écran filmé + texte + musique
+  - Recette fixe de 20 secondes :
+      0-2 s   accroche en gros texte (« Cette réplique de One Piece, mot par mot »)
+      2-15 s  la réplique collée dans MoriWords, découpée et traduite
+      15-20 s zoom sur un mot (ex. 仲間 nakama = compagnon)
+      fin     « Lien en bio »
+  - 3 formats : réplique décortiquée / 1 mot d'anime / erreur de débutant
+  - Préparer 5 vidéos d'un coup le dimanche
+  - Pas d'images d'anime (droits d'auteur), le texte seul suffit
+  - Community management : 10 minutes par jour, aider sans vendre
+    pendant 2-3 semaines, puis un message sincère pour chercher des testeurs
+  - Se donner 2 mois avant de juger les résultats
+  - Si ça n'accroche pas : étudiant en com (Malt, écoles), fan de la
+    communauté, ou miser sur le SEO
+
+Plan sur 90 jours :
+  Semaines 1-2  : domaine, liste d'attente, stats, Search Console,
+                  début de participation aux communautés
+  Semaines 3-6  : comptes + Stripe, 3 vidéos par semaine, 10-20 pages SEO
+  Semaines 7-8  : bêta privée avec la liste d'attente
+  Semaines 9-12 : lancement officiel (offre des 100 premiers, créateurs,
+                  communautés, email à la liste d'attente)
+
+Chiffres à suivre :
+  - Visiteurs -> inscrits : viser 5 à 10 % minimum
+  - Activation : part des inscrits qui créent une carte le 1er jour
+  - Rétention à 7 et à 30 jours (LE chiffre qui compte)
+  - Inscrits -> payants (5 % dans le prévisionnel, à remplacer)
+
+
+------------------------------------------------------------------
+6. POSITIONNEMENT ET CONCURRENCE
+------------------------------------------------------------------
+
+Concurrents (infos à vérifier, les prix bougent) :
+  - Duolingo : fun, mais superficiel en japonais
+  - Anki : puissant et gratuit, mais austère et tout à créer soi-même
+  - WaniKani / Bunpro : excellents, mais en anglais et en dollars
+  - Migaku / LingQ / Yomitan : contenus réels, surtout en anglais
+  - ChatGPT / Claude en direct : gratuits, mais sans suivi ni révision
+
+Le créneau de MoriWords (personne ne coche les 4 cases à la fois) :
+  1. Tout en français
+  2. La boucle complète : texte réel -> fiches -> révision SM-2
+     -> production -> correction
+  3. Niveau JLPT respecté
+  4. Culture anime et manga comme porte d'entrée
+
+Risques :
+  - « ChatGPT + Anki » gratuit : l'argument doit être le gain de temps
+    et le suivi de progression, pas « il y a de l'IA »
+  - C'est une niche : viser « l'outil que les francophones se
+    recommandent », pas battre Duolingo
+  - Beaucoup d'abandons dans les applis de langues : miser sur la
+    série de jours et les rappels
+
+Valider avant d'investir des mois :
+  [ ] Parler à 10 apprenants (écouter avant de présenter l'appli)
+  [ ] Liste d'attente : 100 emails sans pub = bon signal
+  [ ] Prévente « tarif fondateur » (ex. 19 € la 1re année)
+
+Plus tard : le code est pensé pour plusieurs langues. Pistes :
+coréen -> français (K-pop, K-drama), japonais -> espagnol ou portugais.
+
+
+------------------------------------------------------------------
+7. ORDRE DE BATAILLE (récap)
+------------------------------------------------------------------
+
+  1. (!) Aujourd'hui : plafonds Anthropic + Vercel, 2FA, secret scanning, Dependabot
+  2. (!) Cette semaine : limites de taille, limite de requêtes, protection des DELETE
+  3. Domaine + liste d'attente + stats, et commencer les communautés
+  4. Comptes utilisateurs + quotas + enregistrement de response.usage
+  5. Stripe + pages légales + Vercel Pro
+  6. Vidéos courtes + premières pages SEO
+  7. Bêta privée, puis lancement
+  8. Remplacer les hypothèses du prévisionnel par les vrais chiffres
+     et réajuster le prix si besoin
