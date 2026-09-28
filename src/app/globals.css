@@ -16,6 +16,7 @@
   --line-strong: #b9b8b0;
   --accent: #cd2d1c; /* vermillon, 5.1:1 sur blanc */
   --accent-dark: #a02114;
+  --accent-hover: #a02114; /* fond de survol des boutons pleins (texte blanc) */
   --accent-soft: #fbeae6;
   --tint: #efeee9;
   --success: #4fb477;
@@ -46,6 +47,7 @@
     --line-strong: #524a40;
     --accent: #c8432a; /* texte blanc dessus : 4.8:1 (#ff6b4d ne donnait que 2.8:1) */
     --accent-dark: #ff8a6f;
+    --accent-hover: #a8361f;
     --accent-soft: #3a2018;
     --tint: #2a2621;
     --success: #4ecb82;
@@ -69,6 +71,7 @@
   --line-strong: #524a40;
   --accent: #c8432a;
   --accent-dark: #ff8a6f;
+  --accent-hover: #a8361f;
   --accent-soft: #3a2018;
   --tint: #2a2621;
   --success: #4ecb82;
@@ -214,8 +217,8 @@ a {
 }
 
 .primary-button:hover:not(:disabled) {
-  border-color: var(--accent-dark);
-  background: var(--accent-dark);
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
 }
 
 .secondary-button {
@@ -735,8 +738,8 @@ details[open] > summary ~ * {
 }
 
 .confirm-danger-button:hover:not(:disabled) {
-  border-color: var(--accent-dark);
-  background: var(--accent-dark);
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
 }
 
 /* Sceau (hanko) de la marque. */

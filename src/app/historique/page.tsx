@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { SearchField } from "@/components/reference-toolbar";
 import type { SourceTextSummary } from "@/types/shared";
 
 const PAGE_SIZE = 12;
@@ -136,27 +137,26 @@ export default function HistoriquePage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <h1 className="text-[var(--ink)]">
-            Tous tes textes analysés
-          </h1>
+        <header className="fade-in-up mb-8">
+          <p className="eyebrow mb-1">Historique</p>
+          <h1 className="text-[var(--ink)]">Tous tes textes analysés</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+            Rouvre un texte pour retrouver ses mots et continuer à en ajouter à tes decks.
+          </p>
         </header>
 
         <section className="panel">
-          <div className="mb-4 flex items-baseline justify-between gap-4">
-            <h2 className="text-[var(--ink)]">Recherche</h2>
-            <span className="text-sm text-[var(--muted)]">{total} texte(s)</span>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <input
+          <form onSubmit={handleSubmit} className="mb-3">
+            <SearchField
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={setQuery}
               placeholder="Rechercher dans le titre ou le contenu"
-              aria-label="Rechercher dans l'historique"
-              className="mb-6 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
+              label="Rechercher dans l'historique"
             />
           </form>
+          <p className="mb-4 text-sm text-[var(--muted)]">
+            {total} texte{total > 1 ? "s" : ""}
+          </p>
 
           {error ? (
             <p className="error-banner mb-4">
@@ -173,31 +173,36 @@ export default function HistoriquePage() {
             </div>
           ) : sourceTexts.length > 0 ? (
             <>
-              <div className="grid md:grid-cols-2 md:gap-x-10">
+              <div className="grid gap-3 md:grid-cols-2">
                 {sourceTexts.map((sourceText) => (
                   <Link
                     key={sourceText.id}
                     href={`/?sourceTextId=${sourceText.id}`}
-                    className="token-card block text-left"
+                    className="token-card group mb-0! flex flex-col text-left"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <time className="eyebrow" dateTime={sourceText.createdAt}>
-                        {new Date(sourceText.createdAt).toLocaleDateString("fr-FR")}
+                      <time className="mono text-xs text-[var(--muted)]" dateTime={sourceText.createdAt}>
+                        {new Date(sourceText.createdAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </time>
                       {sourceText.origin ? (
-                        <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
+                        <span className="rounded-full bg-[var(--tint)] px-2.5 py-0.5 text-xs font-semibold text-[var(--muted)]">
                           {ORIGIN_LABELS[sourceText.origin] ?? sourceText.origin}
                         </span>
                       ) : null}
                     </div>
                     {sourceText.title ? (
-                      <p className="mt-1 text-xs font-medium text-[var(--accent-dark)]">
-                        {sourceText.title}
-                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-[var(--accent-dark)]">{sourceText.title}</p>
                     ) : null}
                     <p className="mt-2 line-clamp-2 text-base leading-7 text-[var(--ink)]" lang="ja">
                       {sourceText.content}
                     </p>
+                    <span className="mt-2 text-xs font-semibold text-[var(--muted)] transition-colors group-hover:text-[var(--accent-dark)]">
+                      Rouvrir l’analyse →
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -217,9 +222,23 @@ export default function HistoriquePage() {
             </>
           ) : (
             <div className="empty-state">
+              <span className="empty-state-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 3h9l3 3v15H6z" />
+                  <path d="M9 10h6M9 14h6" />
+                </svg>
+              </span>
               <p className="font-medium text-[var(--ink)]">
                 {debouncedQuery ? "Aucun texte ne correspond à la recherche." : "Aucun texte analysé pour le moment."}
               </p>
+              {!debouncedQuery ? (
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  <Link href="/" className="link-button text-sm!">
+                    Analyse un premier texte
+                  </Link>{" "}
+                  : il apparaîtra ici.
+                </p>
+              ) : null}
             </div>
           )}
         </section>

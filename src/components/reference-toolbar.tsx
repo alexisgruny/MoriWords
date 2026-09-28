@@ -43,61 +43,106 @@ export function ReferenceToolbar({
     // elle prendrait un quart de l'écran en permanence.
     <div className="-mx-1 mb-5 bg-[var(--paper)] px-1 pt-1 pb-4 sm:sticky sm:top-0 sm:z-10">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Niveau JLPT">
-          {options.map((option) => {
-            const isActive = level === option.value;
-
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onLevelChange(option.value)}
-                aria-pressed={isActive}
-                className={`chip ${isActive ? "border-[var(--accent)]! bg-[var(--accent)]! text-white!" : ""}`}
-              >
-                {option.label}
-                <span className={`mono text-xs ${isActive ? "opacity-80" : "text-[var(--muted)]"}`}>{option.count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <FilterChips options={options} value={level} onChange={onLevelChange} label="Niveau JLPT" />
         {extra}
       </div>
 
-      <div className="relative">
-        <svg
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[var(--muted)]"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="m20 20-4.2-4.2" />
-        </svg>
-        <input
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder={placeholder}
-          aria-label={searchLabel}
-          lang={searchLang}
-          className="min-h-11 w-full rounded-full border border-[var(--line-strong)] bg-[var(--paper)] py-2 pr-10 pl-10 text-[var(--ink)] outline-none"
-        />
-        {query ? (
+      <SearchField
+        value={query}
+        onChange={onQueryChange}
+        placeholder={placeholder}
+        label={searchLabel}
+        lang={searchLang}
+      />
+    </div>
+  );
+}
+
+// Groupe de pastilles à choix unique, chacune avec son nombre d'éléments
+// (facultatif).
+export function FilterChips<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: Array<{ value: T; label: string; count?: number }>;
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label={label}>
+      {options.map((option) => {
+        const isActive = value === option.value;
+
+        return (
           <button
+            key={option.value}
             type="button"
-            onClick={() => onQueryChange("")}
-            aria-label="Effacer la recherche"
-            className="absolute top-1/2 right-2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--tint)] hover:text-[var(--ink)]"
+            onClick={() => onChange(option.value)}
+            aria-pressed={isActive}
+            className={`chip ${isActive ? "border-[var(--accent)]! bg-[var(--accent)]! text-white!" : ""}`}
           >
-            ✕
+            {option.label}
+            {option.count !== undefined ? (
+              <span className={`mono text-xs ${isActive ? "opacity-80" : "text-[var(--muted)]"}`}>{option.count}</span>
+            ) : null}
           </button>
-        ) : null}
-      </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Champ de recherche avec icône et bouton d'effacement.
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+  label,
+  lang,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  label: string;
+  lang?: string;
+}) {
+  return (
+    <div className="relative">
+      <svg
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[var(--muted)]"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="m20 20-4.2-4.2" />
+      </svg>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={label}
+        lang={lang}
+        className="min-h-11 w-full border border-[var(--line-strong)] bg-[var(--paper)] py-2 pr-10 pl-10 text-[var(--ink)] outline-none"
+      />
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Effacer la recherche"
+          className="absolute top-1/2 right-2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--tint)] hover:text-[var(--ink)]"
+        >
+          ✕
+        </button>
+      ) : null}
     </div>
   );
 }

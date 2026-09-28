@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 
+import { FilterChips } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
+import { jlptBadgeClass } from "@/lib/jlpt-badge";
 
 type Exercise = { id: string; french: string; level: string | null; focus: string };
 
@@ -18,13 +20,6 @@ type Correction = {
 
 export type Source = "grammar" | "examples" | "conjugation" | "kanji";
 
-const SOURCE_LABELS: Record<Source, string> = {
-  grammar: "grammaire",
-  examples: "mon vocabulaire",
-  conjugation: "conjugaison",
-  kanji: "kanji",
-};
-
 const VERDICT_STYLES: Record<Correction["verdict"], string> = {
   correct: "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success-dark)]",
   almost: "border-[var(--warning)] bg-[var(--warning-soft)] text-[var(--warning-dark)]",
@@ -35,6 +30,12 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
   correct: "Correct",
   almost: "Presque",
   incorrect: "À revoir",
+};
+
+const VERDICT_ICONS: Record<Correction["verdict"], string> = {
+  correct: "✓",
+  almost: "~",
+  incorrect: "✗",
 };
 
 // Exercice d'écriture : Claude propose une phrase française à traduire en
@@ -151,68 +152,59 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
 
   return (
     <section className="panel">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-[var(--ink)]">
-          {source === "examples" ? "Exercice sur mon vocabulaire" : `Exercice de ${SOURCE_LABELS[source]}`}
-        </h2>
-        <p className="text-sm text-[var(--muted)]">
-          {isKanji ? "Regarde le kanji, écris son sens en français." : "Écris ta traduction en japonais, Claude la corrige."}
-        </p>
-      </div>
+      {/* Pas de titre ici : chaque page qui affiche ce composant nomme déjà
+          l'exercice (titre de sous-page, ou libellé de section en révision). */}
+      <p className="mb-4 text-sm text-[var(--muted)]">
+        {isKanji ? "Regarde le kanji, écris son sens en français." : "Écris ta traduction en japonais, Claude la corrige."}
+      </p>
 
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT de l'exercice">
-        <button
-          type="button"
-          onClick={() => handleLevelChange("all")}
-          aria-pressed={level === "all"}
-          className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-            level === "all"
-              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-              : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-          }`}
-        >
-          Tous niveaux
-        </button>
-        {GRAMMAR_LEVELS.map((candidate) => (
-          <button
-            key={candidate}
-            type="button"
-            onClick={() => handleLevelChange(candidate)}
-            aria-pressed={level === candidate}
-            className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-              level === candidate
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-            }`}
-          >
-            {candidate}
-          </button>
-        ))}
+      <div className="mb-4">
+        <FilterChips
+          options={[
+            { value: "all" as const, label: "Tous niveaux" },
+            ...GRAMMAR_LEVELS.map((candidate) => ({ value: candidate, label: candidate })),
+          ]}
+          value={level}
+          onChange={handleLevelChange}
+          label="Niveau JLPT de l'exercice"
+        />
       </div>
 
       <div className="mb-5">
-        <button type="button" onClick={handleStart} className="secondary-button">
-          {exercise || info ? "Nouvelle phrase" : "Commencer"}
+        <button
+          type="button"
+          onClick={handleStart}
+          className={exercise || info ? "secondary-button" : "primary-button"}
+        >
+          {exercise || info ? "Nouvelle phrase" : "Commencer →"}
         </button>
       </div>
 
-      {isLoadingExercise ? <p className="text-sm text-[var(--muted)]">Préparation de la phrase...</p> : null}
+      {isLoadingExercise ? <div className="skeleton h-36 rounded-2xl" aria-label="Préparation de la phrase" /> : null}
 
       {!isLoadingExercise && info ? <div className="empty-state">{info}</div> : null}
 
       {!isLoadingExercise && exercise ? (
         <div>
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-4">
-            <p className="eyebrow">
-              {isKanji ? "Que veut dire ce kanji ?" : "À traduire en japonais"}
-              {exercise.level ? ` · niveau ${exercise.level}` : ""}
-              {isKanji ? ` · lectures : ${exercise.focus}` : ` · ${exercise.focus}`}
-            </p>
+          {/* key = exercice : l'animation d'entrée rejoue à chaque nouvelle phrase. */}
+          <div
+            key={exercise.id}
+            className={`fade-in-up rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-5 ${isKanji ? "text-center" : ""}`}
+          >
+            <div className={`flex flex-wrap items-center gap-2 ${isKanji ? "justify-center" : ""}`}>
+              <span className="eyebrow">{isKanji ? "Que veut dire ce kanji ?" : "À traduire en japonais"}</span>
+              {exercise.level ? <span className={jlptBadgeClass(exercise.level)}>{exercise.level}</span> : null}
+            </div>
             <p
-              className={isKanji ? "mt-1 text-4xl font-bold text-[var(--ink)]" : "mt-1 text-lg font-semibold text-[var(--ink)]"}
+              className={
+                isKanji ? "mt-3 text-6xl font-bold text-[var(--ink)]" : "mt-2 text-xl font-semibold leading-snug text-[var(--ink)]"
+              }
               lang={isKanji ? "ja" : undefined}
             >
               {exercise.french}
+            </p>
+            <p className="mt-2 text-sm text-[var(--muted)]" lang={isKanji ? "ja" : undefined}>
+              {isKanji ? `Lectures : ${exercise.focus}` : `Point travaillé : ${exercise.focus}`}
             </p>
           </div>
 
@@ -228,7 +220,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             placeholder={isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
             lang={isKanji ? "fr" : "ja"}
             rows={3}
-            className="mt-4 min-h-24 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-lg text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
+            className="mt-4 min-h-24 w-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-lg text-[var(--ink)] outline-none"
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -240,7 +232,9 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             >
               {isCorrecting ? "Correction..." : isKanji ? "Vérifier ma réponse" : "Corriger ma traduction"}
             </button>
-            <span className="text-xs text-[var(--muted)]">Ctrl/Cmd + Entrée pour envoyer</span>
+            <span className="text-xs text-[var(--muted)]">
+              <span className="kbd">Ctrl</span> + <span className="kbd">Entrée</span> pour envoyer
+            </span>
             <button
               type="button"
               onClick={() => void loadExercise(level, seenIds)}
@@ -252,8 +246,16 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
           </div>
 
           {correction ? (
-            <div className={`mt-4 rounded-2xl border p-4 ${VERDICT_STYLES[correction.correction.verdict]}`}>
-              <p className="text-sm font-semibold">{VERDICT_LABELS[correction.correction.verdict]}</p>
+            <div className={`fade-in-up mt-4 rounded-2xl border p-4 ${VERDICT_STYLES[correction.correction.verdict]}`}>
+              <p className="flex items-center gap-2 text-base font-bold">
+                <span
+                  className="grid h-6 w-6 place-items-center rounded-full border-2 border-current text-xs"
+                  aria-hidden="true"
+                >
+                  {VERDICT_ICONS[correction.correction.verdict]}
+                </span>
+                {VERDICT_LABELS[correction.correction.verdict]}
+              </p>
               <p className="mt-1 text-sm">{correction.correction.summary}</p>
 
               {correction.correction.errors.length > 0 ? (
@@ -276,10 +278,14 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
               ) : null}
 
               {isKanji ? (
-                <p className="mt-3 text-sm text-[var(--ink)]">
-                  <span className="font-semibold">Sens attendu : </span>
-                  {correction.reference}
-                </p>
+                // Sur une mauvaise réponse, l'erreur ci-dessus montre déjà le
+                // sens attendu ; sur une bonne, on rappelle tous les synonymes.
+                correction.correction.verdict === "correct" ? (
+                  <p className="mt-3 text-sm text-[var(--ink)]">
+                    <span className="font-semibold">Sens attendu : </span>
+                    {correction.reference}
+                  </p>
+                ) : null
               ) : (
                 <>
                   <p className="mt-3 text-sm text-[var(--ink)]">

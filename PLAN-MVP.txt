@@ -1438,8 +1438,9 @@ pages via les classes deja partagees (.panel, .token-card, .empty-state).
 - [TERMINE] Etape 2 (decks et revision) : voir Priorite 41.
 - [TERMINE] Etape 3 (page d'accueil) : voir Priorite 42.
 - [TERMINE] Etape 4 (pages de reference) : voir Priorite 43.
-- [A FAIRE] Etapes suivantes : liste des mots d'un deck, vocabulaire/
-  historique, exercices, mobile (barre de navigation tronquee).
+- [TERMINE] Etape 5 (navigation mobile, mots, vocabulaire, historique,
+  exercices) : voir Priorite 44. Passe design/UX terminee sur toutes les
+  pages.
 
 
 Priorite 41 - Passe design/UX, etape 2 : decks et revision
@@ -1526,6 +1527,40 @@ Priorite 43 - Passe design/UX, etape 4 : grammaire, conjugaison, kanji
   et mobile : entree depliee, recherche collee apres defilement de la liste
   des kanji (sauf mobile, voulu), etat vide + reinitialisation, aucune
   erreur.
+
+
+Priorite 44 - Passe design/UX, etape 5 : navigation mobile et pages restantes
+------------------------------------------------------------------
+- [TERMINE] Navigation : sous la largeur "lg", les 8 liens defilaient
+  horizontalement, coupes en plein mot ("...aison Kanji Exer..."). Ils
+  passent dans un menu deroulant (bouton qui affiche la page courante),
+  groupe en Apprendre / Reference / Suivi ; se ferme apres navigation,
+  avec Echap ou en touchant a cote. Barre complete inchangee sur ordinateur.
+- [TERMINE] FilterChips et SearchField sortis de reference-toolbar.tsx pour
+  etre reutilises (compte facultatif sur les pastilles).
+- [TERMINE] Mots d'un deck : filtres en pastilles, recherche partagee,
+  skeleton de chargement, badges d'etat aux couleurs des statistiques
+  (nouveau gris / en cours ambre / maitrise vert), actions en pastilles,
+  etat vide avec lien vers Analyser ou "Reinitialiser les filtres".
+- [TERMINE] Vocabulaire : etat de chargement (l'etat vide s'affichait avant
+  l'arrivee des mots), recherche ajoutee, niveaux avec leur nombre, badges
+  JLPT colores, "vu N fois", "Dans un deck" en vert.
+- [TERMINE] Historique : recherche partagee, cartes avec date lisible,
+  origine en pastille, "Rouvrir l'analyse", etat vide avec lien.
+- [TERMINE] Exercices : cartes du hub avec un kanji par type (文 活 字 語)
+  et une fleche ; widget avec niveaux en pastilles, "Commencer" en bouton
+  principal, skeleton, phrase qui rejoue son animation a chaque exercice,
+  verdict avec icone. Titre du widget retire (il doublait celui de la
+  page) et "Sens attendu" affiche une seule fois sur une mauvaise reponse
+  de kanji.
+- [TERMINE] Mode sombre : le survol des boutons pleins utilisait
+  --accent-dark (le corail clair des liens) comme fond, texte blanc
+  illisible ; nouveau jeton --accent-hover (#a8361f en sombre).
+- Verifie : tsc, eslint, vitest (193 tests) ; dans Edge : menu mobile
+  (ouverture, Echap, clic sur un lien, toucher a cote) en 390px et 900px,
+  barre complete en 1280px ; exercice de kanji reel (correction locale),
+  etats vides vocabulaire/historique, page Mots sur un deck jetable
+  supprime ensuite ; clair et sombre, aucune erreur.
 
 
 Architecture cible
