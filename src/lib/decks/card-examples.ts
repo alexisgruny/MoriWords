@@ -32,9 +32,53 @@ export class ExampleServiceError extends Error {
   }
 }
 
+const cachedExamplesSchema = z
+  .array(
+    z.object({
+      japanese: z.string().min(1),
+      reading: z.string().nullable(),
+      translation: z.string().min(1),
+    }),
+  )
+  .min(1);
+
+// Un même mot ajouté dans deux decks différents (ou une carte sans exemples
+// régénérée) recevrait sinon deux jeux de phrases quasi identiques : on
+// réutilise le premier plutôt que de rappeler Claude pour un résultat
+// presque équivalent. Validé avec le schéma au cas où le format stocké
+// deviendrait incompatible (régénère plutôt que de renvoyer n'importe quoi).
+async function getCachedLemmaExamples(lemma: string): Promise<GeneratedExample[] | null> {
+  const cached = await prisma.lemmaExampleCache.findUnique({
+    where: { lemma_sourceLanguage_targetLanguage: { lemma, sourceLanguage: "ja", targetLanguage: "fr" } },
+  });
+
+  if (!cached) {
+    return null;
+  }
+
+  const parsed = cachedExamplesSchema.safeParse(cached.examples);
+  return parsed.success ? parsed.data : null;
+}
+
+async function cacheLemmaExamples(lemma: string, examples: GeneratedExample[]): Promise<void> {
+  await prisma.lemmaExampleCache.upsert({
+    where: { lemma_sourceLanguage_targetLanguage: { lemma, sourceLanguage: "ja", targetLanguage: "fr" } },
+    update: { examples },
+    create: { lemma, sourceLanguage: "ja", targetLanguage: "fr", examples },
+  });
+}
+
 // Demande à Claude 5 phrases simples contenant le mot, adaptées à son niveau
-// JLPT (un mot N5 reçoit des phrases N5, pas des phrases de journal).
+// JLPT (un mot N5 reçoit des phrases N5, pas des phrases de journal). Vérifie
+// d'abord le cache par mot (voir getCachedLemmaExamples) pour éviter un appel
+// pour un mot déjà illustré ailleurs.
 export async function generateExamples(lemma: string): Promise<GeneratedExample[]> {
+  const cached = await getCachedLemmaExamples(lemma);
+
+  if (cached) {
+    return cached;
+  }
+
   const level = classifyDifficulty(lemma, null, null);
   const levelLabel = level === "unknown" ? "N5" : level;
 
@@ -54,11 +98,15 @@ export async function generateExamples(lemma: string): Promise<GeneratedExample[
     },
   });
 
-  return payload.examples.slice(0, EXAMPLES_PER_CARD).map((example) => ({
+  const examples = payload.examples.slice(0, EXAMPLES_PER_CARD).map((example) => ({
     japanese: example.japanese.trim(),
     reading: example.reading?.trim() || null,
     translation: example.translation.trim(),
   }));
+
+  await cacheLemmaExamples(lemma, examples);
+
+  return examples;
 }
 
 // Comme generateExamples mais ne lève jamais d'erreur : en cas d'échec ou de

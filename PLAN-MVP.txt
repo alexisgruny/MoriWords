@@ -1324,6 +1324,39 @@ rappeler Claude pour la corriger est un gaspillage evitable.
   differents) tous verts.
 
 
+Priorite 36 - Recycler les exemples de mots entre cartes (cache par lemme)
+------------------------------------------------------------------
+Suite de la Priorite 35 (meme demande : reduire l'usage de Claude partout
+dans le code). Un mot ajoute dans deux decks differents (ou une carte sans
+exemples completee plus tard) est un Card distinct a chaque fois, donc
+generateExamples etait rappele a chaque fois pour un contenu quasi
+identique au meme niveau JLPT, meme si ce mot avait deja ete illustre pour
+une autre carte. La traduction elle-meme (translateText) recyclait deja
+via TranslationCache (lemme -> traduction), mais pas les 5 phrases
+d'exemple.
+- [TERMINE] Nouvelle table LemmaExampleCache (prisma/schema.prisma,
+  migration 20260928060053_add_lemma_example_cache), cle unique
+  (lemma, sourceLanguage, targetLanguage), meme structure que
+  TranslationCache mais pour le tableau d'exemples complet (JSON).
+- [TERMINE] generateExamples (src/lib/decks/card-examples.ts) verifie
+  d'abord ce cache par mot avant d'appeler Claude, et y enregistre le
+  resultat apres une generation reussie ; aucun appelant (ajout de carte,
+  regeneration d'exemples manquants) n'a eu besoin de changer, la fonction
+  garde la meme signature (meme motif que translateText).
+- [TERMINE] Recherche des autres points d'appel a Claude dans le code
+  (translateText, generateExamples, correctTranslation/getTranslationCorrection,
+  generateGrammarExercises, generateAnimeQuote et les autres generateurs de
+  flux) : les generateurs de contenu du jour (citation d'anime, actu
+  simplifiee, dialogue, extrait litteraire) sont volontairement exclus du
+  cache, leur interet etant justement de varier a chaque clic.
+- Verifie : tsc, eslint, vitest (suite complete, 183 tests dont 1 nouveau
+  sur le recyclage par lemme) tous verts. Un vrai conflit de lemme de test
+  entre ce fichier et cards-examples.integration.test.ts (tous deux
+  utilisaient "食べる" avec succes, la table etant desormais partagee entre
+  fichiers de test) a ete repere et corrige en changeant le lemme de test
+  local pour un mot que ce fichier est seul a generer avec succes.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

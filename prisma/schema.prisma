@@ -185,3 +185,17 @@ model ExerciseCorrectionCache {
 
   @@unique([exerciseId, answerKey])
 }
+
+// Phrases d'exemple déjà générées pour un mot (indépendamment de toute
+// carte précise) : un même mot ajouté dans deux decks différents recevrait
+// sinon deux jeux de phrases quasi identiques, payés deux fois à Claude.
+model LemmaExampleCache {
+  id             String   @id @default(cuid())
+  lemma          String
+  sourceLanguage String   @default("ja")
+  targetLanguage String   @default("fr")
+  examples       Json
+  createdAt      DateTime @default(now())
+
+  @@unique([lemma, sourceLanguage, targetLanguage])
+}

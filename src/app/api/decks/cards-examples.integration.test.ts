@@ -49,6 +49,10 @@ beforeEach(() => {
 
 afterAll(async () => {
   await prisma.deck.deleteMany({ where: { id: { in: deckIdsToCleanUp } } });
+  // Le cache par mot (LemmaExampleCache) n'est pas lié à un deck : à nettoyer
+  // explicitement pour ne pas fausser une future exécution de ces tests (qui
+  // sauterait alors l'appel à Claude en croyant le mot déjà illustré).
+  await prisma.lemmaExampleCache.deleteMany({ where: { lemma: { in: ["食べる", "飲む", "見る"] } } });
   await prisma.$disconnect();
 });
 
