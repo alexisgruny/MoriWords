@@ -51,6 +51,14 @@ export default function Footer() {
           >
             Code source sur GitHub
           </a>
+          <div className="flex gap-3 text-xs">
+            <Link href="/confidentialite" className="transition hover:text-[var(--ink)]">
+              Confidentialité
+            </Link>
+            <Link href="/mentions-legales" className="transition hover:text-[var(--ink)]">
+              Mentions légales
+            </Link>
+          </div>
           <Link href="/proprietaire" className="text-xs text-[var(--muted)] transition hover:text-[var(--ink)]">
             Mode propriétaire
           </Link>

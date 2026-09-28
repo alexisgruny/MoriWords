@@ -160,6 +160,16 @@ export function AuthForm({
         </button>
       </form>
 
+      {isSignup ? (
+        <p className="mt-4 text-center text-xs text-[var(--muted)]">
+          En créant un compte, tu acceptes la{" "}
+          <Link href="/confidentialite" className="underline hover:text-[var(--ink)]">
+            politique de confidentialité
+          </Link>
+          .
+        </p>
+      ) : null}
+
       <p className="mt-5 text-center text-sm text-[var(--muted)]">
         {isSignup ? "Déjà un compte ? " : "Pas encore de compte ? "}
         <Link

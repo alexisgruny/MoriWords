@@ -126,6 +126,12 @@ Decisions et contraintes a connaitre
   10 routes qui peuvent appeler Claude) : pas besoin de passer userId aux
   fonctions profondes. En-tetes de securite dans next.config.ts (CSP legere
   sans restriction de scripts, anti-iframe, nosniff, HSTS...).
+- RGPD (Priorite 50) : page /compte (infos, export JSON de toutes les
+  donnees via GET /api/account, suppression definitive via DELETE avec
+  "SUPPRIMER" tape, cascade sur toutes les donnees), pages publiques
+  /confidentialite et /mentions-legales (liens en pied de page et a
+  l'inscription). A completer quand le site sera payant : statut, SIRET,
+  adresse de contact, CGV.
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -222,3 +228,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 47    Comptes utilisateurs, phase 1 (Better Auth : email et Google).
 48    Comptes, phase 2 : donnees isolees par compte, pages privees.
 49    Quota Claude par compte, suivi des tokens (ClaudeUsage), en-tetes HTTP.
+50    RGPD : Mon compte (export, suppression), confidentialite, mentions legales.

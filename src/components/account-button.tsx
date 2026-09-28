@@ -84,6 +84,14 @@ export function AccountButton() {
             <p className="truncate font-semibold text-[var(--ink)]">{user.name}</p>
             <p className="truncate text-xs text-[var(--muted)]">{user.email}</p>
           </div>
+          <Link
+            href="/compte"
+            role="menuitem"
+            onClick={() => setIsOpen(false)}
+            className="mt-1 flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--ink)] hover:bg-[var(--tint)]"
+          >
+            Mon compte
+          </Link>
           <button
             type="button"
             role="menuitem"

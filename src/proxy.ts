@@ -2,8 +2,18 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages accessibles sans compte : référentiels (sans données personnelles
-// ni appel à Claude) et pages de connexion.
-const PUBLIC_PATHS = ["/connexion", "/inscription", "/kana", "/kanji", "/grammaire", "/conjugaison", "/exercices/kana"];
+// ni appel à Claude), pages de connexion et pages légales.
+const PUBLIC_PATHS = [
+  "/connexion",
+  "/inscription",
+  "/kana",
+  "/kanji",
+  "/grammaire",
+  "/conjugaison",
+  "/exercices/kana",
+  "/confidentialite",
+  "/mentions-legales",
+];
 const AUTH_PATHS = ["/connexion", "/inscription"];
 
 function matches(pathname: string, paths: string[]) {

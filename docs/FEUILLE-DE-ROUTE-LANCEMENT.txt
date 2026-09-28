@@ -124,7 +124,9 @@ NÉCESSAIRES avant de faire payer :
   [x] Enregistrer response.usage (tokens) par utilisateur et par action
       (nouvelle table ClaudeUsage, dans claude-json-generator.ts et translate.ts)
   [ ] Passer sur Vercel Pro (le plan Hobby interdit l'usage commercial)
-  [ ] Mentions légales, CGV, politique de confidentialité (RGPD)
+  [~] Mentions légales, CGV, politique de confidentialité (RGPD) : mentions,
+      confidentialité, export et suppression du compte faits ; CGV à écrire
+      avec Stripe
   [ ] Vérifier le droit des citations d'anime (src/lib/feeds/anime-quote.ts)
 
 OPTIONNELLES mais rentables :
