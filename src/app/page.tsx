@@ -769,7 +769,7 @@ export default function Home() {
       const failedCount = results.length - succeeded.length;
 
       if (succeeded.length > 0) {
-        showToast(`${succeeded.length} mot(s) traduits.`);
+        showToast(`${succeeded.length} mot(s) traduit(s).`);
       }
       if (failedCount > 0) {
         showToast(`${failedCount} mot(s) n’ont pas pu être traduits.`, "error");

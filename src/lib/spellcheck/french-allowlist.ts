@@ -33,6 +33,7 @@ export const FRENCH_ALLOWLIST: string[] = [
   "shogi",
   "zelkova",
   "fuki",
+  "hagi",
   "sake",
   "ayu",
   "monme",
