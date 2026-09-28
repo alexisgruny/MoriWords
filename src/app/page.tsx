@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
+import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -22,19 +23,6 @@ const GENERATED_SOURCES = [
   { key: "daily-dialogue", label: "Dialogue quotidien" },
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
-
-function jlptBadgeClass(level: string): string {
-  if (level === "N5" || level === "N4") {
-    return "jlpt-badge jlpt-easy";
-  }
-  if (level === "N3") {
-    return "jlpt-badge jlpt-mid";
-  }
-  if (level === "N2" || level === "N1") {
-    return "jlpt-badge jlpt-hard";
-  }
-  return "jlpt-badge";
-}
 
 const STEPS = ["Colle ou génère un texte", "Choisis les mots", "Traduis-les ou garde-les dans un deck"];
 

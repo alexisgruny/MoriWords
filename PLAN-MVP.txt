@@ -1437,8 +1437,9 @@ pages via les classes deja partagees (.panel, .token-card, .empty-state).
   en 200.
 - [TERMINE] Etape 2 (decks et revision) : voir Priorite 41.
 - [TERMINE] Etape 3 (page d'accueil) : voir Priorite 42.
-- [A FAIRE] Etapes suivantes : pages de reference (grammaire/conjugaison/
-  kanji), liste des mots d'un deck, vocabulaire/historique, mobile.
+- [TERMINE] Etape 4 (pages de reference) : voir Priorite 43.
+- [A FAIRE] Etapes suivantes : liste des mots d'un deck, vocabulaire/
+  historique, exercices, mobile (barre de navigation tronquee).
 
 
 Priorite 41 - Passe design/UX, etape 2 : decks et revision
@@ -1497,6 +1498,34 @@ Priorite 42 - Passe design/UX, etape 3 : page d'accueil (analyse)
   apres defilement, le guide avance, aucune erreur console venant de
   l'app. Textes et vocabulaire crees par ce test supprimes de la base
   locale ensuite.
+
+
+Priorite 43 - Passe design/UX, etape 4 : grammaire, conjugaison, kanji
+------------------------------------------------------------------
+- [TERMINE] components/reference-toolbar.tsx : filtre par niveau + recherche,
+  copie-colle jusqu'ici sur les trois pages. Niveaux en pastilles avec leur
+  nombre, recherche avec icone et bouton d'effacement, barre collee en haut
+  pendant le defilement a partir de la largeur tablette (pas sur telephone,
+  ou elle prendrait un quart de l'ecran). NoResults : etat vide avec lien
+  "reinitialise les filtres". Chevron : fleche des entrees depliables.
+- [TERMINE] src/lib/jlpt-badge.ts : badge JLPT colore par palier, partage
+  (sorti de la page d'accueil) et utilise sur les trois pages.
+- [TERMINE] Entrees depliables : chevron qui pivote, contenu qui apparait
+  en douceur, formation dans un encadre, exemples de conjugaison lus
+  "base -> forme conjuguee (lecture)".
+- [TERMINE] Kanji : caractere dans une tuile carree, sens en titre,
+  lectures on/kun, nombre de traits ("1 trait" au singulier), ajout au deck
+  en pastille "+ Ajouter" ou "Dans ce deck" en vert.
+- [TERMINE] "S'exercer" devient le bouton principal des trois en-tetes.
+- [TERMINE] Contraste en mode sombre : le vermillon de remplissage
+  (#ff6b4d) ne donnait que 2.8:1 avec le texte blanc des boutons, pastilles
+  actives, compteurs et logo ; remplace par #c8432a (4.8:1). Les liens
+  gardent le vermillon clair (--accent-dark), l'accent n'etant jamais
+  utilise comme couleur de texte.
+- Verifie : tsc, eslint, vitest (193 tests) ; dans Edge en clair, sombre
+  et mobile : entree depliee, recherche collee apres defilement de la liste
+  des kanji (sauf mobile, voulu), etat vide + reinitialisation, aucune
+  erreur.
 
 
 Architecture cible

@@ -44,7 +44,7 @@
     --paper: #211e1a;
     --line: #38332c;
     --line-strong: #524a40;
-    --accent: #ff6b4d;
+    --accent: #c8432a; /* texte blanc dessus : 4.8:1 (#ff6b4d ne donnait que 2.8:1) */
     --accent-dark: #ff8a6f;
     --accent-soft: #3a2018;
     --tint: #2a2621;
@@ -67,7 +67,7 @@
   --paper: #211e1a;
   --line: #38332c;
   --line-strong: #524a40;
-  --accent: #ff6b4d;
+  --accent: #c8432a;
   --accent-dark: #ff8a6f;
   --accent-soft: #3a2018;
   --tint: #2a2621;
@@ -373,6 +373,8 @@ textarea:focus {
   .token-card,
   .grade-button,
   .chip,
+  .details-chevron,
+  details[open] > summary ~ *,
   .primary-button,
   .secondary-button,
   .link-button {
@@ -613,6 +615,26 @@ a:hover > .seal {
   border-color: var(--success);
   background: var(--success-soft);
   color: var(--success-dark);
+}
+
+/* Entrée dépliable (<details>) des pages de référence : chevron qui pivote
+   à l'ouverture et contenu qui apparaît en douceur. */
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.details-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 200ms ease;
+}
+
+details[open] .details-chevron {
+  transform: rotate(180deg);
+}
+
+details[open] > summary ~ * {
+  animation: fade-in-up 240ms ease both;
 }
 
 /* Touche de raccourci clavier affichée dans un texte d'aide. */

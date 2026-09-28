@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
 import { filterKanji, JLPT_KANJI } from "@/lib/kanji/kanji";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
+import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import type { DeckSummary } from "@/types/shared";
+
+const counts = Object.fromEntries(
+  GRAMMAR_LEVELS.map((level) => [level, JLPT_KANJI.filter((entry) => entry.level === level).length]),
+) as Record<GrammarLevel, number>;
 
 // Combien de kanji afficher avant d'exiger un clic sur "Charger plus" : le
 // dataset est bien plus gros que grammaire/conjugaison (~2200 kanji, surtout
@@ -117,13 +123,39 @@ export default function KanjiPage() {
 
   const results = filterKanji(JLPT_KANJI, level, query);
   const visibleResults = results.slice(0, visibleCount);
-  const countFor = (candidate: GrammarLevel) => JLPT_KANJI.filter((entry) => entry.level === candidate).length;
+
+  const deckControl =
+    decks.length > 0 ? (
+      <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        Ajouter dans
+        <select
+          value={selectedDeckId}
+          onChange={(event) => setSelectedDeckId(event.target.value)}
+          aria-label="Deck de destination"
+          className="min-h-9 cursor-pointer rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)]"
+        >
+          {decks.map((deck) => (
+            <option key={deck.id} value={deck.id}>
+              {deck.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : (
+      <p className="text-sm text-[var(--muted)]">
+        <Link href="/decks" className="link-button text-sm!">
+          Crée un deck
+        </Link>{" "}
+        pour pouvoir ajouter des kanji.
+      </p>
+    );
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <header className="fade-in-up mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
+            <p className="eyebrow mb-1">Référence</p>
             <h1 className="text-[var(--ink)]">Kanji par niveau JLPT</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
               Les kanji à connaître de N5 à N1, avec leurs lectures on&apos;yomi et
@@ -131,76 +163,23 @@ export default function KanjiPage() {
               lecture ou un sens.
             </p>
           </div>
-          <Link href="/exercices/kanji" className="secondary-button shrink-0">
-            S&apos;exercer
+          <Link href="/exercices/kanji" className="primary-button shrink-0">
+            S&apos;exercer →
           </Link>
         </header>
 
         <section className="panel">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
-              <button
-                type="button"
-                onClick={() => setLevel("all")}
-                aria-pressed={level === "all"}
-                className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                  level === "all"
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                    : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-                }`}
-              >
-                Tous ({JLPT_KANJI.length})
-              </button>
-              {GRAMMAR_LEVELS.map((candidate) => (
-                <button
-                  key={candidate}
-                  type="button"
-                  onClick={() => setLevel(candidate)}
-                  aria-pressed={level === candidate}
-                  className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                    level === candidate
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                      : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-                  }`}
-                >
-                  {candidate} ({countFor(candidate)})
-                </button>
-              ))}
-            </div>
-
-            {decks.length > 0 ? (
-              <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                Ajouter dans
-                <select
-                  value={selectedDeckId}
-                  onChange={(event) => setSelectedDeckId(event.target.value)}
-                  aria-label="Deck de destination"
-                  className="min-h-9 rounded-sm border border-[var(--line-strong)] bg-[var(--paper)] px-2 py-1 text-sm text-[var(--ink)]"
-                >
-                  {decks.map((deck) => (
-                    <option key={deck.id} value={deck.id}>
-                      {deck.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <p className="text-sm text-[var(--muted)]">
-                <Link href="/decks" className="link-button text-sm!">
-                  Crée un deck
-                </Link>{" "}
-                pour pouvoir ajouter des kanji.
-              </p>
-            )}
-          </div>
-
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+          <ReferenceToolbar
+            level={level}
+            onLevelChange={setLevel}
+            counts={counts}
+            total={JLPT_KANJI.length}
+            query={query}
+            onQueryChange={setQuery}
             placeholder="Rechercher un kanji, une lecture ou un sens (ex. 食, たべる, manger)"
-            aria-label="Rechercher un kanji"
-            lang="ja"
-            className="mb-6 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
+            searchLabel="Rechercher un kanji"
+            searchLang="ja"
+            extra={deckControl}
           />
 
           <p className="mb-4 text-sm text-[var(--muted)]">{results.length} kanji</p>
@@ -213,37 +192,50 @@ export default function KanjiPage() {
                   const isAdded = existingLemmas.has(entry.kanji);
 
                   return (
-                    <div key={entry.kanji} className="token-card">
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="text-3xl font-bold text-[var(--ink)]" lang="ja">
-                          {entry.kanji}
-                        </span>
-                        <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-xs text-[var(--ink)]">
-                          JLPT {entry.level}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm font-medium text-[var(--ink)]">{entry.meaning}</p>
-                      {entry.onReadings.length > 0 ? (
-                        <p className="mt-2 text-sm text-[var(--muted)]" lang="ja">
-                          <span className="eyebrow">On</span> {entry.onReadings.join("・")}
-                        </p>
-                      ) : null}
-                      {entry.kunReadings.length > 0 ? (
-                        <p className="mt-1 text-sm text-[var(--muted)]" lang="ja">
-                          <span className="eyebrow">Kun</span> {entry.kunReadings.join("・")}
-                        </p>
-                      ) : null}
+                    <div key={entry.kanji} className="token-card mb-0! flex gap-4">
+                      <span
+                        className="grid h-20 w-20 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-[var(--tint)] text-5xl font-bold text-[var(--ink)]"
+                        lang="ja"
+                      >
+                        {entry.kanji}
+                      </span>
 
-                      {decks.length > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleAddToDeck(entry.kanji, preferredReading, entry.meaning)}
-                          disabled={!selectedDeckId || addingKanji === entry.kanji || isAdded}
-                          className="mt-3 rounded-sm border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--accent-soft)] disabled:opacity-55"
-                        >
-                          {isAdded ? "Déjà dans ce deck" : addingKanji === entry.kanji ? "Ajout..." : "Ajouter au deck"}
-                        </button>
-                      ) : null}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold leading-snug text-[var(--ink)]">{entry.meaning}</p>
+                          <span className={`shrink-0 ${jlptBadgeClass(entry.level)}`}>{entry.level}</span>
+                        </div>
+                        {entry.onReadings.length > 0 ? (
+                          <p className="mt-1.5 text-sm text-[var(--muted)]" lang="ja">
+                            <span className="mr-1 text-xs font-semibold text-[var(--muted)]">On</span>
+                            {entry.onReadings.join("・")}
+                          </p>
+                        ) : null}
+                        {entry.kunReadings.length > 0 ? (
+                          <p className="mt-0.5 text-sm text-[var(--muted)]" lang="ja">
+                            <span className="mr-1 text-xs font-semibold text-[var(--muted)]">Kun</span>
+                            {entry.kunReadings.join("・")}
+                          </p>
+                        ) : null}
+
+                        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                          <span className="mono text-xs text-[var(--muted)]">{entry.strokeCount} trait{entry.strokeCount > 1 ? "s" : ""}</span>
+                          {decks.length > 0 ? (
+                            isAdded ? (
+                              <span className="text-xs font-semibold text-[var(--success-dark)]">✓ Dans ce deck</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => void handleAddToDeck(entry.kanji, preferredReading, entry.meaning)}
+                                disabled={!selectedDeckId || addingKanji === entry.kanji}
+                                className="chip px-3! py-1! text-xs!"
+                              >
+                                {addingKanji === entry.kanji ? "Ajout..." : "+ Ajouter"}
+                              </button>
+                            )
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -256,16 +248,20 @@ export default function KanjiPage() {
                     onClick={() => setVisibleCount((current) => current + PAGE_SIZE)}
                     className="secondary-button"
                   >
-                    Charger plus ({results.length - visibleResults.length} restant(s))
+                    Charger plus ({results.length - visibleResults.length} restant
+                    {results.length - visibleResults.length > 1 ? "s" : ""})
                   </button>
                 </div>
               ) : null}
             </>
           ) : (
-            <div className="empty-state min-h-48">
-              <p className="font-medium text-[var(--ink)]">Aucun kanji ne correspond.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">Essaie un autre niveau ou un autre mot-clé.</p>
-            </div>
+            <NoResults
+              title="Aucun kanji ne correspond."
+              onReset={() => {
+                setLevel("all");
+                setQuery("");
+              }}
+            />
           )}
         </section>
       </div>

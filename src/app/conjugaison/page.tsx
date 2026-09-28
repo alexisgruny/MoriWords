@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { Chevron, NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { conjugationForms, filterConjugationForms } from "@/lib/conjugation/forms";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
+import { jlptBadgeClass } from "@/lib/jlpt-badge";
+
+const counts = Object.fromEntries(
+  GRAMMAR_LEVELS.map((level) => [level, conjugationForms.filter((form) => form.level === level).length]),
+) as Record<GrammarLevel, number>;
 
 // Page de référence de conjugaison : formes classées par niveau JLPT, avec
 // filtre par niveau, recherche libre et exemples traduits. Même structure que
@@ -16,14 +22,13 @@ export default function ConjugationPage() {
   const [query, setQuery] = useState("");
 
   const results = filterConjugationForms(conjugationForms, level, query);
-  const countFor = (candidate: GrammarLevel) =>
-    conjugationForms.filter((form) => form.level === candidate).length;
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <header className="fade-in-up mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
+            <p className="eyebrow mb-1">Référence</p>
             <h1 className="text-[var(--ink)]">Conjugaison par niveau JLPT</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
               Les formes verbales et adjectivales à connaître de N5 à N1, avec leur
@@ -31,71 +36,47 @@ export default function ConjugationPage() {
               cherche un mot-clé (en japonais ou en français).
             </p>
           </div>
-          <Link href="/exercices/conjugaison" className="secondary-button shrink-0">
-            S&apos;exercer
+          <Link href="/exercices/conjugaison" className="primary-button shrink-0">
+            S&apos;exercer →
           </Link>
         </header>
 
         <section className="panel">
-          <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Niveau JLPT">
-            <button
-              type="button"
-              onClick={() => setLevel("all")}
-              aria-pressed={level === "all"}
-              className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                level === "all"
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                  : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-              }`}
-            >
-              Tous ({conjugationForms.length})
-            </button>
-            {GRAMMAR_LEVELS.map((candidate) => (
-              <button
-                key={candidate}
-                type="button"
-                onClick={() => setLevel(candidate)}
-                aria-pressed={level === candidate}
-                className={`rounded-sm border px-3.5 py-1.5 text-sm font-medium transition ${
-                  level === candidate
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                    : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
-                }`}
-              >
-                {candidate} ({countFor(candidate)})
-              </button>
-            ))}
-          </div>
-
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+          <ReferenceToolbar
+            level={level}
+            onLevelChange={setLevel}
+            counts={counts}
+            total={conjugationForms.length}
+            query={query}
+            onQueryChange={setQuery}
             placeholder="Rechercher une forme ou un sens (ex. たい, potentielle)"
-            aria-label="Rechercher une forme de conjugaison"
-            className="mb-6 min-h-11 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
+            searchLabel="Rechercher une forme de conjugaison"
           />
 
-          <p className="mb-4 text-sm text-[var(--muted)]">{results.length} forme(s)</p>
+          <p className="mb-4 text-sm text-[var(--muted)]">
+            {results.length} forme{results.length > 1 ? "s" : ""}
+          </p>
 
           {results.length > 0 ? (
             <div className="grid gap-3">
               {results.map((form) => (
-                <details key={form.id} className="token-card group">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
-                    <span>
+                <details key={form.id} className="token-card group mb-0!">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                    <span className="min-w-0">
                       <span className="eyebrow">{form.category}</span>
-                      <span className="mt-1 block text-lg font-semibold text-[var(--ink)]">
-                        {form.name}
-                      </span>
+                      <span className="mt-1 block text-lg font-semibold text-[var(--ink)]">{form.name}</span>
                     </span>
-                    <span className="shrink-0 whitespace-nowrap rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2 py-0.5 mono text-xs text-[var(--ink)]">
-                      JLPT {form.level}
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className={jlptBadgeClass(form.level)}>{form.level}</span>
+                      <Chevron />
                     </span>
                   </summary>
 
                   <div className="mt-4 border-t border-[var(--line)] pt-4">
                     <p className="eyebrow">Formation</p>
-                    <p className="mt-1 text-sm text-[var(--ink)]">{form.formation}</p>
+                    <p className="mt-1 inline-block rounded-lg bg-[var(--tint)] px-3 py-1.5 text-sm text-[var(--ink)]">
+                      {form.formation}
+                    </p>
                     <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{form.explanation}</p>
 
                     <p className="eyebrow mt-4">Exemples</p>
@@ -103,14 +84,15 @@ export default function ConjugationPage() {
                       {form.examples.map((example) => (
                         <li
                           key={`${example.base}-${example.conjugated}`}
-                          className="border-l-2 border-[var(--line)] py-1 pl-3"
+                          className="border-l-2 border-[var(--accent)] py-1 pl-3"
                         >
-                          <p className="text-base text-[var(--ink)]" lang="ja">
-                            {example.conjugated}
-                            <span className="ml-2 text-sm text-[var(--muted)]">
-                              ({example.base}
-                              {example.reading ? ` · ${example.reading}` : ""})
-                            </span>
+                          <p className="flex flex-wrap items-baseline gap-x-2 text-base text-[var(--ink)]" lang="ja">
+                            <span className="text-sm text-[var(--muted)]">{example.base}</span>
+                            <span className="text-[var(--muted)]" aria-hidden="true">→</span>
+                            <span className="font-semibold">{example.conjugated}</span>
+                            {example.reading ? (
+                              <span className="text-sm text-[var(--muted)]">({example.reading})</span>
+                            ) : null}
                           </p>
                           <p className="mt-1 text-sm text-[var(--muted)]">{example.meaning}</p>
                         </li>
@@ -121,12 +103,13 @@ export default function ConjugationPage() {
               ))}
             </div>
           ) : (
-            <div className="empty-state min-h-48">
-              <p className="font-medium text-[var(--ink)]">Aucune forme ne correspond.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Essaie un autre niveau ou un autre mot-clé.
-              </p>
-            </div>
+            <NoResults
+              title="Aucune forme ne correspond."
+              onReset={() => {
+                setLevel("all");
+                setQuery("");
+              }}
+            />
           )}
         </section>
       </div>
