@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ProgressBar } from "@/components/progress-bar";
 import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
 import type { DeckSummary } from "@/types/shared";
@@ -22,6 +23,9 @@ export default function DecksPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckPendingDeletion, setDeckPendingDeletion] = useState<DeckSummary | null>(null);
+  // Sans cet état, "Aucun deck pour le moment" s'affichait une fraction de
+  // seconde avant l'arrivée de la vraie liste.
+  const [isLoading, setIsLoading] = useState(true);
 
   // Va chercher la liste de tous les decks sur le serveur.
   async function fetchDecks() {
@@ -40,6 +44,8 @@ export default function DecksPage() {
       }
     } catch {
       // The deck list can be refreshed again later.
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -155,12 +161,14 @@ export default function DecksPage() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-[var(--ink)]">À réviser aujourd’hui</h2>
               <div className="flex items-center gap-3">
-                <Link href="/decks/reviser" className="secondary-button px-4! py-2! text-xs!">
-                  Réviser tout
-                </Link>
                 <span className="count-badge" aria-label={`${totalDueCount} carte(s) à réviser`}>
                   {totalDueCount}
                 </span>
+                {totalDueCount > 0 ? (
+                  <Link href="/decks/reviser" className="primary-button">
+                    Réviser tout →
+                  </Link>
+                ) : null}
               </div>
             </div>
 
@@ -211,36 +219,73 @@ export default function DecksPage() {
             </p>
           ) : null}
 
-          {decks.length > 0 ? (
-            <div>
-              {decks.map((deck) => (
-                <div key={deck.id} className="token-card relative flex items-start gap-4">
-                  <Link href={`/decks/${deck.id}`} className="block min-w-0 flex-1">
-                    <span className="block text-lg font-bold text-[var(--ink)]">
-                      {deck.name}
-                    </span>
-                    <span className="mt-0.5 block text-sm text-[var(--muted)]">
-                      {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
-                    </span>
-                  </Link>
-                  <span className="mono mt-1 shrink-0 text-sm text-[var(--ink)]">{deck.cards.length} carte{deck.cards.length > 1 ? "s" : ""}</span>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setDeckPendingDeletion(deck);
-                    }}
-                    aria-label={`Supprimer le deck « ${deck.name} »`}
-                    className="shrink-0 px-1.5 text-[var(--muted)] hover:text-[var(--accent-dark)]"
+          {isLoading ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="skeleton h-32" />
+              <div className="skeleton h-32" />
+            </div>
+          ) : decks.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {decks.map((deck, index) => {
+                const dueCount = deck.cards.filter((card) => isCardDue(card.dueAt)).length;
+                const upToDate = deck.cards.length - dueCount;
+
+                return (
+                  <div
+                    key={deck.id}
+                    className="token-card fade-in-up relative mb-0! flex flex-col gap-3"
+                    style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <div className="flex items-start gap-3">
+                      <Link href={`/decks/${deck.id}`} className="block min-w-0 flex-1">
+                        <span className="block truncate text-lg font-bold text-[var(--ink)]">{deck.name}</span>
+                        <span className="mt-0.5 line-clamp-2 block text-sm text-[var(--muted)]">
+                          {deck.description ?? "Deck de vocabulaire pour la pratique quotidienne."}
+                        </span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setDeckPendingDeletion(deck);
+                        }}
+                        aria-label={`Supprimer le deck « ${deck.name} »`}
+                        className="shrink-0 cursor-pointer rounded-full px-1.5 text-[var(--muted)] hover:text-[var(--accent-dark)]"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {deck.cards.length > 0 ? (
+                      <div>
+                        <div className="mb-1.5 flex items-baseline justify-between text-xs text-[var(--muted)]">
+                          <span>
+                            {upToDate} / {deck.cards.length} à jour
+                          </span>
+                          {dueCount > 0 ? (
+                            <span className="font-semibold text-[var(--accent-dark)]">{dueCount} à revoir</span>
+                          ) : (
+                            <span className="font-semibold text-[var(--success-dark)]">Tout est à jour</span>
+                          )}
+                        </div>
+                        <ProgressBar rate={upToDate / deck.cards.length} />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--muted)]">Encore vide : ajoute des mots depuis Analyser.</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">
+              <span className="empty-state-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="6" width="13" height="14" rx="2" />
+                  <path d="M8 3h10a2 2 0 0 1 2 2v12" />
+                </svg>
+              </span>
               <p className="font-medium text-[var(--ink)]">Aucun deck pour le moment.</p>
               <p className="mt-1 text-sm text-[var(--muted)]">
                 Crée un deck puis ajoute-y des mots depuis la page Analyser.

@@ -371,6 +371,7 @@ textarea:focus {
   .fade-in-up,
   .skeleton,
   .token-card,
+  .grade-button,
   .primary-button,
   .secondary-button,
   .link-button {
@@ -453,6 +454,84 @@ a:hover > .seal {
   border-radius: 999px;
   background: var(--progress-color, var(--accent));
   transition: width 500ms ease;
+}
+
+/* Boutons de note en révision (0-5) : trois tons au lieu de six boutons
+   vermillon identiques, pour qu'on lise d'un coup d'œil "raté" / "moyen" /
+   "réussi" (voir components/review-controls.tsx). */
+.grade-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.6rem 0.4rem;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.grade-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.grade-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+.grade-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.grade-again {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent-dark);
+}
+
+.grade-again:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.grade-hard {
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+  color: var(--warning-dark);
+}
+
+.grade-hard:hover:not(:disabled) {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.grade-good {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  color: var(--success-dark);
+}
+
+.grade-good:hover:not(:disabled) {
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+
+/* Touche de raccourci clavier affichée dans un texte d'aide. */
+.kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--paper);
+  padding: 0 0.35em;
+  font-size: 0.78em;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .part-of-speech {

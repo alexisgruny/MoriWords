@@ -1435,9 +1435,44 @@ pages via les classes deja partagees (.panel, .token-card, .empty-state).
   vermillon) pour chaque taux, apparition echelonnee des listes.
 - Verifie : tsc, eslint, vitest (193 tests) tous verts ; pages principales
   en 200.
-- [A FAIRE] Etapes suivantes : decks et revision (retournement de carte,
-  progression de session), page d'accueil (parcours d'analyse), pages de
-  reference (grammaire/conjugaison/kanji), mobile.
+- [TERMINE] Etape 2 (decks et revision) : voir Priorite 41.
+- [A FAIRE] Etapes suivantes : page d'accueil (parcours d'analyse), pages
+  de reference (grammaire/conjugaison/kanji), liste des mots d'un deck,
+  mobile.
+
+
+Priorite 41 - Passe design/UX, etape 2 : decks et revision
+------------------------------------------------------------------
+- [TERMINE] components/review-controls.tsx, partage par l'entrainement d'un
+  deck et "Reviser tout" (qui dupliquaient le meme code) :
+  - GradeButtons : les 6 notes n'etaient que 6 boutons vermillon
+    identiques ; trois tons desormais (rate / moyen / reussi), 6 colonnes
+    sur ecran large, touches de raccourci en style .kbd.
+  - SessionProgress : barre "cartes notees / total de la session",
+    masquee tant que rien n'est revise.
+  - ReviewDone : ecran "Session terminee ! N cartes revisees" avec liens
+    vers les exercices et l'analyse, distinct de "rien a revoir en
+    arrivant".
+- [TERMINE] Carte de revision centree, qui rejoue une animation d'entree a
+  chaque nouvelle carte (key = id de carte), reponse qui apparait en douceur.
+- [TERMINE] Compteur de session remis a zero en changeant de deck (pendant
+  le rendu, pas dans un effet) et decremente par "Annuler la derniere
+  reponse".
+- [TERMINE] Libelle "Nouveaux" corrige en "Plus tard" : il comptait les
+  cartes pas encore dues, pas les nouvelles.
+- [TERMINE] Liste des decks : "Aucun deck pour le moment" s'affichait une
+  fraction de seconde avant le chargement (pas d'etat de chargement) ->
+  skeleton ; decks en grille avec barre "a jour" et nombre a revoir ;
+  "Reviser tout" devient le bouton principal quand des cartes sont dues.
+- [TERMINE] En-tete d'un deck : placeholder au lieu de "Deck" pendant le
+  chargement, onglets avec le meme trait anime que la navigation, bouton
+  de suppression en couleur de danger.
+- [TERMINE] Statistiques d'un deck : skeleton de chargement, tuiles
+  echelonnees (tuile "A revoir" mise en avant s'il y en a), repartition
+  en vert/ambre/gris (maitrises/en cours/nouveaux) avec legende coloree.
+- Verifie : tsc, eslint, vitest (193 tests ; les 3 tests d'integration
+  connus pour expirer sous charge passent seuls), pages en 200 sur un deck
+  jetable "safe to delete" supprime ensuite.
 
 
 Architecture cible

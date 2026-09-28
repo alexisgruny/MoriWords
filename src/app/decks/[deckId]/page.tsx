@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
+import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
 import { useToast } from "@/components/toast-provider";
 import { buildQuizChoices } from "@/lib/decks/card-utils";
 import type { DeckCard, DeckCardWithOccurrences, DeckSummary } from "@/types/shared";
@@ -69,6 +70,16 @@ export default function DeckTrainingPage() {
   // plus récente : annuler une deuxième fois annulerait celle d'avant).
   const [undoableCardId, setUndoableCardId] = useState<string | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
+  // Cartes notées depuis l'arrivée sur ce deck (barre de progression et
+  // écran de fin de session). Remis à zéro en changeant de deck, pendant le
+  // rendu plutôt que dans un effet (motif recommandé par React pour un état
+  // dérivé d'une valeur qui change).
+  const [sessionReviewed, setSessionReviewed] = useState(0);
+  const [sessionDeckId, setSessionDeckId] = useState(deckId);
+  if (sessionDeckId !== deckId) {
+    setSessionDeckId(deckId);
+    setSessionReviewed(0);
+  }
 
   // Charge le deck et ses cartes à chaque changement de deck.
   useEffect(() => {
@@ -148,6 +159,7 @@ export default function DeckTrainingPage() {
       setReviewCardId(null);
       setShowAnswer(false);
       setUndoableCardId(cardId);
+      setSessionReviewed((count) => count + 1);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -179,6 +191,7 @@ export default function DeckTrainingPage() {
 
       await loadDeck();
       setUndoableCardId(null);
+      setSessionReviewed((count) => Math.max(0, count - 1));
       showToast("Révision annulée.");
     } catch (requestError) {
       showToast(
@@ -395,14 +408,17 @@ export default function DeckTrainingPage() {
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            Total : {deck?.cards.length ?? 0}
+          <span className="rounded-full bg-[var(--tint)] px-3 py-1.5">
+            Total <strong className="mono text-[var(--ink)]">{deck?.cards.length ?? 0}</strong>
           </span>
-          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            À revoir : {dueCards.length}
+          <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5">
+            À revoir <strong className="mono text-[var(--accent-dark)]">{dueCards.length}</strong>
           </span>
-          <span className="rounded-sm border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5">
-            Nouveaux : {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
+          <span className="rounded-full bg-[var(--tint)] px-3 py-1.5">
+            Plus tard{" "}
+            <strong className="mono text-[var(--ink)]">
+              {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
+            </strong>
           </span>
         </div>
 
@@ -426,9 +442,16 @@ export default function DeckTrainingPage() {
           ))}
         </div>
 
+        <SessionProgress reviewed={sessionReviewed} remaining={dueCards.length} />
+
         {activeCard ? (
           <>
-            <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6">
+            {/* key = carte : chaque nouvelle carte est un nouvel élément, donc
+                l'animation d'entrée rejoue à chaque passage à la suivante. */}
+            <div
+              key={activeCard.id}
+              className="fade-in-up rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 text-center sm:p-8"
+            >
               {reviewMode === "context" ? (
                 activeCardContextSentence ? (
                   <>
@@ -462,7 +485,7 @@ export default function DeckTrainingPage() {
               )}
 
               {reviewMode !== "quiz" && showAnswer ? (
-                <div className="mt-4 border-t border-[var(--line)] pt-4">
+                <div className="fade-in-up mt-5 border-t border-dashed border-[var(--line-strong)] pt-5">
                   <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
                   {reviewMode !== "standard" ? (
                     <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
@@ -476,7 +499,7 @@ export default function DeckTrainingPage() {
               ) : null}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
               {reviewMode === "quiz" ? (
                 !activeCard.meaning ? (
                   <p className="text-sm text-[var(--muted)]">
@@ -539,44 +562,28 @@ export default function DeckTrainingPage() {
                         );
                       })}
                     </div>
-                    <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 1 à 4.</p>
+                    <p className="w-full text-xs text-[var(--muted)]">
+                      Raccourci clavier : <span className="kbd">1</span> à <span className="kbd">4</span>.
+                    </p>
                   </>
                 )
               ) : !showAnswer ? (
-                <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
-                  Afficher la réponse <span className="opacity-70">(espace)</span>
+                <button type="button" onClick={() => setShowAnswer(true)} className="primary-button w-full sm:w-auto">
+                  Afficher la réponse <span className="kbd ml-1.5 border-white/40! bg-transparent! text-white">espace</span>
                 </button>
               ) : (
-                <>
-                  <div className="grid w-full grid-cols-3 gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((quality) => {
-                      const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
-                      return (
-                        <button
-                          key={quality}
-                          type="button"
-                          onClick={() => void submitReviewCard(activeCard.id, quality)}
-                          disabled={isReviewing && reviewCardId === activeCard.id}
-                          className="primary-button flex items-center justify-center gap-1.5"
-                        >
-                          <span className="mono text-xs opacity-70">{quality}</span>
-                          {labels[quality]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 0 à 5.</p>
-                </>
+                <GradeButtons
+                  onGrade={(quality) => void submitReviewCard(activeCard.id, quality)}
+                  disabled={isReviewing && reviewCardId === activeCard.id}
+                />
               )}
             </div>
           </>
         ) : (
-          <div className="empty-state min-h-48">
-            <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd’hui.</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Ajoute de nouveaux mots depuis la page Analyser ou reviens plus tard.
-            </p>
-          </div>
+          <ReviewDone
+            reviewed={sessionReviewed}
+            emptyHint="Ajoute de nouveaux mots depuis la page Analyser, ou reviens plus tard."
+          />
         )}
       </section>
     </>

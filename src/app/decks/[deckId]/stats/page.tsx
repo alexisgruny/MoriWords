@@ -87,13 +87,18 @@ export default function DeckStatsPage() {
     : [];
 
   const breakdownRows = [
-    { label: "Nouveaux", value: breakdown.new, color: "bg-[var(--line)]" },
-    { label: "En cours", value: breakdown.learning, color: "bg-[var(--accent-soft)]" },
-    { label: "Maîtrisés", value: breakdown.mature, color: "bg-[var(--accent)]" },
+    { label: "Nouveaux", value: breakdown.new, color: "bg-[var(--line-strong)]" },
+    { label: "En cours", value: breakdown.learning, color: "bg-[var(--warning)]" },
+    { label: "Maîtrisés", value: breakdown.mature, color: "bg-[var(--success)]" },
   ];
 
   if (isLoading) {
-    return <p className="text-sm text-[var(--muted)]">Chargement des statistiques...</p>;
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="skeleton h-48" />
+        <div className="skeleton h-40" />
+      </div>
+    );
   }
 
   return (
@@ -106,10 +111,24 @@ export default function DeckStatsPage() {
         <h2 className="text-[var(--ink)]">Vue d’ensemble</h2>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {summary.map((item) => (
-            <div key={item.label} className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
+          {summary.map((item, index) => (
+            <div
+              key={item.label}
+              className={`fade-in-up rounded-xl border p-4 ${
+                item.label === "À revoir" && item.value !== "0"
+                  ? "border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[var(--accent-soft)]"
+                  : "border-[var(--line)] bg-[var(--tint)]"
+              }`}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
               <p className="text-sm text-[var(--muted)]">{item.label}</p>
-              <p className="font-display mt-1 text-4xl font-bold text-[var(--ink)]">{item.value}</p>
+              <p
+                className={`font-display mono mt-1 text-4xl font-bold ${
+                  item.label === "À revoir" && item.value !== "0" ? "text-[var(--accent-dark)]" : "text-[var(--ink)]"
+                }`}
+              >
+                {item.value}
+              </p>
             </div>
           ))}
         </div>
@@ -118,7 +137,7 @@ export default function DeckStatsPage() {
           <div className="mt-6">
             <p className="eyebrow">Répartition des mots</p>
             <div
-              className="mt-3 flex h-3 overflow-hidden rounded-sm border border-[var(--line)]"
+              className="mt-3 flex h-3 gap-0.5 overflow-hidden rounded-full bg-[var(--tint)]"
               role="img"
               aria-label={`${breakdown.new} nouveaux, ${breakdown.learning} en cours, ${breakdown.mature} maîtrisés`}
             >
@@ -130,7 +149,8 @@ export default function DeckStatsPage() {
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
               {breakdownRows.map((row) => (
-                <li key={row.label}>
+                <li key={row.label} className="flex items-center gap-1.5">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${row.color}`} aria-hidden="true" />
                   <span className="font-semibold text-[var(--ink)]">{row.value}</span> {row.label.toLowerCase()}
                 </li>
               ))}

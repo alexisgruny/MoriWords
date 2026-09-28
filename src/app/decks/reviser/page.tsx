@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
 import { useToast } from "@/components/toast-provider";
 import type { DueCard } from "@/types/shared";
 
@@ -21,6 +22,7 @@ export default function ReviewAllDuePage() {
   const [undoableCard, setUndoableCard] = useState<{ id: string; deckId: string } | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionReviewed, setSessionReviewed] = useState(0);
 
   useEffect(() => {
     void loadDueCards();
@@ -111,6 +113,7 @@ export default function ReviewAllDuePage() {
       await loadDueCards();
       setShowAnswer(false);
       setUndoableCard({ id: card.id, deckId: card.deckId });
+      setSessionReviewed((count) => count + 1);
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "Une erreur est survenue pendant la révision.",
@@ -139,6 +142,7 @@ export default function ReviewAllDuePage() {
 
       await loadDueCards();
       setUndoableCard(null);
+      setSessionReviewed((count) => Math.max(0, count - 1));
       showToast("Révision annulée.");
     } catch (requestError) {
       showToast(requestError instanceof Error ? requestError.message : "L’annulation a échoué.", "error");
@@ -184,11 +188,16 @@ export default function ReviewAllDuePage() {
             </div>
           </div>
 
+          <SessionProgress reviewed={sessionReviewed} remaining={dueCards.length} />
+
           {isLoading ? (
             <div className="skeleton h-64 rounded-2xl" />
           ) : activeCard ? (
             <>
-              <div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6">
+              <div
+                key={activeCard.id}
+                className="fade-in-up rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 text-center sm:p-8"
+              >
                 <Link href={`/decks/${activeCard.deckId}`} className="link-button text-sm!">
                   {activeCard.deck.name}
                 </Link>
@@ -198,7 +207,7 @@ export default function ReviewAllDuePage() {
                 <p className="mt-2 text-sm text-[var(--muted)]">{activeCard.reading ?? "lecture inconnue"}</p>
 
                 {showAnswer ? (
-                  <div className="mt-4 border-t border-[var(--line)] pt-4">
+                  <div className="fade-in-up mt-5 border-t border-dashed border-[var(--line-strong)] pt-5">
                     <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
                     <p className="mt-1 text-lg font-medium text-[var(--ink)]">
                       {activeCard.meaning ?? "Sens à compléter"}
@@ -207,40 +216,18 @@ export default function ReviewAllDuePage() {
                 ) : null}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
                 {!showAnswer ? (
-                  <button type="button" onClick={() => setShowAnswer(true)} className="primary-button">
-                    Afficher la réponse <span className="opacity-70">(espace)</span>
+                  <button type="button" onClick={() => setShowAnswer(true)} className="primary-button w-full sm:w-auto">
+                    Afficher la réponse <span className="kbd ml-1.5 border-white/40! bg-transparent! text-white">espace</span>
                   </button>
                 ) : (
-                  <>
-                    <div className="grid w-full grid-cols-3 gap-2">
-                      {[0, 1, 2, 3, 4, 5].map((quality) => {
-                        const labels = ["Encore", "Difficile", "Ok", "Bien", "Très bien", "Parfait"];
-                        return (
-                          <button
-                            key={quality}
-                            type="button"
-                            onClick={() => void submitReview(activeCard, quality)}
-                            disabled={isReviewing}
-                            className="primary-button flex items-center justify-center gap-1.5"
-                          >
-                            <span className="mono text-xs opacity-70">{quality}</span>
-                            {labels[quality]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="w-full text-xs text-[var(--muted)]">Raccourci clavier : touches 0 à 5.</p>
-                  </>
+                  <GradeButtons onGrade={(quality) => void submitReview(activeCard, quality)} disabled={isReviewing} />
                 )}
               </div>
             </>
           ) : (
-            <div className="empty-state min-h-48">
-              <p className="font-medium text-[var(--ink)]">Aucune carte à revoir dans aucun deck.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">Reviens plus tard, ou ajoute de nouveaux mots.</p>
-            </div>
+            <ReviewDone reviewed={sessionReviewed} emptyHint="Aucun deck n’a de carte due. Reviens plus tard, ou ajoute de nouveaux mots." />
           )}
         </section>
       </div>

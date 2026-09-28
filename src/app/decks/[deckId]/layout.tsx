@@ -220,7 +220,11 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
               </div>
             ) : (
               <div className="mt-1 flex flex-wrap items-baseline gap-2">
-                <h1 className="text-[var(--ink)]">{deck?.name ?? "Deck"}</h1>
+                {deck ? (
+                  <h1 className="fade-in-up text-[var(--ink)]">{deck.name}</h1>
+                ) : (
+                  <div className="skeleton mt-1 h-10 w-56" aria-label="Chargement du deck" />
+                )}
                 {deck ? (
                   <button
                     type="button"
@@ -252,7 +256,7 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setIsDeletionPending(true)}
-              className="secondary-button px-4! py-2! text-xs!"
+              className="secondary-button px-4! py-2! text-xs! text-[var(--danger)]! hover:bg-[var(--accent-soft)]!"
             >
               Supprimer le deck
             </button>
@@ -268,10 +272,8 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
                 key={tab.href}
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`-mb-px border-b-[3px] px-1 pb-2 text-sm font-semibold transition ${
-                  isActive
-                    ? "border-[var(--accent)] text-[var(--ink)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                className={`nav-link -mb-px px-1 text-sm font-semibold transition-colors ${
+                  isActive ? "text-[var(--ink)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
                 }`}
               >
                 {tab.label}
