@@ -120,7 +120,14 @@ export default function ExerciseStatsPage() {
             </section>
 
             <section className="panel">
-              <h2 className="mb-4 text-[var(--ink)]">Points à revoir</h2>
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+                <h2 className="text-[var(--ink)]">Points à revoir</h2>
+                {stats.weakPoints.length > 0 ? (
+                  <Link href="/exercices/revision" className="secondary-button">
+                    S&apos;entraîner sur mes points faibles
+                  </Link>
+                ) : null}
+              </div>
 
               {stats.weakPoints.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">

@@ -103,15 +103,22 @@ async function getPointPool(point: GrammarPoint, generate: ExerciseGenerator): P
 }
 
 // Choisit une phrase de grammaire au hasard parmi celles pas encore vues, pour
-// un niveau donné (ou tous). Renvoie null quand tout a déjà été fait.
+// un niveau donné (ou tous). Si focusIn est fourni, ne pioche que parmi les
+// points listés (voir /exercices/revision, qui s'entraîne sur les points
+// faibles remontés par les statistiques). Renvoie null quand tout a déjà
+// été fait.
 export async function pickGrammarExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
   generate: ExerciseGenerator = generateGrammarExercises,
+  focusIn?: string[],
 ): Promise<Exercise | null> {
   const seen = new Set(excludeIds);
+  const points = filterGrammarPoints(grammarPoints, level, "").filter(
+    (point) => !focusIn || focusIn.includes(point.pattern),
+  );
 
-  for (const point of shuffle(filterGrammarPoints(grammarPoints, level, ""))) {
+  for (const point of shuffle(points)) {
     const unseen = (await getPointPool(point, generate)).filter((entry) => !seen.has(entry.id));
 
     if (unseen.length > 0) {
@@ -127,10 +134,11 @@ export async function pickGrammarExercise(
 // (déjà traduite), pour s'entraîner sur son propre vocabulaire. Le niveau du
 // mot n'est pas stocké : il est recalculé ici, donc le filtre par niveau se
 // fait en mémoire plutôt qu'en SQL (acceptable vu la taille d'un vocabulaire
-// personnel).
+// personnel). focusIn restreint aux lemmes listés (points faibles).
 export async function pickExampleExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
+  focusIn?: string[],
 ): Promise<Exercise | null> {
   const excluded = excludeIds
     .filter((id) => id.startsWith(EXAMPLE_PREFIX))
@@ -143,7 +151,8 @@ export async function pickExampleExercise(
 
   const matching = candidates
     .map((candidate) => ({ candidate, level: classifyDifficulty(candidate.card.lemma, null, null) }))
-    .filter((entry) => level === "all" || entry.level === level);
+    .filter((entry) => level === "all" || entry.level === level)
+    .filter((entry) => !focusIn || focusIn.includes(entry.candidate.card.lemma));
 
   if (matching.length === 0) {
     return null;
@@ -162,15 +171,18 @@ export async function pickExampleExercise(
 // Choisit au hasard un exemple de conjugaison au hasard parmi ceux pas encore
 // vus, pour un niveau donné (ou tous). Contrairement à la grammaire, chaque
 // forme a déjà ses exemples écrits à la main (src/lib/conjugation/forms.ts) :
-// pas besoin d'appeler Claude pour en générer d'autres.
+// pas besoin d'appeler Claude pour en générer d'autres. focusIn restreint aux
+// formes listées (points faibles).
 export async function pickConjugationExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
+  focusIn?: string[],
 ): Promise<Exercise | null> {
   const seen = new Set(excludeIds);
 
   const pool = conjugationForms
     .filter((form) => level === "all" || form.level === level)
+    .filter((form) => !focusIn || focusIn.includes(form.name))
     .flatMap((form) =>
       form.examples.map((example, index) => ({
         id: `${CONJUGATION_PREFIX}${form.id}:${index}`,
@@ -192,9 +204,13 @@ export async function pickConjugationExercise(
 // (ou tous) : le kanji lui-même est montré (champ "french", réutilisé ici
 // comme le texte de la question plutôt que du français), l'élève doit en
 // donner le sens ; les lectures restent données comme indice (focus).
+// focusIn restreint aux kanji dont les lectures (focus) sont listées
+// (points faibles) : c'est la même valeur que celle enregistrée dans
+// ExerciseAttempt, pas besoin de la retraduire vers un caractère précis.
 export async function pickKanjiExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
+  focusIn?: string[],
 ): Promise<Exercise | null> {
   const seen = new Set(excludeIds);
 
@@ -205,6 +221,7 @@ export async function pickKanjiExercise(
       level: entry.level,
       focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
     }))
+    .filter((entry) => !focusIn || focusIn.includes(entry.focus))
     .filter((entry) => !seen.has(entry.id));
 
   if (pool.length === 0) {

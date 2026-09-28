@@ -43,7 +43,10 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
 // puis Claude la corrige en expliquant chaque erreur. Un composant client
 // autonome, une instance par type sur ses propres sous-pages (/exercices/...),
 // chacune avec un source fixe et son propre sélecteur de niveau JLPT.
-export function TranslationExercise({ source }: { source: Source }) {
+// focusIn (optionnel) restreint le tirage aux points/formes/kanji/mots
+// listés, utilisé par /exercices/revision pour s'entraîner sur les points
+// faibles remontés par les statistiques.
+export function TranslationExercise({ source, focusIn }: { source: Source; focusIn?: string[] }) {
   const { showToast } = useToast();
   const isKanji = source === "kanji";
 
@@ -66,7 +69,7 @@ export function TranslationExercise({ source }: { source: Source }) {
       const response = await fetch("/api/grammar/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source, level: nextLevel, excludeIds }),
+        body: JSON.stringify({ source, level: nextLevel, excludeIds, focusIn }),
       });
       const data = (await response.json()) as { exercise: Exercise | null; message?: string; error?: string };
 

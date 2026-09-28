@@ -20,7 +20,9 @@ const SOURCES: Source[] = ["examples", "conjugation", "kanji"];
 // référentiel de conjugaison (src/lib/conjugation/forms.ts) ; "kanji" : sens
 // d'un kanji du référentiel (src/lib/kanji/kanji.ts), l'élève doit écrire le
 // caractère. excludeIds évite de reproposer les phrases déjà faites pendant
-// la session.
+// la session. focusIn (optionnel) restreint aux points/formes/kanji/mots
+// listés (voir /exercices/revision, qui s'entraîne sur les points faibles
+// remontés par les statistiques).
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json().catch(() => null);
@@ -33,12 +35,15 @@ export async function POST(request: Request) {
     const excludeIds = Array.isArray(candidate.excludeIds)
       ? candidate.excludeIds.filter((id): id is string => typeof id === "string")
       : [];
+    const focusIn = Array.isArray(candidate.focusIn)
+      ? candidate.focusIn.filter((focus): focus is string => typeof focus === "string")
+      : undefined;
 
     const pickers: Record<Source, () => Promise<Awaited<ReturnType<typeof pickGrammarExercise>>>> = {
-      grammar: () => pickGrammarExercise(level, excludeIds),
-      examples: () => pickExampleExercise(level, excludeIds),
-      conjugation: () => pickConjugationExercise(level, excludeIds),
-      kanji: () => pickKanjiExercise(level, excludeIds),
+      grammar: () => pickGrammarExercise(level, excludeIds, undefined, focusIn),
+      examples: () => pickExampleExercise(level, excludeIds, focusIn),
+      conjugation: () => pickConjugationExercise(level, excludeIds, focusIn),
+      kanji: () => pickKanjiExercise(level, excludeIds, focusIn),
     };
 
     const exercise = await pickers[source]();
@@ -54,7 +59,12 @@ export async function POST(request: Request) {
         grammar: "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
       };
 
-      return Response.json({ exercise: null, message: messages[source] });
+      const message =
+        focusIn && focusIn.length > 0
+          ? "Tu as fait tous les exercices disponibles pour ces points faibles. Continue à t'entraîner ailleurs, les statistiques se mettent à jour à chaque réponse."
+          : messages[source];
+
+      return Response.json({ exercise: null, message });
     }
 
     return Response.json({ exercise });

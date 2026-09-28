@@ -1421,6 +1421,29 @@ Architecture cible
 - src/lib/feeds/ : adaptateurs RSS et sources quotidiennes.
 - src/types/ : types partages.
 
+Priorite 39 - Entrainement cible sur les points faibles
+------------------------------------------------------------------
+Suite de la Priorite 38 : la page de statistiques etait purement en lecture,
+il fallait chercher soi-meme les exercices concernes. Ferme la boucle avec
+une session d'entrainement qui ne pioche que dans les points faibles.
+- [TERMINE] pickGrammarExercise/pickConjugationExercise/pickKanjiExercise/
+  pickExampleExercise (src/lib/grammar/exercises.ts) acceptent un focusIn
+  optionnel qui restreint le pool aux points/formes/kanji/mots listes (meme
+  valeur que celle deja enregistree dans ExerciseAttempt.focus, donc pas de
+  traduction supplementaire necessaire).
+- [TERMINE] POST /api/grammar/exercises et TranslationExercise (nouveau
+  prop focusIn) transmettent ce filtre de bout en bout ; message "plus rien
+  a faire" specifique quand focusIn est actif et le pool restreint est
+  epuise.
+- [TERMINE] Page /exercices/revision : recupere les points faibles de
+  /api/grammar/exercises/stats, les regroupe par source, et affiche une
+  instance de TranslationExercise par source concernee avec son focusIn.
+  Lien "S'entrainer sur mes points faibles" depuis /exercices/stats.
+- Verifie : tsc, eslint, vitest (suite complete, 193 tests dont 4 nouveaux
+  sur focusIn, un par fonction pick*) tous verts. Teste en direct de bout
+  en bout : deux mauvaises reponses sur un kanji -> apparait dans les
+  points faibles -> focusIn restreint bien le tirage a ce seul kanji.
+
 Premier jalon concret
 ---------------------
 Commencer maintenant par la Priorite 1 : installer kuromoji.js, definir

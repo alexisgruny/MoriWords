@@ -140,6 +140,14 @@ describe("pickGrammarExercise", () => {
 
     expect(exercise).toBeNull();
   });
+
+  it("restricts to the points listed in focusIn", async () => {
+    generateJsonFromClaudeMock.mockRejectedValue(new Error("boom"));
+
+    const exercise = await pickGrammarExercise("all", [], undefined, [testPoint.pattern]);
+
+    expect(exercise?.focus).toBe(testPoint.pattern);
+  });
 });
 
 describe("resolveExercise", () => {
@@ -215,6 +223,28 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
     const nonMatching = await pickExampleExercise("N2", others);
     expect(nonMatching).toBeNull();
   });
+
+  it("restricts to the lemmas listed in focusIn", async () => {
+    const deck = await prisma.deck.create({ data: { name: `Exercise focusIn test deck ${Date.now()}` } });
+    deckIdsToCleanUp.push(deck.id);
+    const wantedCard = await prisma.card.create({
+      data: { deckId: deck.id, lemma: "食べる", meaning: "manger", sourceLanguage: "ja", targetLanguage: "fr" },
+    });
+    const otherCard = await prisma.card.create({
+      data: { deckId: deck.id, lemma: "飲む", meaning: "boire", sourceLanguage: "ja", targetLanguage: "fr" },
+    });
+    await prisma.cardExample.create({
+      data: { cardId: wantedCard.id, japanese: "何を食べますか。", translation: "Que manges-tu ?" },
+    });
+    await prisma.cardExample.create({
+      data: { cardId: otherCard.id, japanese: "何を飲みますか。", translation: "Que bois-tu ?" },
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const exercise = await pickExampleExercise("all", [], ["食べる"]);
+      expect(exercise?.focus).toBe("食べる");
+    }
+  });
 });
 
 describe("pickConjugationExercise and resolveExercise round-trip", () => {
@@ -253,6 +283,15 @@ describe("pickConjugationExercise and resolveExercise round-trip", () => {
 
     await expect(pickConjugationExercise("all", allIds)).resolves.toBeNull();
   });
+
+  it("restricts to the form names listed in focusIn", async () => {
+    const form = conjugationForms.find((candidate) => candidate.id === "n5-te-form")!;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const exercise = await pickConjugationExercise("all", [], [form.name]);
+      expect(exercise?.focus).toBe(form.name);
+    }
+  });
 });
 
 describe("pickKanjiExercise and resolveExercise round-trip", () => {
@@ -287,6 +326,16 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     const allIds = JLPT_KANJI.map((entry) => `kanji:${entry.kanji}`);
 
     await expect(pickKanjiExercise("all", allIds)).resolves.toBeNull();
+  });
+
+  it("restricts to the readings listed in focusIn", async () => {
+    const entry = JLPT_KANJI.find((candidate) => candidate.kanji === "食")!;
+    const focus = [...entry.onReadings, ...entry.kunReadings].join("・");
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const exercise = await pickKanjiExercise("all", [], [focus]);
+      expect(exercise?.focus).toBe(focus);
+    }
   });
 });
 
