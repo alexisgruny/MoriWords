@@ -1206,6 +1206,35 @@ clair.
   vermillon avec la bonne reponse affichee, icones sur les bons boutons).
 
 
+Priorite 31 - Explications simplifiees pour debutants + verification orthographique
+------------------------------------------------------------------
+Demande de l'utilisateur : les explications de grammaire/conjugaison
+utilisaient trop de jargon linguistique pour un debutant, et certains sens
+de kanji generes par Claude contenaient des restes d'anglais ou des fautes
+(non detectes jusqu'ici faute d'un controle systematique).
+- [TERMINE] Reecriture d'environ 19 champs "explanation"/"formation" dans
+  points.ts et forms.ts pour eviter le jargon non explique (concession,
+  proposition, forme neutre, ouie-dire, agent du passif, registre
+  soutenu...) et le remplacer par des tournures explicites pour un
+  debutant.
+- [TERMINE] Outil de verification orthographique hors-ligne :
+  src/lib/spellcheck/check-french.ts (nspell + dictionary-fr, MIT/MPL-2.0,
+  devDependencies uniquement, jamais expedie au client) avec une liste
+  d'exceptions FRENCH_ALLOWLIST pour les termes de linguistique japonaise,
+  noms propres et romanisations qui ne sont pas dans un dictionnaire
+  francais standard.
+- [TERMINE] Tests check-french.test.ts qui font tourner ce verificateur sur
+  les 3 jeux de donnees statiques (grammarPoints, conjugationForms,
+  JLPT_KANJI) pour attraper automatiquement toute nouvelle faute ou mot
+  invente lors d'un futur ajout de contenu.
+- [TERMINE] Correction de 12 sens de kanji dans jlpt-kanji-data.ts (et dans
+  MANUAL_TRANSLATIONS du script de generation, pour que la correction
+  survive une regeneration complete) qui contenaient un reliquat anglais ou
+  une coquille, reperes par ce nouveau verificateur.
+- Verifie : tsc, eslint, vitest (suite complete, 170 tests, y compris les 9
+  nouveaux tests d'orthographe) tous verts.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

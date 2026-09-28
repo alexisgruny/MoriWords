@@ -55,6 +55,22 @@ const MANUAL_TRANSLATIONS = {
   "恋": "amour (romantique)",
   "悩": "souffrir, se tourmenter",
   "戸": "porte coulissante, maison (compteur)",
+
+  // Ceux-ci ont bien été "traduits", mais avec un reliquat anglais ou une
+  // coquille (repérés par le test d'orthographe check-french.test.ts) :
+  // corrigés à la main pour la même raison que les précédents.
+  "配": "distribuer, répartir",
+  "荷": "charge, bagage",
+  "伽": "infirmière, compagnon de veillée",
+  "偵": "espion, détective",
+  "儀": "cérémonie, affaire",
+  "博": "docteur, vaste",
+  "壮": "robuste, vigueur",
+  "尋": "chercher, sonder",
+  "恭": "respectueux, déférent",
+  "揮": "élan, geste",
+  "揺": "balancement, oscillation",
+  "眼": "œil, regard",
 };
 const MAX_READINGS = 3;
 const MAX_MEANINGS = 3;

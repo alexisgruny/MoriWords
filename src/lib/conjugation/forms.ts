@@ -211,7 +211,7 @@ export const conjugationForms: ConjugationForm[] = [
     category: "Verbes",
     name: "Forme potentielle (pouvoir faire)",
     formation: "Godan : base -e + る. Ichidan : retirer る + られる (souvent contracté en れる à l'oral). Irréguliers : できる, 来られる.",
-    explanation: "Décrit une capacité, pas une permission (pour la permission, voir ~てもいい). La forme potentielle se conjugue ensuite comme un verbe ichidan.",
+    explanation: "Décrit une capacité (savoir/pouvoir faire), pas une permission (pour ça, voir ~てもいい). Une fois formée, elle se conjugue comme un verbe en -る classique (食べる, 見る...).",
     examples: [
       { base: "書く", reading: "かく", conjugated: "書ける", meaning: "pouvoir écrire" },
       { base: "食べる", reading: "たべる", conjugated: "食べられる", meaning: "pouvoir manger" },
@@ -224,7 +224,7 @@ export const conjugationForms: ConjugationForm[] = [
     category: "Verbes",
     name: "Forme passive",
     formation: "Godan : base -a + れる. Ichidan : retirer る + られる. Irréguliers : される, 来られる.",
-    explanation: "Comme en français, mais aussi utilisée pour exprimer une gêne subie (« passif de désagrément »), sans équivalent direct en français.",
+    explanation: "Comme en français, mais aussi utilisée pour dire qu'on subit une action qui nous dérange ou nous gêne (« il m'a plu dessus » plutôt que juste « il a plu ») — une nuance qui n'a pas vraiment d'équivalent en français.",
     examples: [
       { base: "書く", reading: "かく", conjugated: "書かれる", meaning: "être écrit" },
       { base: "褒める", reading: "ほめる", conjugated: "褒められる", meaning: "être félicité" },
@@ -274,7 +274,7 @@ export const conjugationForms: ConjugationForm[] = [
     category: "Verbes et adjectifs",
     name: "~そう (avoir l'air de, sur le point de)",
     formation: "Base -i (verbes) ou radical de l'adjectif (retirer い, ou な pour les adjectifs en な) + そう.",
-    explanation: "Impression visuelle immédiate. À ne pas confondre avec ~そうです en fin de phrase (ouï-dire, « il paraît que »), qui se construit différemment (forme en dictionnaire + そうです).",
+    explanation: "Une impression basée sur ce qu'on voit, sur le moment. À ne pas confondre avec un autre ~そうです, qui se construit différemment (verbe/adjectif à la forme du dictionnaire + そうです) et qui veut plutôt dire « on m'a dit que ».",
     examples: [
       { base: "降る", reading: "ふる", conjugated: "降りそう", meaning: "on dirait qu'il va pleuvoir" },
       { base: "美味しい", reading: "おいしい", conjugated: "美味しそう", meaning: "ça a l'air bon" },
@@ -336,8 +336,8 @@ export const conjugationForms: ConjugationForm[] = [
     level: "N1",
     category: "Style littéraire",
     name: "Négation littéraire ~ぬ / ~ざる",
-    formation: "Forme en ない : retirer le い final + ぬ (fin de phrase) ou ざる (devant un nom, forme attributive).",
-    explanation: "Registre écrit/soutenu ou expressions figées ; ぬ remplace ない tel quel, ざる s'utilise devant un nom ou を得ない.",
+    formation: "Forme en ない : retirer le い final + ぬ (fin de phrase) ou ざる (devant un nom).",
+    explanation: "Un style à l'écrit, plutôt formel, ou des expressions toutes faites ; ぬ remplace ない tel quel, ざる s'utilise devant un nom ou を得ない.",
     examples: [
       { base: "知る", reading: "しる", conjugated: "知らぬ", meaning: "ne pas savoir (littéraire)" },
       { base: "知る", reading: "しる", conjugated: "知らざるを得ない", meaning: "ne pas pouvoir faire autrement que de savoir" },

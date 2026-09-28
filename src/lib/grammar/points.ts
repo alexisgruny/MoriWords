@@ -30,7 +30,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "A est B",
     formation: "Nom + は + Nom + です",
     explanation:
-      "Structure de base pour définir ou présenter. は (lu « wa ») marque le thème de la phrase, です est la copule polie.",
+      "Sert à présenter ou définir quelque chose : は (qui se lit « wa », pas « ha ») introduit le sujet dont on parle, et です joue le rôle de « est/suis/es » en français, en version polie.",
     examples: [
       { ja: "私は学生です。", fr: "Je suis étudiant(e)." },
       { ja: "これは私の本です。", fr: "Ceci est mon livre." },
@@ -132,7 +132,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "parce que ～ / depuis ～",
     formation: "Proposition + から",
     explanation:
-      "Après une proposition, から donne la cause. Après un nom de temps ou de lieu, il signifie « à partir de ».",
+      "Après une phrase, から donne la cause : « parce que ». Après un nom de temps ou de lieu, il veut dire « à partir de ».",
     examples: [
       { ja: "忙しいですから、行きません。", fr: "Comme je suis occupé, je n'y vais pas." },
       { ja: "九時から仕事です。", fr: "Le travail commence à neuf heures." },
@@ -232,7 +232,8 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～と思う",
     meaning: "je pense que ～",
     formation: "Forme neutre + と思う",
-    explanation: "Exprime une opinion ou une supposition personnelle, avec la proposition en forme neutre.",
+    explanation:
+      "Sert à donner son avis ou une supposition. Ce qui vient avant と思う se met à la forme simple/familière (celle du dictionnaire), même dans une phrase par ailleurs polie.",
     examples: [
       { ja: "明日は雨が降ると思います。", fr: "Je pense qu'il pleuvra demain." },
       { ja: "彼は来ないと思います。", fr: "Je pense qu'il ne viendra pas." },
@@ -269,7 +270,8 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～ても",
     meaning: "même si ～, bien que ～",
     formation: "Verbe (forme て) + も / Adjectif い : ～くても",
-    explanation: "Exprime une concession : le résultat reste le même malgré la condition.",
+    explanation:
+      "Le résultat ne change pas, même si la condition est remplie : proche de « même si » ou « bien que » en français.",
     examples: [
       { ja: "雨が降っても、行きます。", fr: "J'irai même s'il pleut." },
       { ja: "高くても、買いたいです。", fr: "Même si c'est cher, je veux l'acheter." },
@@ -282,7 +284,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "avoir l'air ～, sembler ～",
     formation: "Adjectif (sans い / な) ou verbe (base ます) + そうだ",
     explanation:
-      "Jugement fondé sur l'apparence visible. Attention : ～そうだ après une forme neutre signifie « il paraît que » (ouï-dire), un autre point.",
+      "Jugement basé sur ce qu'on voit, avant même d'essayer ou de vérifier. Attention, il existe un ～そうだ qui se construit différemment (après la forme simple) et qui veut dire autre chose : « on m'a dit que ～ ».",
     examples: [
       { ja: "このケーキはおいしそうです。", fr: "Ce gâteau a l'air délicieux." },
       { ja: "今にも雨が降りそうです。", fr: "On dirait qu'il va pleuvoir d'un instant à l'autre." },
@@ -461,7 +463,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "afin de ～ / à cause de ～",
     formation: "Verbe (forme dictionnaire) / Nom + の + ために",
     explanation:
-      "But (avec une action volontaire) ou cause (avec un fait, souvent négatif). Le sujet des deux propositions est le même pour le sens de but.",
+      "Deux sens possibles : « pour, dans le but de » quand on fait volontairement quelque chose (la même personne agit dans les deux parties de la phrase), ou « à cause de » pour expliquer un fait, souvent gênant.",
     examples: [
       { ja: "試験に合格するために、毎日勉強します。", fr: "J'étudie tous les jours pour réussir l'examen." },
       { ja: "事故のために、電車が遅れました。", fr: "Le train a eu du retard à cause d'un accident." },
@@ -484,9 +486,9 @@ export const grammarPoints: GrammarPoint[] = [
     level: "N3",
     pattern: "～ところだ",
     meaning: "être sur le point de / en train de / venir de ～",
-    formation: "Verbe (dict.) / ている / た + ところだ",
+    formation: "Verbe (forme du dictionnaire) / ている / た + ところだ",
     explanation:
-      "Précise le moment exact de l'action : juste avant (dict.), pendant (ている), juste après (た).",
+      "Précise le moment exact par rapport à l'action : juste avant qu'elle commence (forme du dictionnaire), pendant qu'elle se déroule (ている), ou juste après qu'elle s'est terminée (た).",
     examples: [
       { ja: "今、家を出るところです。", fr: "Je suis sur le point de quitter la maison." },
       { ja: "ちょうど食べ終わったところです。", fr: "Je viens juste de finir de manger." },
@@ -512,7 +514,7 @@ export const grammarPoints: GrammarPoint[] = [
     meaning: "selon ～, par ～, à cause de ～",
     formation: "Nom + によって",
     explanation:
-      "Exprime la variation selon le cas, l'agent d'un passif, le moyen ou la cause. Sens à déduire du contexte.",
+      "Un mot à plusieurs sens selon la phrase : « ça dépend de » (人によって = selon les personnes), « par » (qui a fait l'action, avec un verbe passif), ou « à cause de ». Le contexte permet de savoir lequel.",
     examples: [
       { ja: "人によって考え方が違います。", fr: "La façon de penser varie selon les personnes." },
       { ja: "この本は夏目漱石によって書かれた。", fr: "Ce livre a été écrit par Natsume Sōseki." },
@@ -551,7 +553,8 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～ざるを得ない",
     meaning: "ne pas pouvoir faire autrement que ～",
     formation: "Verbe (forme ない sans ない) + ざるを得ない (する → せざるを得ない)",
-    explanation: "Contrainte : on est obligé de faire quelque chose malgré soi. Registre écrit ou soutenu.",
+    explanation:
+      "On est obligé de faire quelque chose malgré soi, sans autre choix. Plutôt utilisé à l'écrit ou dans un discours formel.",
     examples: [
       { ja: "上司の命令なので、従わざるを得ない。", fr: "C'est un ordre de mon supérieur, je suis obligé d'obéir." },
       { ja: "雨のため、中止せざるを得なかった。", fr: "À cause de la pluie, nous avons été contraints d'annuler." },
@@ -599,7 +602,8 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～ものの",
     meaning: "bien que ～, certes ～ mais",
     formation: "Forme neutre + ものの",
-    explanation: "Concession écrite : le fait est reconnu, mais la suite ne correspond pas à l'attente.",
+    explanation:
+      "On admet un fait, mais ce qui suit ne va pas dans le sens attendu (proche de « certes ～, mais » en français). Plutôt utilisé à l'écrit.",
     examples: [
       { ja: "買ったものの、一度も使っていない。", fr: "Je l'ai acheté, mais je ne m'en suis jamais servi." },
       { ja: "頭ではわかっているものの、行動に移せない。", fr: "Je comprends bien, mais je n'arrive pas à passer à l'action." },
@@ -636,8 +640,8 @@ export const grammarPoints: GrammarPoint[] = [
     level: "N2",
     pattern: "～に限る",
     meaning: "il n'y a rien de mieux que ～",
-    formation: "Nom / Verbe (dict.) + に限る",
-    explanation: "Exprime une préférence forte ou un conseil : ～ est le meilleur choix.",
+    formation: "Nom / Verbe (forme du dictionnaire) + に限る",
+    explanation: "Sert à dire, avec conviction, que ～ est ce qu'il y a de mieux dans la situation.",
     examples: [
       { ja: "夏はビールに限る。", fr: "En été, rien ne vaut une bière." },
       { ja: "風邪のときは寝るに限る。", fr: "Quand on est enrhumé, le mieux est de dormir." },
@@ -687,7 +691,7 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～を余儀なくされる",
     meaning: "être contraint de ～",
     formation: "Nom (action) + を余儀なくされる",
-    explanation: "Contrainte due aux circonstances, sans autre choix possible. Registre écrit.",
+    explanation: "On est forcé par les circonstances, sans autre choix possible. Plutôt utilisé à l'écrit.",
     examples: [
       { ja: "台風のため、試合は中止を余儀なくされた。", fr: "À cause du typhon, le match a dû être annulé." },
       { ja: "不況で、会社は縮小を余儀なくされた。", fr: "En raison de la récession, l'entreprise a été forcée de se réduire." },
@@ -698,8 +702,8 @@ export const grammarPoints: GrammarPoint[] = [
     level: "N1",
     pattern: "～かたわら",
     meaning: "tout en ～ (activité menée en parallèle)",
-    formation: "Verbe (dict.) / Nom + の + かたわら",
-    explanation: "Deux activités menées de front sur la durée, l'une principale, l'autre secondaire.",
+    formation: "Verbe (forme du dictionnaire) / Nom + の + かたわら",
+    explanation: "Décrit deux activités menées en parallèle sur une longue période : une activité principale, et une autre à côté.",
     examples: [
       { ja: "彼は会社で働くかたわら、小説を書いている。", fr: "Tout en travaillant en entreprise, il écrit des romans." },
       { ja: "仕事のかたわら、大学院に通っている。", fr: "En parallèle de son travail, elle suit des études supérieures." },
@@ -771,7 +775,8 @@ export const grammarPoints: GrammarPoint[] = [
     pattern: "～といえども",
     meaning: "même si ～, aussi ～ soit-il",
     formation: "Nom / Forme neutre + といえども",
-    explanation: "Concession soutenue : même dans le cas de ～, la conclusion s'applique.",
+    explanation:
+      "Un « même si » très formel, presque littéraire : même dans le cas de ～, ce qui suit reste vrai.",
     examples: [
       { ja: "専門家といえども、間違えることはある。", fr: "Même un expert peut se tromper." },
       { ja: "子どもといえども、責任は取らなければならない。", fr: "Tout enfant qu'il soit, il doit assumer ses responsabilités." },
