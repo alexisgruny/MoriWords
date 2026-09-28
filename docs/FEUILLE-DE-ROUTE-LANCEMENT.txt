@@ -138,7 +138,8 @@ OPTIONNELLES mais rentables :
       extractJsonPayload, pour avoir moins de réponses inexploitables
   [ ] Mieux normaliser la clé du cache de corrections (espaces, 。)
   [ ] Offre annuelle (moins de frais Stripe, moins de désabonnements)
-  [ ] Page /admin pour suivre coût Claude / CA / marge
+  [~] Page /admin pour suivre coût Claude / CA / marge (coût fait, CA et
+      marge à ajouter avec Stripe)
 
 À ÉVITER :
   - Le prompt caching Anthropic : prompts trop courts, aucun gain

@@ -132,6 +132,10 @@ Decisions et contraintes a connaitre
   /confidentialite et /mentions-legales (liens en pied de page et a
   l'inscription). A completer quand le site sera payant : statut, SIRET,
   adresse de contact, CGV.
+- Admin (Priorite 51) : page /admin, visible seulement du compte
+  OWNER_EMAIL (404 pour les autres) : cout Claude estime (tarif Haiku 4.5)
+  aujourd'hui / 7 j / 30 j, graphique par jour, detail par action et par
+  compte, nombre de comptes (src/lib/admin/usage-stats.ts).
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -229,3 +233,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 48    Comptes, phase 2 : donnees isolees par compte, pages privees.
 49    Quota Claude par compte, suivi des tokens (ClaudeUsage), en-tetes HTTP.
 50    RGPD : Mon compte (export, suppression), confidentialite, mentions legales.
+51    Page /admin : cout Claude par jour, par action et par compte.
