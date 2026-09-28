@@ -4,6 +4,7 @@ import {
   correctKanjiMeaningAnswer,
   getTranslationCorrection,
   isKanjiExerciseId,
+  logExerciseAttempt,
   resolveExercise,
 } from "@/lib/grammar/exercises";
 
@@ -49,6 +50,13 @@ export async function POST(request: Request) {
           focus: exercise.focus,
           answer,
         });
+
+    await logExerciseAttempt({
+      exerciseId,
+      focus: exercise.focus,
+      level: exercise.level,
+      correct: correction.verdict === "correct",
+    });
 
     return Response.json({ correction, reference: exercise.japanese });
   } catch (error) {

@@ -215,16 +215,19 @@ export async function pickKanjiExercise(
 }
 
 // Retrouve la phrase française et sa traduction japonaise de référence à
-// partir de l'identifiant d'un exercice.
+// partir de l'identifiant d'un exercice, avec son niveau JLPT (pour les
+// statistiques de progression, voir logExerciseAttempt).
 export async function resolveExercise(
   id: string,
-): Promise<{ french: string; japanese: string; focus: string } | null> {
+): Promise<{ french: string; japanese: string; focus: string; level: string | null } | null> {
   if (id.startsWith(STATIC_PREFIX)) {
     const [pointId, indexText] = id.slice(STATIC_PREFIX.length).split(":");
     const point = grammarPoints.find((candidate) => candidate.id === pointId);
     const example = point?.examples[Number(indexText)];
 
-    return point && example ? { french: example.fr, japanese: example.ja, focus: point.pattern } : null;
+    return point && example
+      ? { french: example.fr, japanese: example.ja, focus: point.pattern, level: point.level }
+      : null;
   }
 
   if (id.startsWith(CONJUGATION_PREFIX)) {
@@ -233,7 +236,7 @@ export async function resolveExercise(
     const example = form?.examples[Number(indexText)];
 
     return form && example
-      ? { french: example.meaning, japanese: example.conjugated, focus: form.name }
+      ? { french: example.meaning, japanese: example.conjugated, focus: form.name, level: form.level }
       : null;
   }
 
@@ -245,7 +248,12 @@ export async function resolveExercise(
     // question ("french") est le kanji lui-même, la réponse attendue
     // ("japanese") est son sens en français.
     return entry
-      ? { french: entry.kanji, japanese: entry.meaning, focus: [...entry.onReadings, ...entry.kunReadings].join("・") }
+      ? {
+          french: entry.kanji,
+          japanese: entry.meaning,
+          focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+          level: entry.level,
+        }
       : null;
   }
 
@@ -255,9 +263,18 @@ export async function resolveExercise(
       include: { card: { select: { lemma: true } } },
     });
 
-    return example
-      ? { french: example.translation, japanese: example.japanese, focus: example.card.lemma }
-      : null;
+    if (!example) {
+      return null;
+    }
+
+    const level = classifyDifficulty(example.card.lemma, null, null);
+
+    return {
+      french: example.translation,
+      japanese: example.japanese,
+      focus: example.card.lemma,
+      level: level === "unknown" ? null : level,
+    };
   }
 
   const stored = await prisma.grammarExercise.findUnique({ where: { id } });
@@ -268,7 +285,53 @@ export async function resolveExercise(
 
   const point = grammarPoints.find((candidate) => candidate.id === stored.pointId);
 
-  return { french: stored.french, japanese: stored.japanese, focus: point?.pattern ?? "" };
+  return { french: stored.french, japanese: stored.japanese, focus: point?.pattern ?? "", level: stored.level };
+}
+
+export type ExerciseSource = "grammar" | "conjugation" | "kanji" | "examples";
+
+// Déduit le type d'exercice à partir de son identifiant (même logique que
+// resolveExercise), pour l'enregistrer dans les statistiques de progression.
+export function getExerciseSource(id: string): ExerciseSource {
+  if (id.startsWith(KANJI_PREFIX)) {
+    return "kanji";
+  }
+
+  if (id.startsWith(CONJUGATION_PREFIX)) {
+    return "conjugation";
+  }
+
+  if (id.startsWith(EXAMPLE_PREFIX)) {
+    return "examples";
+  }
+
+  // static:... ou l'id cuid d'une ligne GrammarExercise stockée : les deux
+  // sont des exercices de grammaire.
+  return "grammar";
+}
+
+// Enregistre une tentative d'exercice (bonne ou mauvaise réponse) pour la
+// page de statistiques /exercices/stats. N'échoue jamais la requête de
+// correction : une écriture de log manquée n'est pas grave, juste un point
+// de moins dans les statistiques.
+export async function logExerciseAttempt(params: {
+  exerciseId: string;
+  focus: string;
+  level: string | null;
+  correct: boolean;
+}): Promise<void> {
+  try {
+    await prisma.exerciseAttempt.create({
+      data: {
+        source: getExerciseSource(params.exerciseId),
+        focus: params.focus,
+        level: params.level,
+        correct: params.correct,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to log exercise attempt:", error);
+  }
 }
 
 export const MAX_ANSWER_LENGTH = 500;

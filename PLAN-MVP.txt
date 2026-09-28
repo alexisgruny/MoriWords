@@ -1357,6 +1357,60 @@ d'exemple.
   local pour un mot que ce fichier est seul a generer avec succes.
 
 
+Priorite 37 - Mode sombre
+------------------------------------------------------------------
+Demande de l'utilisateur (avec la Priorite 38 ci-dessous, meme requete).
+- [TERMINE] Variables de theme (globals.css) dupliquees en version sombre a
+  deux niveaux : suit @media (prefers-color-scheme: dark) par defaut, et un
+  data-theme="dark"/"light" explicite sur <html> la remplace. Palette
+  "carnet imprime" gardee, inversee en charbon chaud (pas de noir pur), le
+  vermillon d'accent garde vif dans les deux themes.
+- [TERMINE] Nouvelles variables --success/--warning/--danger (+ leurs -soft/
+  -dark) pour les 3 hex codes qui etaient codes en dur dans le JSX (bandeaux
+  de verdict traduction et quiz) et ne suivaient donc pas le theme ; .toast
+  reste volontairement toujours sombre (chip fixe, ne s'inverse pas).
+- [TERMINE] Script inline dans layout.tsx (s'execute avant hydratation) qui
+  applique un choix de theme deja memorise en localStorage, pour eviter un
+  flash clair->sombre au chargement.
+- [TERMINE] components/theme-toggle.tsx : bouton soleil/lune dans la barre
+  de navigation. Aucun etat React : l'icone visible depend uniquement de
+  CSS (meme logique a deux niveaux que les variables), le clic lit/ecrit
+  directement l'attribut data-theme + localStorage. Evite le pattern
+  useEffect+setState (bloque par la regle eslint react-hooks/set-state-in-effect
+  et de toute facon sujet a un flash/desaccord serveur-client).
+- Verifie : tsc, eslint, vitest (aucun test cible, changement purement
+  visuel) tous verts.
+
+
+Priorite 38 - Statistiques de progression sur les exercices
+------------------------------------------------------------------
+Les exercices (grammaire/conjugaison/kanji/mon vocabulaire, voir Priorite
+32) n'avaient aucune trace des tentatives : impossible de savoir sur quoi
+l'utilisateur bute. Ajoute un historique + une page qui en tire un taux de
+reussite par type et les points les plus rates.
+- [TERMINE] Nouvelle table ExerciseAttempt (prisma/schema.prisma, migration
+  20260928061858_add_exercise_attempts) : source, focus, niveau, bonne/
+  mauvaise reponse, horodatage.
+- [TERMINE] resolveExercise (src/lib/grammar/exercises.ts) renvoie
+  desormais aussi le niveau JLPT de l'exercice (deja disponible partout
+  sauf pour la source "examples", calcule via classifyDifficulty comme
+  pickExampleExercise le fait deja).
+- [TERMINE] getExerciseSource (deduit le type depuis le prefixe de l'id) et
+  logExerciseAttempt (ecrit une ligne apres chaque correction, jamais
+  bloquant : une erreur d'ecriture du log n'empeche pas de renvoyer la
+  correction a l'eleve) ; branches dans POST /api/grammar/exercises/correct.
+- [TERMINE] src/lib/grammar/exercise-stats.ts : getExerciseStats() calcule
+  le taux de reussite par source, et les points avec au moins 2 tentatives
+  et moins de 80% de reussite (les 10 pires, tous types confondus).
+- [TERMINE] GET /api/grammar/exercises/stats et page /exercices/stats (lien
+  "Mes statistiques" depuis /exercices) : un taux par type d'exercice, puis
+  la liste "Points a revoir".
+- Verifie : tsc, eslint, vitest (suite complete, 189 tests dont 9 nouveaux :
+  getExerciseSource, logExerciseAttempt, getExerciseStats x4, plus mise a
+  jour des assertions resolveExercise existantes pour le nouveau champ
+  level) tous verts.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

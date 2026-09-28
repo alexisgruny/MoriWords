@@ -17,8 +17,10 @@ import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import {
   correctKanjiMeaningAnswer,
   correctTranslation,
+  getExerciseSource,
   getTranslationCorrection,
   isKanjiExerciseId,
+  logExerciseAttempt,
   pickConjugationExercise,
   pickExampleExercise,
   pickGrammarExercise,
@@ -148,6 +150,7 @@ describe("resolveExercise", () => {
       french: testPoint.examples[0].fr,
       japanese: testPoint.examples[0].ja,
       focus: testPoint.pattern,
+      level: testPoint.level,
     });
   });
 
@@ -179,7 +182,12 @@ describe("pickExampleExercise and resolveExercise round-trip", () => {
     expect(exercise?.focus).toBe("食べる");
 
     const resolved = await resolveExercise(ownId);
-    expect(resolved).toEqual({ french: "Que manges-tu ?", japanese: "何を食べますか。", focus: "食べる" });
+    expect(resolved).toEqual({
+      french: "Que manges-tu ?",
+      japanese: "何を食べますか。",
+      focus: "食べる",
+      level: "N5",
+    });
 
     // Une fois exclue, elle ne peut plus être proposée à nouveau.
     const excludingOwn = await pickExampleExercise("all", [...others, ownId]);
@@ -228,6 +236,7 @@ describe("pickConjugationExercise and resolveExercise round-trip", () => {
       french: form.examples[index].meaning,
       japanese: form.examples[index].conjugated,
       focus: form.name,
+      level: form.level,
     });
   });
 
@@ -264,6 +273,7 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
       french: entry.kanji,
       japanese: entry.meaning,
       focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+      level: entry.level,
     });
   });
 
@@ -320,6 +330,32 @@ describe("isKanjiExerciseId", () => {
     expect(isKanjiExerciseId("kanji:食")).toBe(true);
     expect(isKanjiExerciseId("static:n5-wa-desu:0")).toBe(false);
     expect(isKanjiExerciseId("conj:n5-te-form:0")).toBe(false);
+  });
+});
+
+describe("getExerciseSource", () => {
+  it("identifies each exercise id prefix, defaulting unprefixed ids to grammar", () => {
+    expect(getExerciseSource("kanji:食")).toBe("kanji");
+    expect(getExerciseSource("conj:n5-te-form:0")).toBe("conjugation");
+    expect(getExerciseSource("ex:some-card-example-id")).toBe("examples");
+    expect(getExerciseSource("static:n5-wa-desu:0")).toBe("grammar");
+    expect(getExerciseSource("cuid-style-grammar-exercise-row-id")).toBe("grammar");
+  });
+});
+
+describe("logExerciseAttempt", () => {
+  const exerciseId = `test-attempt-log:kanji:${Date.now()}`;
+
+  afterEach(async () => {
+    await prisma.exerciseAttempt.deleteMany({ where: { focus: exerciseId } });
+  });
+
+  it("records the attempt with the source derived from the exercise id", async () => {
+    await logExerciseAttempt({ exerciseId, focus: exerciseId, level: "N5", correct: true });
+
+    const rows = await prisma.exerciseAttempt.findMany({ where: { focus: exerciseId } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ source: "grammar", focus: exerciseId, level: "N5", correct: true });
   });
 });
 

@@ -199,3 +199,20 @@ model LemmaExampleCache {
 
   @@unique([lemma, sourceLanguage, targetLanguage])
 }
+
+// Historique des tentatives d'exercice (grammaire/conjugaison/kanji/mon
+// vocabulaire), pour calculer un taux de réussite par point/forme/kanji/mot
+// et repérer ce qui mérite d'être revu (page /exercices/stats). Écrit après
+// chaque correction, jamais relu pour la correction elle-même (voir
+// ExerciseCorrectionCache, qui a un rôle différent).
+model ExerciseAttempt {
+  id        String   @id @default(cuid())
+  source    String
+  focus     String
+  level     String?
+  correct   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([source, focus])
+  @@index([createdAt])
+}

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
+
 // Les pages du site accessibles depuis la barre de navigation.
 const links = [
   { href: "/", label: "Analyser" },
@@ -64,6 +66,10 @@ export default function Nav() {
             );
           })}
         </nav>
+
+        <div className="mb-3 shrink-0">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

@@ -27,6 +27,12 @@ export const metadata: Metadata = {
   description: "Analyse et mémorisation du japonais, mot par mot.",
 };
 
+// Lit le thème choisi explicitement (localStorage) avant le premier rendu,
+// pour éviter un flash clair->sombre au chargement. Sans choix mémorisé, la
+// préférence système s'applique directement via CSS (@media prefers-color-scheme,
+// voir globals.css), sans avoir besoin de ce script.
+const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
+
 // Mise en page commune à toutes les pages du site : polices, barre de
 // navigation en haut, puis le contenu propre à chaque page.
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -35,6 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="fr"
       className={`${nunito.variable} ${notoSansJp.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ToastProvider>
           <Nav />

@@ -26,8 +26,8 @@ const SOURCE_LABELS: Record<Source, string> = {
 };
 
 const VERDICT_STYLES: Record<Correction["verdict"], string> = {
-  correct: "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]",
-  almost: "border-[#e0a326] bg-[#fdf3e0] text-[#8a5c0a]",
+  correct: "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success-dark)]",
+  almost: "border-[var(--warning)] bg-[var(--warning-soft)] text-[var(--warning-dark)]",
   incorrect: "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]",
 };
 

@@ -29,12 +29,17 @@ export default function ExercisesPage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <h1 className="text-[var(--ink)]">Exercices</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Choisis un type d&apos;exercice. Claude propose une phrase à traduire (ou un
-            kanji à écrire), et corrige ta réponse.
-          </p>
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[var(--ink)]">Exercices</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              Choisis un type d&apos;exercice. Claude propose une phrase à traduire (ou un
+              kanji à écrire), et corrige ta réponse.
+            </p>
+          </div>
+          <Link href="/exercices/stats" className="secondary-button shrink-0">
+            Mes statistiques
+          </Link>
         </header>
 
         <div className="grid gap-3 sm:grid-cols-2">

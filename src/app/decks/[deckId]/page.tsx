@@ -493,7 +493,7 @@ export default function DeckTrainingPage() {
                       <div
                         className={`w-full rounded-xl border px-4 py-3 text-sm font-semibold ${
                           selectedQuizChoice === activeCard.meaning
-                            ? "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]"
+                            ? "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success-dark)]"
                             : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
                         }`}
                         role="status"
@@ -511,7 +511,7 @@ export default function DeckTrainingPage() {
                         const isSelected = selectedQuizChoice === choice;
                         const feedbackClass = selectedQuizChoice
                           ? isCorrectChoice
-                            ? "border-[#4fb477] bg-[#eef8f1] text-[#1f7a44]"
+                            ? "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success-dark)]"
                             : isSelected
                               ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
                               : "border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink)]"
