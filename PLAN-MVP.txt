@@ -104,6 +104,12 @@ Decisions et contraintes a connaitre
   Claude (200/heure, 600/jour, reglables par CLAUDE_MAX_CALLS_PER_HOUR /
   _PER_DAY), compteurs en base (RateLimitCounter). DELETE/PATCH des decks
   et cartes reserves au proprietaire (OWNER_SECRET + cookie signe).
+- Comptes utilisateurs (Priorite 47, phase 1) : Better Auth, email + mot de
+  passe (hache) et Google, pages /connexion et /inscription, bouton de compte
+  dans la nav. Colonne userId (optionnelle) sur Deck, SourceText,
+  ExerciseAttempt ; le premier compte cree avec OWNER_EMAIL recupere les
+  donnees existantes. Installe avec legacy-peer-deps (.npmrc) a cause d'un
+  peer optionnel Vite 8.
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -113,6 +119,15 @@ Decisions et contraintes a connaitre
 
 Points ouverts
 --------------
+- [A FAIRE] Comptes, phase 2 : chaque route filtre par l'utilisateur
+  connecte (decks, cartes, textes, tentatives), pages protegees, puis
+  retrait de la protection OWNER_SECRET.
+- [A FAIRE par l'utilisateur] Variables Vercel pour les comptes :
+  BETTER_AUTH_SECRET (aleatoire, 32+ caracteres), BETTER_AUTH_URL
+  (https://moriwords.vercel.app), OWNER_EMAIL (son email, AVANT de creer son
+  compte), et pour Google GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (Google
+  Cloud, URI de redirection
+  https://moriwords.vercel.app/api/auth/callback/google).
 - [A FAIRE par l'utilisateur] Definir OWNER_SECRET dans les settings Vercel
   (mot de passe long et aleatoire), puis deverrouiller son navigateur sur
   /proprietaire. Sans lui, en production, personne ne peut supprimer,
@@ -188,3 +203,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 45    Securite : limites de taille, limitation par IP, budget Claude global,
       actions destructrices reservees au proprietaire.
 46    Page Kana (hiragana/katakana) et exercice de lecture des kana.
+47    Comptes utilisateurs, phase 1 (Better Auth : email et Google).
