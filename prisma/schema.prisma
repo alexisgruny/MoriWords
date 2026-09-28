@@ -170,3 +170,18 @@ model GrammarExercise {
 
   @@index([pointId])
 }
+
+// Correction (verdict, explication...) déjà obtenue de Claude pour une
+// réponse donnée à un exercice donné. answerKey est la réponse normalisée
+// (espaces et ponctuation finale ignorées) : si le même exercice revient
+// (pool fini d'exemples) et que la réponse est la même, on réutilise cette
+// correction au lieu de rappeler Claude.
+model ExerciseCorrectionCache {
+  id         String   @id @default(cuid())
+  exerciseId String
+  answerKey  String
+  correction Json
+  createdAt  DateTime @default(now())
+
+  @@unique([exerciseId, answerKey])
+}

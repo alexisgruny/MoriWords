@@ -1298,6 +1298,32 @@ que l'inverse (donner le sens et devoir ecrire le kanji).
   accents tous acceptes ; reponse hors-sujet rejetee), sans appel Claude.
 
 
+Priorite 35 - Recycler les corrections de grammaire/conjugaison (cache DB)
+------------------------------------------------------------------
+Demande de l'utilisateur : les exercices de grammaire et de conjugaison
+piochent dans un pool fini (points/formes fixes, exemples statiques ou
+generes une seule fois) ; a chaque fois qu'un exercice deja vu revient et
+que la reponse est la meme (bonne reponse retenue, ou meme faute repetee),
+rappeler Claude pour la corriger est un gaspillage evitable.
+- [TERMINE] Nouvelle table ExerciseCorrectionCache (prisma/schema.prisma,
+  migration 20260928044630_add_exercise_correction_cache) : correction
+  (JSON) mise en cache par (exerciseId, answerKey), answerKey etant la
+  reponse normalisee (espaces et ponctuation finale ignores).
+- [TERMINE] getTranslationCorrection (src/lib/grammar/exercises.ts)
+  remplace l'appel direct a correctTranslation dans la route de
+  correction : (1) si la reponse correspond exactement a la traduction de
+  reference, verdict "correct" immediat, sans DB ni Claude ; (2) sinon,
+  cherche une correction deja enregistree pour ce couple exercice+reponse
+  et la rejoue ; (3) seulement en dernier recours, appelle Claude puis
+  memorise le resultat pour la prochaine fois.
+- [TERMINE] La source "examples" (mon vocabulaire) beneficie aussi du
+  cache (meme route), meme si son pool est propre a chaque deck.
+- Verifie : tsc, eslint, vitest (suite complete, 182 tests dont 4 nouveaux
+  sur getTranslationCorrection : match exact, tolerance ponctuation,
+  reutilisation du cache, cache non partage entre deux exercices
+  differents) tous verts.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

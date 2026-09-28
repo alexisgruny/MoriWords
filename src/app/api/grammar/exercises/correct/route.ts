@@ -2,7 +2,7 @@ import {
   ExerciseServiceError,
   MAX_ANSWER_LENGTH,
   correctKanjiMeaningAnswer,
-  correctTranslation,
+  getTranslationCorrection,
   isKanjiExerciseId,
   resolveExercise,
 } from "@/lib/grammar/exercises";
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
 
     const correction = isKanjiExerciseId(exerciseId)
       ? correctKanjiMeaningAnswer({ reference: exercise.japanese, answer })
-      : await correctTranslation({
+      : await getTranslationCorrection({
+          exerciseId,
           french: exercise.french,
           reference: exercise.japanese,
           focus: exercise.focus,

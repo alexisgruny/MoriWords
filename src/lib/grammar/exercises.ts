@@ -340,6 +340,70 @@ export function correctKanjiMeaningAnswer(params: { reference: string; answer: s
   };
 }
 
+// Clé de cache pour une réponse : espaces et ponctuation finale ignorés
+// (「です。」= 「です」= 「 です 」), le reste (kanji vs kana, particules...)
+// est gardé tel quel car ça peut changer si la réponse est correcte.
+function normalizeAnswerKey(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[。.!！?？、,]+$/g, "");
+}
+
+// Corrige la traduction de l'élève, en recyclant les corrections déjà
+// obtenues de Claude pour éviter de le rappeler à chaque fois :
+// 1. si la réponse correspond exactement à la traduction de référence, elle
+//    est forcément correcte (aucun appel, aucun accès à la base) ;
+// 2. sinon, si cette réponse a déjà été corrigée pour ce même exercice (le
+//    pool d'exercices est fini : un point de grammaire ou une forme de
+//    conjugaison ne propose toujours que les mêmes phrases), on rejoue la
+//    correction stockée ;
+// 3. seulement en dernier recours, on appelle Claude et on garde le
+//    résultat pour la prochaine fois qu'une réponse identique arrivera.
+export async function getTranslationCorrection(params: {
+  exerciseId: string;
+  french: string;
+  reference: string;
+  focus: string;
+  answer: string;
+}): Promise<Correction> {
+  const answerKey = normalizeAnswerKey(params.answer);
+
+  if (answerKey === normalizeAnswerKey(params.reference)) {
+    return { verdict: "correct", corrected: params.reference, summary: "Bonne réponse !", errors: [] };
+  }
+
+  const cached = await prisma.exerciseCorrectionCache.findUnique({
+    where: { exerciseId_answerKey: { exerciseId: params.exerciseId, answerKey } },
+  });
+
+  if (cached) {
+    const parsed = correctionSchema.safeParse(cached.correction);
+    if (parsed.success) {
+      return parsed.data;
+    }
+  }
+
+  const correction = await correctTranslation({
+    french: params.french,
+    reference: params.reference,
+    focus: params.focus,
+    answer: params.answer,
+  });
+
+  try {
+    await prisma.exerciseCorrectionCache.create({
+      data: { exerciseId: params.exerciseId, answerKey, correction },
+    });
+  } catch (error) {
+    // Une réponse identique corrigée en parallèle (deux onglets, par ex.) peut
+    // violer l'unicité : sans gravité, la correction a quand même été rendue.
+    console.error("Failed to cache exercise correction:", error);
+  }
+
+  return correction;
+}
+
 // Fait corriger la traduction de l'élève par Claude : il compare avec la
 // référence (sans pénaliser une autre traduction valide), explique chaque
 // erreur en français simple et montre comment la corriger.

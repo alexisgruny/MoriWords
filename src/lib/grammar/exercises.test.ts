@@ -17,6 +17,7 @@ import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import {
   correctKanjiMeaningAnswer,
   correctTranslation,
+  getTranslationCorrection,
   isKanjiExerciseId,
   pickConjugationExercise,
   pickExampleExercise,
@@ -319,6 +320,107 @@ describe("isKanjiExerciseId", () => {
     expect(isKanjiExerciseId("kanji:食")).toBe(true);
     expect(isKanjiExerciseId("static:n5-wa-desu:0")).toBe(false);
     expect(isKanjiExerciseId("conj:n5-te-form:0")).toBe(false);
+  });
+});
+
+describe("getTranslationCorrection", () => {
+  const exerciseId = `test-correction-cache:${Date.now()}`;
+
+  afterEach(async () => {
+    await prisma.exerciseCorrectionCache.deleteMany({ where: { exerciseId: { startsWith: "test-correction-cache:" } } });
+  });
+
+  it("accepts an answer matching the reference exactly, without calling Claude", async () => {
+    const correction = await getTranslationCorrection({
+      exerciseId,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "私は学生です。",
+    });
+
+    expect(correction).toEqual({
+      verdict: "correct",
+      corrected: "私は学生です。",
+      summary: "Bonne réponse !",
+      errors: [],
+    });
+    expect(generateJsonFromClaudeMock).not.toHaveBeenCalled();
+  });
+
+  it("ignores a trailing punctuation/whitespace difference from the reference", async () => {
+    const correction = await getTranslationCorrection({
+      exerciseId,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "私は学生です",
+    });
+
+    expect(correction.verdict).toBe("correct");
+    expect(generateJsonFromClaudeMock).not.toHaveBeenCalled();
+  });
+
+  it("calls Claude once for a new wrong answer, then reuses the cached correction", async () => {
+    generateJsonFromClaudeMock.mockResolvedValue({
+      verdict: "almost",
+      corrected: "私は学生です。",
+      summary: "Presque parfait !",
+      errors: [{ wrong: "学生だ", right: "学生です", explanation: "Utilise la forme polie です." }],
+    });
+
+    const first = await getTranslationCorrection({
+      exerciseId,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "私は学生だ。",
+    });
+
+    expect(first.verdict).toBe("almost");
+    expect(generateJsonFromClaudeMock).toHaveBeenCalledTimes(1);
+
+    generateJsonFromClaudeMock.mockClear();
+
+    const second = await getTranslationCorrection({
+      exerciseId,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "私は学生だ。",
+    });
+
+    expect(second).toEqual(first);
+    expect(generateJsonFromClaudeMock).not.toHaveBeenCalled();
+  });
+
+  it("does not reuse a cached correction from a different exercise", async () => {
+    generateJsonFromClaudeMock.mockResolvedValue({
+      verdict: "incorrect",
+      corrected: "私は学生です。",
+      summary: "À revoir",
+      errors: [],
+    });
+
+    await getTranslationCorrection({
+      exerciseId,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "違う答え",
+    });
+
+    generateJsonFromClaudeMock.mockClear();
+
+    await getTranslationCorrection({
+      exerciseId: `${exerciseId}-other`,
+      french: "Je suis étudiant.",
+      reference: "私は学生です。",
+      focus: "AはBです",
+      answer: "違う答え",
+    });
+
+    expect(generateJsonFromClaudeMock).toHaveBeenCalledTimes(1);
   });
 });
 
