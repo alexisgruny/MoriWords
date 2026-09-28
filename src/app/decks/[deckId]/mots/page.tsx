@@ -218,7 +218,7 @@ export default function DeckWordsPage() {
       }
 
       if (failedIds.size > 0) {
-        showToast(`${failedIds.size} mot(s) n’ont pas pu être traduits.`, "error");
+        showToast(`${failedIds.size} mot(s) n'ont pas pu être traduits.`, "error");
       }
     } catch {
       showToast("La traduction des mots a échoué.", "error");
@@ -299,7 +299,7 @@ export default function DeckWordsPage() {
       }
 
       if (failedCount > 0) {
-        showToast(`${failedCount} mot(s) n’ont pas pu être supprimés.`, "error");
+        showToast(`${failedCount} mot(s) n'ont pas pu être supprimés.`, "error");
       }
 
       setSelectedIds(new Set());
@@ -352,7 +352,7 @@ export default function DeckWordsPage() {
       }
 
       if (otherFailedCount > 0) {
-        showToast(`${otherFailedCount} mot(s) n’ont pas pu être déplacés.`, "error");
+        showToast(`${otherFailedCount} mot(s) n'ont pas pu être déplacés.`, "error");
       }
 
       setSelectedIds(new Set());
@@ -444,7 +444,7 @@ export default function DeckWordsPage() {
             <p className="text-sm text-[var(--ink)]">
               {translateProgress
                 ? `Traduction en cours… ${translateProgress.done}/${translateProgress.total}`
-                : `${missingMeaningCount} mot(s) n’ont pas encore de sens.`}
+                : `${missingMeaningCount} mot(s) n'ont pas encore de sens.`}
             </p>
             <button
               type="button"

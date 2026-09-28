@@ -56,16 +56,16 @@ export function StreakBanner() {
         {isBroken ? (
           <>
             <span className="font-semibold">Série interrompue.</span> Ta meilleure série était de{" "}
-            {daysLabel(streak.longestStreak)} — reprends-la aujourd’hui.
+            {daysLabel(streak.longestStreak)} — reprends-la aujourd&apos;hui.
           </>
         ) : streak.reviewedToday ? (
           <>
-            <span className="font-semibold">🔥 {daysLabel(streak.currentStreak)} d’affilée.</span> Continue comme ça !
+            <span className="font-semibold">🔥 {daysLabel(streak.currentStreak)} d&apos;affilée.</span> Continue comme ça !
           </>
         ) : (
           <>
-            <span className="font-semibold">🔥 {daysLabel(streak.currentStreak)} d’affilée.</span> Révise
-            aujourd’hui pour ne pas la perdre.
+            <span className="font-semibold">🔥 {daysLabel(streak.currentStreak)} d&apos;affilée.</span> Révise
+            aujourd&apos;hui pour ne pas la perdre.
           </>
         )}
       </p>

@@ -130,7 +130,7 @@ export default function ReviewAllDuePage() {
       const data: unknown = await response.json();
 
       if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible d’annuler la révision");
+        throw new Error("Impossible d'annuler la révision");
       }
 
       if ("error" in data && typeof data.error === "string") {
@@ -141,7 +141,7 @@ export default function ReviewAllDuePage() {
       setUndoableCard(null);
       showToast("Révision annulée.");
     } catch (requestError) {
-      showToast(requestError instanceof Error ? requestError.message : "L’annulation a échoué.", "error");
+      showToast(requestError instanceof Error ? requestError.message : "L'annulation a échoué.", "error");
     } finally {
       setIsUndoing(false);
     }
@@ -156,7 +156,7 @@ export default function ReviewAllDuePage() {
           </Link>
           <h1 className="mt-1 text-[var(--ink)]">Réviser tout</h1>
           <p className="mt-2 text-[var(--muted)]">
-            Toutes les cartes dues, tous decks confondus, dans l’ordre des plus en retard.
+            Toutes les cartes dues, tous decks confondus, dans l&apos;ordre des plus en retard.
           </p>
         </header>
 

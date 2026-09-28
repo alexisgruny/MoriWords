@@ -170,7 +170,7 @@ export default function DeckTrainingPage() {
       const data: unknown = await response.json();
 
       if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible d’annuler la révision");
+        throw new Error("Impossible d'annuler la révision");
       }
 
       if ("error" in data && typeof data.error === "string") {
@@ -182,7 +182,7 @@ export default function DeckTrainingPage() {
       showToast("Révision annulée.");
     } catch (requestError) {
       showToast(
-        requestError instanceof Error ? requestError.message : "L’annulation a échoué.",
+        requestError instanceof Error ? requestError.message : "L'annulation a échoué.",
         "error",
       );
     } finally {
@@ -480,12 +480,12 @@ export default function DeckTrainingPage() {
               {reviewMode === "quiz" ? (
                 !activeCard.meaning ? (
                   <p className="text-sm text-[var(--muted)]">
-                    Ce mot n’a pas encore de sens enregistré — ajoute-le depuis l’onglet Mots ou
+                    Ce mot n&apos;a pas encore de sens enregistré — ajoute-le depuis l&apos;onglet Mots ou
                     utilise un autre mode pour le réviser.
                   </p>
                 ) : quizChoices.length === 0 ? (
                   <p className="text-sm text-[var(--muted)]">
-                    {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d’autres d’abord."}
+                    {isLoadingQuizChoices ? "Préparation du quiz..." : "Pas assez de mots connus pour un quiz. Traduis-en d'autres d'abord."}
                   </p>
                 ) : (
                   <>
@@ -572,7 +572,7 @@ export default function DeckTrainingPage() {
           </>
         ) : (
           <div className="empty-state min-h-48">
-            <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd’hui.</p>
+            <p className="font-medium text-[var(--ink)]">Aucune carte à revoir aujourd&apos;hui.</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Ajoute de nouveaux mots depuis la page Analyser ou reviens plus tard.
             </p>

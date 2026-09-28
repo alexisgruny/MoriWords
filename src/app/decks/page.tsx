@@ -146,14 +146,14 @@ export default function DecksPage() {
         <header className="mb-8">
           <h1 className="text-[var(--ink)]">Decks</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
-            Tes listes de vocabulaire. Ouvre un deck pour t’entraîner, ou crée-en un nouveau.
+            Tes listes de vocabulaire. Ouvre un deck pour t&apos;entraîner, ou crée-en un nouveau.
           </p>
         </header>
 
         {decks.length > 0 ? (
           <section className="panel mb-10">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-[var(--ink)]">À réviser aujourd’hui</h2>
+              <h2 className="text-[var(--ink)]">À réviser aujourd&apos;hui</h2>
               <div className="flex items-center gap-3">
                 <Link href="/decks/reviser" className="secondary-button px-4! py-2! text-xs!">
                   Réviser tout

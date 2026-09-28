@@ -130,7 +130,7 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
       link.remove();
       URL.revokeObjectURL(url);
     } catch {
-      showToast("L’export vers Anki a échoué.", "error");
+      showToast("L'export vers Anki a échoué.", "error");
     } finally {
       setIsExporting(false);
     }

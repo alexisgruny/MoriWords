@@ -44,7 +44,7 @@ export default function HistoriquePage() {
     const data: unknown = await response.json();
 
     if (!response.ok || typeof data !== "object" || data === null) {
-      throw new Error("Impossible de récupérer l’historique");
+      throw new Error("Impossible de récupérer l'historique");
     }
 
     if ("error" in data && typeof data.error === "string") {
@@ -52,7 +52,7 @@ export default function HistoriquePage() {
     }
 
     if (!("sourceTexts" in data) || !Array.isArray(data.sourceTexts)) {
-      throw new Error("Réponse inattendue de l’historique");
+      throw new Error("Réponse inattendue de l'historique");
     }
 
     return {
@@ -92,7 +92,7 @@ export default function HistoriquePage() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Une erreur est survenue lors du chargement de l’historique.",
+            : "Une erreur est survenue lors du chargement de l'historique.",
         );
       } finally {
         if (!cancelled) {
@@ -122,7 +122,7 @@ export default function HistoriquePage() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Une erreur est survenue lors du chargement de l’historique.",
+          : "Une erreur est survenue lors du chargement de l'historique.",
       );
     } finally {
       setIsLoadingMore(false);
