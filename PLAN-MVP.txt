@@ -1276,6 +1276,28 @@ appeler Claude a chaque soumission etait un gaspillage de tokens inutile.
   sur correctKanjiAnswer/isKanjiExerciseId) tous verts.
 
 
+Priorite 34 - Exercice de kanji inverse : afficher le kanji, deviner le sens
+------------------------------------------------------------------
+Remarque de l'utilisateur : mieux vaut afficher le kanji et demander son
+sens (lecture/reconnaissance, l'usage naturel d'une carte de kanji) plutot
+que l'inverse (donner le sens et devoir ecrire le kanji).
+- [TERMINE] pickKanjiExercise et resolveExercise (src/lib/grammar/
+  exercises.ts) inverses : le kanji est la question, son sens (une des
+  quelques synonymes courts du referentiel) est la reponse attendue.
+- [TERMINE] correctKanjiAnswer remplace par correctKanjiMeaningAnswer :
+  compare la reponse a chaque synonyme separe par une virgule, en ignorant
+  accents/casse/ponctuation finale/article de tete ("un puits" = "puits"),
+  toujours en local (aucun appel Claude, comme demande a la Priorite 33).
+- [TERMINE] TranslationExercise (composant) adapte a ce sens inverse pour
+  la source kanji : prompt "Que veut dire ce kanji ?", kanji affiche en
+  grand avec lang="ja", zone de reponse en francais (placeholder, lang),
+  bouton "Verifier ma reponse", et un affichage "Sens attendu" simplifie
+  (au lieu de dupliquer correction/reference qui sont toujours identiques).
+- Verifie : tsc, eslint, vitest (suite complete, 178 tests) tous verts ;
+  teste en direct sur le serveur de dev (synonymes, article "un", casse et
+  accents tous acceptes ; reponse hors-sujet rejetee), sans appel Claude.
+
+
 Architecture cible
 - src/app/ : pages, routes et actions Next.js.
 - src/lib/tokenizer/ : interface Tokenizer et implementations par langue.

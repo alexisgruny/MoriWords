@@ -1,7 +1,7 @@
 import {
   ExerciseServiceError,
   MAX_ANSWER_LENGTH,
-  correctKanjiAnswer,
+  correctKanjiMeaningAnswer,
   correctTranslation,
   isKanjiExerciseId,
   resolveExercise,
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     const correction = isKanjiExerciseId(exerciseId)
-      ? correctKanjiAnswer({ reference: exercise.japanese, answer })
+      ? correctKanjiMeaningAnswer({ reference: exercise.japanese, answer })
       : await correctTranslation({
           french: exercise.french,
           reference: exercise.japanese,

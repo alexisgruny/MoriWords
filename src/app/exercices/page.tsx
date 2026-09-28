@@ -14,7 +14,7 @@ const EXERCISE_TYPES = [
   {
     href: "/exercices/kanji",
     title: "Kanji",
-    description: "Écris le bon kanji à partir de son sens et de ses lectures.",
+    description: "Regarde un kanji et écris son sens en français.",
   },
   {
     href: "/exercices/vocabulaire",

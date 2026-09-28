@@ -189,9 +189,9 @@ export async function pickConjugationExercise(
 }
 
 // Choisit un kanji au hasard parmi ceux pas encore vus, pour un niveau donné
-// (ou tous) : le sens sert de phrase à "traduire" (l'élève doit écrire le
-// kanji lui-même), les lectures sont données comme indice (focus) pour que
-// deviner le bon caractère parmi ~2200 reste possible.
+// (ou tous) : le kanji lui-même est montré (champ "french", réutilisé ici
+// comme le texte de la question plutôt que du français), l'élève doit en
+// donner le sens ; les lectures restent données comme indice (focus).
 export async function pickKanjiExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
@@ -201,7 +201,7 @@ export async function pickKanjiExercise(
   const pool = JLPT_KANJI.filter((entry) => level === "all" || entry.level === level)
     .map((entry) => ({
       id: `${KANJI_PREFIX}${entry.kanji}`,
-      french: entry.meaning,
+      french: entry.kanji,
       level: entry.level,
       focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
     }))
@@ -241,8 +241,11 @@ export async function resolveExercise(
     const kanji = id.slice(KANJI_PREFIX.length);
     const entry = JLPT_KANJI.find((candidate) => candidate.kanji === kanji);
 
+    // "french"/"japanese" sont inversés par rapport aux autres sources : la
+    // question ("french") est le kanji lui-même, la réponse attendue
+    // ("japanese") est son sens en français.
     return entry
-      ? { french: entry.meaning, japanese: entry.kanji, focus: [...entry.onReadings, ...entry.kunReadings].join("・") }
+      ? { french: entry.kanji, japanese: entry.meaning, focus: [...entry.onReadings, ...entry.kunReadings].join("・") }
       : null;
   }
 
@@ -287,28 +290,51 @@ const correctionSchema = z.object({
 
 export type Correction = z.infer<typeof correctionSchema>;
 
-// Un exercice de kanji n'a qu'une seule bonne réponse (le caractère lui-même),
-// contrairement à une traduction qui a de nombreuses formulations valides :
-// pas besoin d'appeler Claude, une comparaison locale suffit et ne coûte
-// aucun token.
+// Un exercice de kanji se corrige contre un ensemble fixe de synonymes
+// courts (le sens du kanji, voir scripts/generate-jlpt-kanji.mjs), pas
+// contre une infinité de formulations comme une traduction libre : pas
+// besoin d'appeler Claude, une comparaison locale suffit et ne coûte aucun
+// token.
 export function isKanjiExerciseId(id: string): boolean {
   return id.startsWith(KANJI_PREFIX);
 }
 
-export function correctKanjiAnswer(params: { reference: string; answer: string }): Correction {
-  if (params.answer.trim() === params.reference) {
+// Ignore accents, casse, ponctuation finale et article de tête (« un »,
+// « la »...) pour comparer un sens sans être bloqué par une formulation
+// différente mais équivalente ("un puits" doit matcher "puits").
+const LEADING_FRENCH_DETERMINER = /^(un|une|des|le|la|les|du|de|d'|l')\s+/;
+
+function normalizeMeaning(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .trim()
+    .replace(LEADING_FRENCH_DETERMINER, "")
+    .trim();
+}
+
+export function correctKanjiMeaningAnswer(params: { reference: string; answer: string }): Correction {
+  const synonyms = params.reference
+    .split(",")
+    .map((part) => normalizeMeaning(part))
+    .filter(Boolean);
+  const isCorrect = synonyms.includes(normalizeMeaning(params.answer));
+
+  if (isCorrect) {
     return { verdict: "correct", corrected: params.reference, summary: "Bonne réponse !", errors: [] };
   }
 
   return {
     verdict: "incorrect",
     corrected: params.reference,
-    summary: "Ce n'est pas le bon kanji.",
+    summary: "Ce n'est pas (tout à fait) le sens attendu.",
     errors: [
       {
         wrong: params.answer.trim(),
         right: params.reference,
-        explanation: `Le kanji attendu est ${params.reference}.`,
+        explanation: `Le sens attendu est : ${params.reference}.`,
       },
     ],
   };

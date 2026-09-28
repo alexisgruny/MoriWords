@@ -15,7 +15,7 @@ import { conjugationForms } from "@/lib/conjugation/forms";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import {
-  correctKanjiAnswer,
+  correctKanjiMeaningAnswer,
   correctTranslation,
   isKanjiExerciseId,
   pickConjugationExercise,
@@ -255,13 +255,13 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     const exercise = await pickKanjiExercise("all", otherIds);
 
     expect(exercise?.id).toBe(`kanji:${entry.kanji}`);
-    expect(exercise?.french).toBe(entry.meaning);
+    expect(exercise?.french).toBe(entry.kanji);
     expect(exercise?.level).toBe(entry.level);
 
     const resolved = await resolveExercise(exercise!.id);
     expect(resolved).toEqual({
-      french: entry.meaning,
-      japanese: entry.kanji,
+      french: entry.kanji,
+      japanese: entry.meaning,
       focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
     });
   });
@@ -279,29 +279,38 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
   });
 });
 
-describe("correctKanjiAnswer", () => {
+describe("correctKanjiMeaningAnswer", () => {
   it("marks an exact match as correct without calling Claude", () => {
     expect(generateJsonFromClaudeMock).not.toHaveBeenCalled();
-    expect(correctKanjiAnswer({ reference: "食", answer: "食" })).toEqual({
+    expect(correctKanjiMeaningAnswer({ reference: "manger, nourriture", answer: "manger" })).toEqual({
       verdict: "correct",
-      corrected: "食",
+      corrected: "manger, nourriture",
       summary: "Bonne réponse !",
       errors: [],
     });
   });
 
-  it("marks a wrong kanji as incorrect and shows the expected one", () => {
-    const correction = correctKanjiAnswer({ reference: "食", answer: "飲" });
-
-    expect(correction.verdict).toBe("incorrect");
-    expect(correction.corrected).toBe("食");
-    expect(correction.errors).toEqual([
-      { wrong: "飲", right: "食", explanation: "Le kanji attendu est 食." },
-    ]);
+  it("matches any of the comma-separated synonyms", () => {
+    expect(correctKanjiMeaningAnswer({ reference: "manger, nourriture", answer: "nourriture" }).verdict).toBe(
+      "correct",
+    );
   });
 
-  it("trims the answer before comparing", () => {
-    expect(correctKanjiAnswer({ reference: "食", answer: " 食 " }).verdict).toBe("correct");
+  it("ignores accents, case and a leading article", () => {
+    expect(correctKanjiMeaningAnswer({ reference: "puits, communauté", answer: "UN PUITS" }).verdict).toBe(
+      "correct",
+    );
+    expect(correctKanjiMeaningAnswer({ reference: "âme, esprit", answer: "ame" }).verdict).toBe("correct");
+  });
+
+  it("marks an unrelated answer as incorrect and shows the expected meaning", () => {
+    const correction = correctKanjiMeaningAnswer({ reference: "manger, nourriture", answer: "boire" });
+
+    expect(correction.verdict).toBe("incorrect");
+    expect(correction.corrected).toBe("manger, nourriture");
+    expect(correction.errors).toEqual([
+      { wrong: "boire", right: "manger, nourriture", explanation: "Le sens attendu est : manger, nourriture." },
+    ]);
   });
 });
 

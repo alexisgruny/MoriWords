@@ -45,6 +45,7 @@ const VERDICT_LABELS: Record<Correction["verdict"], string> = {
 // chacune avec un source fixe et son propre sélecteur de niveau JLPT.
 export function TranslationExercise({ source }: { source: Source }) {
   const { showToast } = useToast();
+  const isKanji = source === "kanji";
 
   const [level, setLevel] = useState<GrammarLevel | "all">("all");
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -152,7 +153,7 @@ export function TranslationExercise({ source }: { source: Source }) {
           {source === "examples" ? "Exercice sur mon vocabulaire" : `Exercice de ${SOURCE_LABELS[source]}`}
         </h2>
         <p className="text-sm text-[var(--muted)]">
-          {source === "kanji" ? "Écris le kanji, Claude vérifie." : "Écris ta traduction en japonais, Claude la corrige."}
+          {isKanji ? "Regarde le kanji, écris son sens en français." : "Écris ta traduction en japonais, Claude la corrige."}
         </p>
       </div>
 
@@ -200,11 +201,16 @@ export function TranslationExercise({ source }: { source: Source }) {
         <div>
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-4">
             <p className="eyebrow">
-              {source === "kanji" ? "Quel est le kanji ?" : "À traduire en japonais"}
+              {isKanji ? "Que veut dire ce kanji ?" : "À traduire en japonais"}
               {exercise.level ? ` · niveau ${exercise.level}` : ""}
-              {source === "kanji" ? ` · lectures : ${exercise.focus}` : ` · ${exercise.focus}`}
+              {isKanji ? ` · lectures : ${exercise.focus}` : ` · ${exercise.focus}`}
             </p>
-            <p className="mt-1 text-lg font-semibold text-[var(--ink)]">{exercise.french}</p>
+            <p
+              className={isKanji ? "mt-1 text-4xl font-bold text-[var(--ink)]" : "mt-1 text-lg font-semibold text-[var(--ink)]"}
+              lang={isKanji ? "ja" : undefined}
+            >
+              {exercise.french}
+            </p>
           </div>
 
           <textarea
@@ -216,8 +222,8 @@ export function TranslationExercise({ source }: { source: Source }) {
                 void handleSubmit();
               }
             }}
-            placeholder="日本語で書いてみよう"
-            lang="ja"
+            placeholder={isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
+            lang={isKanji ? "fr" : "ja"}
             rows={3}
             className="mt-4 min-h-24 w-full border border-[var(--ink)] bg-[var(--paper)] px-3 py-2 text-lg text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
           />
@@ -229,7 +235,7 @@ export function TranslationExercise({ source }: { source: Source }) {
               disabled={isCorrecting || !answer.trim()}
               className="primary-button"
             >
-              {isCorrecting ? "Correction..." : "Corriger ma traduction"}
+              {isCorrecting ? "Correction..." : isKanji ? "Vérifier ma réponse" : "Corriger ma traduction"}
             </button>
             <span className="text-xs text-[var(--muted)]">Ctrl/Cmd + Entrée pour envoyer</span>
             <button
@@ -252,11 +258,11 @@ export function TranslationExercise({ source }: { source: Source }) {
                   {correction.correction.errors.map((entry, index) => (
                     <li key={index} className="rounded-lg bg-[var(--paper)] p-3 text-sm text-[var(--ink)]">
                       <p>
-                        <span lang="ja" className="line-through opacity-70">
+                        <span lang={isKanji ? undefined : "ja"} className="line-through opacity-70">
                           {entry.wrong}
                         </span>{" "}
                         →{" "}
-                        <span lang="ja" className="font-semibold">
+                        <span lang={isKanji ? undefined : "ja"} className="font-semibold">
                           {entry.right}
                         </span>
                       </p>
@@ -266,14 +272,23 @@ export function TranslationExercise({ source }: { source: Source }) {
                 </ul>
               ) : null}
 
-              <p className="mt-3 text-sm text-[var(--ink)]">
-                <span className="font-semibold">Ta traduction corrigée : </span>
-                <span lang="ja">{correction.correction.corrected}</span>
-              </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                <span className="font-semibold">Référence : </span>
-                <span lang="ja">{correction.reference}</span>
-              </p>
+              {isKanji ? (
+                <p className="mt-3 text-sm text-[var(--ink)]">
+                  <span className="font-semibold">Sens attendu : </span>
+                  {correction.reference}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-3 text-sm text-[var(--ink)]">
+                    <span className="font-semibold">Ta traduction corrigée : </span>
+                    <span lang="ja">{correction.correction.corrected}</span>
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    <span className="font-semibold">Référence : </span>
+                    <span lang="ja">{correction.reference}</span>
+                  </p>
+                </>
+              )}
             </div>
           ) : null}
         </div>
