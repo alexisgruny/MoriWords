@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Pied de page affiché en bas de toutes les pages, en miroir de la barre
 // de navigation (voir src/components/nav.tsx).
 export default function Footer() {
@@ -40,14 +42,19 @@ export default function Footer() {
             (MIT), sens traduits en français par Claude.
           </p>
         </div>
-        <a
-          href="https://github.com/alexisgruny/MoriWords"
-          target="_blank"
-          rel="noreferrer"
-          className="text-[var(--muted)] transition hover:text-[var(--ink)]"
-        >
-          Code source sur GitHub
-        </a>
+        <div className="flex flex-col gap-1 sm:items-end">
+          <a
+            href="https://github.com/alexisgruny/MoriWords"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[var(--muted)] transition hover:text-[var(--ink)]"
+          >
+            Code source sur GitHub
+          </a>
+          <Link href="/proprietaire" className="text-xs text-[var(--muted)] transition hover:text-[var(--ink)]">
+            Mode propriétaire
+          </Link>
+        </div>
       </div>
     </footer>
   );

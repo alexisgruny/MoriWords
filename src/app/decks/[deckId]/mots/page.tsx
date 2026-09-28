@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FilterChips, SearchField } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
+import { readApiError } from "@/lib/api-error";
 import { type CardStatus, getCardStatus, isLeechCard } from "@/lib/decks/card-utils";
 import type { DeckCardWithOccurrences, DeckSummary } from "@/types/shared";
 
@@ -160,13 +161,13 @@ export default function DeckWordsPage() {
       const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, { method: "DELETE" });
 
       if (!response.ok) {
-        throw new Error("delete failed");
+        throw new Error(await readApiError(response, "La suppression de la carte a échoué."));
       }
 
       await loadCards();
       showToast("Carte supprimée.");
-    } catch {
-      showToast("La suppression de la carte a échoué.", "error");
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : "La suppression de la carte a échoué.", "error");
     }
   }
 
@@ -249,14 +250,14 @@ export default function DeckWordsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("save failed");
+        throw new Error(await readApiError(response, "La mise à jour du mot a échoué."));
       }
 
       await loadCards();
       setEditingCardId(null);
       showToast("Mot mis à jour.");
-    } catch {
-      showToast("La mise à jour du mot a échoué.", "error");
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : "La mise à jour du mot a échoué.", "error");
     } finally {
       setIsSavingMeaning(false);
     }
@@ -285,23 +286,28 @@ export default function DeckWordsPage() {
     try {
       const results = await Promise.allSettled(
         [...selectedIds].map((cardId) =>
-          fetch(`/api/decks/${deckId}/cards/${cardId}`, { method: "DELETE" }).then((response) => {
+          fetch(`/api/decks/${deckId}/cards/${cardId}`, { method: "DELETE" }).then(async (response) => {
             if (!response.ok) {
-              throw new Error("delete failed");
+              throw new Error(await readApiError(response, "delete failed"));
             }
           }),
         ),
       );
 
-      const failedCount = results.filter((result) => result.status === "rejected").length;
-      const succeededCount = results.length - failedCount;
+      const failures = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
+      const succeededCount = results.length - failures.length;
 
       if (succeededCount > 0) {
         showToast(`${succeededCount} mot(s) supprimé(s).`);
       }
 
-      if (failedCount > 0) {
-        showToast(`${failedCount} mot(s) n’ont pas pu être supprimés.`, "error");
+      if (failures.length > 0) {
+        // Un refus "propriétaire" vaut pour tout le lot : autant le dire.
+        const ownerRefusal = failures.find((failure) => (failure.reason as Error).message.includes("propriétaire"));
+        showToast(
+          ownerRefusal ? (ownerRefusal.reason as Error).message : `${failures.length} mot(s) n’ont pas pu être supprimés.`,
+          "error",
+        );
       }
 
       setSelectedIds(new Set());
@@ -354,7 +360,14 @@ export default function DeckWordsPage() {
       }
 
       if (otherFailedCount > 0) {
-        showToast(`${otherFailedCount} mot(s) n’ont pas pu être déplacés.`, "error");
+        const ownerRefusal = results.find(
+          (result): result is PromiseRejectedResult =>
+            result.status === "rejected" && (result.reason as Error).message.includes("propriétaire"),
+        );
+        showToast(
+          ownerRefusal ? (ownerRefusal.reason as Error).message : `${otherFailedCount} mot(s) n’ont pas pu être déplacés.`,
+          "error",
+        );
       }
 
       setSelectedIds(new Set());

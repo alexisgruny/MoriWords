@@ -1,10 +1,16 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { DialogueServiceError, generateDailyDialogue } from "@/lib/feeds/daily-dialogue";
 
 // Génère un court dialogue de la vie quotidienne via Claude et l'enregistre
 // comme nouveau texte source, prêt à être analysé comme n'importe quel
 // autre texte.
-export async function POST() {
+export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     // Récupère les scènes récentes pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({

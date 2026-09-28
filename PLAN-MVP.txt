@@ -92,6 +92,12 @@ Decisions et contraintes a connaitre
 - Contenu francais statique verifie par un correcteur orthographique
   (nspell + dictionary-fr) dans les tests ; liste d'exceptions pour le
   vocabulaire japonais romanise.
+- Securite en attendant des comptes (Priorite 45) : textes limites en taille
+  (analyse 10 000 car., traduction 2 000), 200 requetes / 10 min par IP sur
+  les 9 routes qui peuvent appeler Claude, budget global d'appels reels a
+  Claude (200/heure, 600/jour, reglables par CLAUDE_MAX_CALLS_PER_HOUR /
+  _PER_DAY), compteurs en base (RateLimitCounter). DELETE/PATCH des decks
+  et cartes reserves au proprietaire (OWNER_SECRET + cookie signe).
 - Tests d'integration sur la vraie base locale : n'injecter que DATABASE_URL
   dans Vitest (jamais les cles API), utiliser des decks jetables
   "safe to delete" et des lemmes que chaque fichier est seul a utiliser
@@ -101,6 +107,10 @@ Decisions et contraintes a connaitre
 
 Points ouverts
 --------------
+- [A FAIRE par l'utilisateur] Definir OWNER_SECRET dans les settings Vercel
+  (mot de passe long et aleatoire), puis deverrouiller son navigateur sur
+  /proprietaire. Sans lui, en production, personne ne peut supprimer,
+  renommer, modifier ni deplacer (protection fermee par defaut).
 - [A FAIRE par l'utilisateur] Definir CRON_SECRET dans les settings Vercel
   pour activer l'import quotidien nippon.com (vercel.json pret ; le bouton
   manuel fonctionne sans).
@@ -169,3 +179,5 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 38-39 Statistiques d'exercice et session ciblee sur les points faibles.
 40-44 Passe design/UX sur tout le site : fondations et coherence, decks et
       revision, accueil, pages de reference, menu mobile et pages restantes.
+45    Securite : limites de taille, limitation par IP, budget Claude global,
+      actions destructrices reservees au proprietaire.

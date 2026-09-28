@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
+import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
 import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -987,6 +988,7 @@ export default function Home() {
               value={text}
               onChange={(event) => setText(event.target.value)}
               placeholder="日本語の文章をここに貼り付けてください。"
+              maxLength={MAX_ANALYSIS_TEXT_LENGTH}
               className="min-h-56 flex-1 resize-y border border-[var(--ink)] bg-[var(--paper)] p-4 text-xl leading-relaxed text-[var(--ink)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
               lang="ja"
             />

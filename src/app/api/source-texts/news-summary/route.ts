@@ -1,10 +1,16 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { NewsSummaryServiceError, generateNewsSummary } from "@/lib/feeds/news-summary";
 
 // Génère un court paragraphe d'actualité simplifiée via Claude et
 // l'enregistre comme nouveau texte source, prêt à être analysé comme
 // n'importe quel autre texte.
-export async function POST() {
+export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     // Récupère les sujets récents pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({

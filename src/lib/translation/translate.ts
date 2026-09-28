@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/prisma";
+import { CLAUDE_BUDGET_EXCEEDED_MESSAGE, consumeClaudeBudget } from "@/lib/security/claude-budget";
 
 import { classifyDifficulty } from "../difficulty/classify";
 import type { JLPTLevel } from "../difficulty/classify";
@@ -223,6 +224,10 @@ export async function translateText(
       explanation: `Anthropic API key manquante. La traduction réelle arrivera quand la clé sera configurée pour ${sourceLanguage} → ${targetLanguage}.`,
       difficulty: classifyDifficulty(cleanedText, null, null),
     };
+  }
+
+  if (!(await consumeClaudeBudget())) {
+    throw new TranslationServiceError(CLAUDE_BUDGET_EXCEEDED_MESSAGE);
   }
 
   const client = new Anthropic({ apiKey });

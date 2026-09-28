@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { normalizeCardPayload } from "@/lib/decks/card-utils";
 import { autoTranslateLemma } from "@/lib/decks/auto-translate";
 import { saveExamples, tryGenerateExamples } from "@/lib/decks/card-examples";
+import { MAX_LEMMA_LENGTH, MAX_MEANING_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { limitByIp } from "@/lib/security/rate-limit";
 
 // Ajouter un mot peut enchaîner une traduction et la génération d'exemples.
 export const maxDuration = 60;
@@ -13,6 +15,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     const { deckId } = await params;
     const body: unknown = await request.json();
@@ -32,6 +39,14 @@ export async function POST(
         { error: "Le lemme est requis." },
         { status: 400 },
       );
+    }
+
+    if (lemma.length > MAX_LEMMA_LENGTH) {
+      return tooLongResponse("Le mot", MAX_LEMMA_LENGTH);
+    }
+
+    if (typeof candidate.meaning === "string" && candidate.meaning.length > MAX_MEANING_LENGTH) {
+      return tooLongResponse("Le sens", MAX_MEANING_LENGTH);
     }
 
     const sourceTextId = typeof candidate.sourceTextId === "string" ? candidate.sourceTextId : null;

@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
+import { CLAUDE_BUDGET_EXCEEDED_MESSAGE, consumeClaudeBudget } from "@/lib/security/claude-budget";
+
 // Délai maximum d'attente de la réponse de Claude avant d'abandonner.
 const DEFAULT_TIMEOUT_MS = 20_000;
 
@@ -64,6 +66,10 @@ export async function generateJsonFromClaude<T>({
 
   if (!apiKey || apiKey.trim().length === 0) {
     throw createError(messages.missingApiKey);
+  }
+
+  if (!(await consumeClaudeBudget())) {
+    throw createError(CLAUDE_BUDGET_EXCEEDED_MESSAGE);
   }
 
   const client = new Anthropic({ apiKey });

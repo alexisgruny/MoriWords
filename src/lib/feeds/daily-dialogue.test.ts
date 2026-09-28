@@ -2,6 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { messagesCreateMock } = vi.hoisted(() => ({ messagesCreateMock: vi.fn() }));
 
+// Le budget global d'appels à Claude écrirait des compteurs en base : sans objet ici.
+vi.mock("@/lib/security/claude-budget", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/security/claude-budget")>()),
+  consumeClaudeBudget: async () => true,
+}));
+
 vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@anthropic-ai/sdk")>();
 

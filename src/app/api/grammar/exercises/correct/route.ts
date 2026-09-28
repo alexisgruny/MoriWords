@@ -1,3 +1,4 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import {
   ExerciseServiceError,
   MAX_ANSWER_LENGTH,
@@ -13,6 +14,11 @@ export const maxDuration = 60;
 // Corrige la traduction japonaise envoyée par l'élève pour un exercice et
 // renvoie la correction expliquée, avec la traduction de référence.
 export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     const body: unknown = await request.json().catch(() => null);
     const candidate = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};

@@ -200,6 +200,19 @@ model LemmaExampleCache {
   @@unique([lemma, sourceLanguage, targetLanguage])
 }
 
+// Compteurs de limitation (une ligne par clé et par fenêtre de temps) :
+// requêtes par IP sur les routes coûteuses, et budget global d'appels
+// réels à Claude (voir src/lib/security/). En base plutôt qu'en mémoire,
+// parce que les fonctions serverless de Vercel ne partagent pas la mémoire.
+model RateLimitCounter {
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+}
+
 // Historique des tentatives d'exercice (grammaire/conjugaison/kanji/mon
 // vocabulaire), pour calculer un taux de réussite par point/forme/kanji/mot
 // et repérer ce qui mérite d'être revu (page /exercices/stats). Écrit après

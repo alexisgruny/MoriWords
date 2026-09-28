@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProgressBar } from "@/components/progress-bar";
 import { StreakBanner } from "@/components/streak-banner";
 import { useToast } from "@/components/toast-provider";
+import { readApiError } from "@/lib/api-error";
 import type { DeckSummary } from "@/types/shared";
 
 // Une carte est due si elle n'a jamais été révisée, ou si sa date
@@ -110,25 +111,18 @@ export default function DecksPage() {
   async function handleDeleteDeck(deckId: string) {
     try {
       const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
-      const data: unknown = await response.json();
 
-      if (!response.ok || typeof data !== "object" || data === null) {
-        throw new Error("Impossible de supprimer le deck");
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error(await readApiError(response, "La suppression du deck a échoué."));
       }
 
       setDecks((current) => current.filter((deck) => deck.id !== deckId));
       showToast("Deck supprimé.");
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Une erreur est survenue pendant la suppression du deck.",
+      showToast(
+        requestError instanceof Error ? requestError.message : "La suppression du deck a échoué.",
+        "error",
       );
-      showToast("La suppression du deck a échoué.", "error");
     }
   }
 

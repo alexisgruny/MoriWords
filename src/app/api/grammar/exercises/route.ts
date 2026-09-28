@@ -1,3 +1,4 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import {
   ExerciseServiceError,
   pickConjugationExercise,
@@ -24,6 +25,11 @@ const SOURCES: Source[] = ["examples", "conjugation", "kanji"];
 // listés (voir /exercices/revision, qui s'entraîne sur les points faibles
 // remontés par les statistiques).
 export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     const body: unknown = await request.json().catch(() => null);
     const candidate = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};

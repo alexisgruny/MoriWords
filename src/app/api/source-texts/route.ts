@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { MAX_ANALYSIS_TEXT_LENGTH, MAX_TITLE_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 
 // Forme attendue du corps de la requête pour créer un texte source.
 type CreateSourceTextBody = {
@@ -32,6 +33,14 @@ export async function POST(request: Request) {
         { error: "Le contenu du texte est requis." },
         { status: 400 },
       );
+    }
+
+    if (body.content.length > MAX_ANALYSIS_TEXT_LENGTH) {
+      return tooLongResponse("Le texte", MAX_ANALYSIS_TEXT_LENGTH);
+    }
+
+    if (typeof body.title === "string" && body.title.length > MAX_TITLE_LENGTH) {
+      return tooLongResponse("Le titre", MAX_TITLE_LENGTH);
     }
 
     const sourceText = await prisma.sourceText.create({

@@ -1,3 +1,4 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { ExampleServiceError, generateExamples, saveExamples } from "@/lib/decks/card-examples";
 
@@ -9,6 +10,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
 ) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     const { deckId, cardId } = await params;
 

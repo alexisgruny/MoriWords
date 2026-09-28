@@ -1,3 +1,5 @@
+import { MAX_TRANSLATION_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { limitByIp } from "@/lib/security/rate-limit";
 import { TranslationServiceError, translateText } from "@/lib/translation/translate";
 
 // Forme attendue du corps de la requête.
@@ -24,6 +26,11 @@ function isTranslateRequest(value: unknown): value is TranslateRequest {
 
 // Traduit un mot ou une phrase (japonais vers français par défaut).
 export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -32,6 +39,14 @@ export async function POST(request: Request) {
         { error: "Le texte à traduire est requis." },
         { status: 400 },
       );
+    }
+
+    if (body.text.length > MAX_TRANSLATION_TEXT_LENGTH) {
+      return tooLongResponse("Le texte à traduire", MAX_TRANSLATION_TEXT_LENGTH);
+    }
+
+    if (body.context && body.context.length > MAX_TRANSLATION_TEXT_LENGTH) {
+      return tooLongResponse("La phrase de contexte", MAX_TRANSLATION_TEXT_LENGTH);
     }
 
     const result = await translateText(

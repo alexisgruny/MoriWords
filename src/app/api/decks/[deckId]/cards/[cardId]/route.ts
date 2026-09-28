@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { requireOwner } from "@/lib/security/owner";
 import { normalizeNullable } from "@/lib/decks/card-utils";
 
 // Modifie une carte : sa lecture et/ou son sens, ou la déplace vers un autre
@@ -9,6 +10,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
 ) {
+  const denied = requireOwner(request);
+  if (denied) {
+    return denied;
+  }
+
   try {
     const { deckId, cardId } = await params;
     const body: unknown = await request.json();
@@ -81,6 +87,11 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ deckId: string; cardId: string }> },
 ) {
+  const denied = requireOwner(request);
+  if (denied) {
+    return denied;
+  }
+
   try {
     const { deckId, cardId } = await params;
 

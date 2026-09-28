@@ -1,3 +1,4 @@
+import { MAX_ANALYSIS_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
 import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
 import type { TokenResult } from "@/lib/tokenizer/types";
 
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
         { error: "Le texte japonais est requis." },
         { status: 400 },
       );
+    }
+
+    if (body.text.length > MAX_ANALYSIS_TEXT_LENGTH) {
+      return tooLongResponse("Le texte", MAX_ANALYSIS_TEXT_LENGTH);
     }
 
     const tokens: TokenResult[] = await tokenizer.tokenize(body.text);

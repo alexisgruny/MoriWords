@@ -1,10 +1,16 @@
+import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
 import { LiteraryExcerptServiceError, generateLiteraryExcerpt } from "@/lib/feeds/literary-excerpt";
 
 // Génère un court extrait littéraire pastiche via Claude et l'enregistre
 // comme nouveau texte source, prêt à être analysé comme n'importe quel
 // autre texte.
-export async function POST() {
+export async function POST(request: Request) {
+  const limited = await limitByIp(request, "claude");
+  if (limited) {
+    return limited;
+  }
+
   try {
     // Récupère les styles récents pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({

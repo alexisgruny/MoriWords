@@ -6,6 +6,7 @@ import { ReactNode, useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
+import { readApiError } from "@/lib/api-error";
 
 // Ce que l'en-tête a besoin de savoir sur le deck (le reste est chargé par chaque page).
 type DeckHeaderInfo = { name: string; cardCount: number };
@@ -88,14 +89,14 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        throw new Error("rename failed");
+        throw new Error(await readApiError(response, "Le renommage du deck a échoué."));
       }
 
       setDeck((current) => (current ? { ...current, name } : current));
       setIsEditingName(false);
       showToast("Deck renommé.");
-    } catch {
-      showToast("Le renommage du deck a échoué.", "error");
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : "Le renommage du deck a échoué.", "error");
     } finally {
       setIsSavingName(false);
     }
@@ -144,13 +145,13 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
 
       if (!response.ok) {
-        throw new Error("delete failed");
+        throw new Error(await readApiError(response, "La suppression du deck a échoué."));
       }
 
       showToast("Deck supprimé.");
       router.push("/decks");
-    } catch {
-      showToast("La suppression du deck a échoué.", "error");
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : "La suppression du deck a échoué.", "error");
       setIsDeleting(false);
     }
   }
