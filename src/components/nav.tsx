@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AccountButton } from "@/components/account-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 // Les pages du site, regroupées pour le menu mobile (sur grand écran elles
@@ -105,6 +106,7 @@ export default function Nav() {
 
         <div className="flex shrink-0 items-center gap-2 xl:mb-3">
           <ThemeToggle />
+          <AccountButton />
           <button
             type="button"
             onClick={() => setIsMenuOpen((open) => !open)}

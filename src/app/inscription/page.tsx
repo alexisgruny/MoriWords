@@ -1,0 +1,18 @@
+import { AuthForm } from "@/components/auth-form";
+import { isGoogleConfigured } from "@/lib/auth/auth";
+
+export default function SignUpPage() {
+  return (
+    <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-md">
+        <header className="fade-in-up mb-6 text-center">
+          <h1 className="text-[var(--ink)]">Créer un compte</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Tes decks, ta série de jours et tes statistiques, sur tous tes appareils.
+          </p>
+        </header>
+        <AuthForm mode="signup" googleEnabled={isGoogleConfigured} />
+      </div>
+    </main>
+  );
+}

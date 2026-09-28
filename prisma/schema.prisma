@@ -23,9 +23,15 @@ model SourceText {
   sourceUrl      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  // Propriétaire du texte. Optionnel : les textes créés avant les comptes
+  // n'en ont pas jusqu'à leur rattachement (voir src/lib/auth/auth.ts).
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tokens          Token[]
   wordOccurrences WordOccurrence[]
+
+  @@index([userId])
 }
 
 model Token {
@@ -68,8 +74,14 @@ model Deck {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // Propriétaire du deck (ses cartes suivent). Optionnel pour la même raison
+  // que SourceText.userId.
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   cards Card[]
+
+  @@index([userId])
 }
 
 model Card {
@@ -225,7 +237,82 @@ model ExerciseAttempt {
   level     String?
   correct   Boolean
   createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([source, focus])
   @@index([createdAt])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Comptes utilisateurs (Better Auth, voir src/lib/auth/auth.ts). Noms et
+// champs imposés par la librairie : ne pas les renommer.
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  decks            Deck[]
+  sourceTexts      SourceText[]
+  exerciseAttempts ExerciseAttempt[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+// Une ligne par moyen de connexion d'un utilisateur : "credential" (email +
+// mot de passe, haché par la librairie) ou "google".
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
