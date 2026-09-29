@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { Chevron, NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
+import { SpeakButton } from "@/components/speak-button";
 import {
   GRAMMAR_LEVELS,
   type GrammarLevel,
@@ -97,8 +98,9 @@ export default function GrammarPage() {
                     <ul className="mt-2 flex flex-col gap-2">
                       {point.examples.map((example) => (
                         <li key={example.ja} className="border-l-2 border-[var(--accent)] py-1 pl-3">
-                          <p className="text-base text-[var(--ink)]" lang="ja">
-                            {example.ja}
+                          <p className="flex items-center gap-2 text-base text-[var(--ink)]" lang="ja">
+                            <span>{example.ja}</span>
+                            <SpeakButton text={example.ja} label="Écouter l'exemple" size="sm" />
                           </p>
                           <p className="mt-1 text-sm text-[var(--muted)]">{example.fr}</p>
                         </li>

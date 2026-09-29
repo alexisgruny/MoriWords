@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
+import { FuriganaSentence } from "@/components/furigana-sentence";
+import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
@@ -48,6 +50,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
   const [showMoreSources, setShowMoreSources] = useState(false);
+  // Lectures (furigana) au-dessus des kanji ; décochées pour s'entraîner à lire.
+  const [showFurigana, setShowFurigana] = useState(true);
   // Mot dont la traduction est attendue : une réponse arrivée après un autre
   // clic ne doit pas s'afficher sous le mauvais mot.
   const translatingPositionRef = useRef<number | null>(null);
@@ -772,6 +776,22 @@ export default function Home() {
     }
   }
 
+  function handleSentenceWordClick(token: TokenResult) {
+    const isOnlySelection = selectedTokenPositions.size === 1 && selectedTokenPositions.has(token.position);
+    setTranslation(null);
+
+    if (isOnlySelection) {
+      setSelectedTokenPositions(new Set());
+      setSelectedToken(null);
+      return;
+    }
+
+    setSelectedTokenPositions(new Set([token.position]));
+    setSelectedToken(token);
+    setLastClickedPosition(token.position);
+    void handleTranslateToken(token, false);
+  }
+
   // Traduit tous les mots cochés en parallèle et garde le résultat de chacun
   // (affiché sur sa carte), pour les consulter avant de décider quoi ajouter.
   async function handleTranslateSelection() {
@@ -1115,27 +1135,30 @@ export default function Home() {
               </p>
             ) : null}
 
-            {visibleTokens.length > 0 ? (
-              <div className="mb-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => void handleAddAllTokensToDeck()}
-                  disabled={isBulkAdding}
-                  className="secondary-button"
-                >
-                  {isBulkAdding
-                    ? `Ajout en cours... ${bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}`
-                    : `Tout ajouter au deck (${visibleTokens.length})`}
-                </button>
-              </div>
-            ) : null}
-
             {tokens.length > 0 ? (
-              <div className="mb-6 border-l-4 border-[var(--line-strong)] pl-4">
-                <p className="eyebrow">Phrase analysée</p>
-                <p className="mt-1 line-clamp-3 text-base leading-7 text-[var(--ink)]" lang="ja">
-                  {text}
-                </p>
+              <div className="mb-6 rounded-2xl bg-[var(--tint)] p-4">
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <p className="eyebrow">Touche un mot pour le comprendre</p>
+                  <div className="flex items-center gap-2">
+                    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[var(--muted)]">
+                      <input
+                        type="checkbox"
+                        checked={showFurigana}
+                        onChange={(event) => setShowFurigana(event.target.checked)}
+                        className="accent-[var(--accent)]"
+                      />
+                      Lectures
+                    </label>
+                    <SpeakButton text={text} label="Écouter la phrase" size="sm" />
+                  </div>
+                </div>
+                <FuriganaSentence
+                  text={text}
+                  tokens={tokens}
+                  selectedPosition={selectedTokenPositions.size === 1 ? (selectedToken?.position ?? null) : null}
+                  showFurigana={showFurigana}
+                  onWordClick={handleSentenceWordClick}
+                />
                 <button
                   type="button"
                   onClick={() => void handleTranslateText()}
@@ -1155,6 +1178,21 @@ export default function Home() {
                     </p>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+
+            {visibleTokens.length > 0 ? (
+              <div className="mb-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void handleAddAllTokensToDeck()}
+                  disabled={isBulkAdding}
+                  className="secondary-button"
+                >
+                  {isBulkAdding
+                    ? `Ajout en cours... ${bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}`
+                    : `Tout ajouter au deck (${visibleTokens.length})`}
+                </button>
               </div>
             ) : null}
 
@@ -1254,7 +1292,8 @@ export default function Home() {
                     ✕
                   </button>
                 </div>
-                <p className="mt-1 text-3xl font-bold text-[var(--ink)]" lang="ja">
+                <p className="mt-1 flex flex-wrap items-center gap-x-3 text-3xl font-bold text-[var(--ink)]" lang="ja">
+                  <SpeakButton text={selectedToken.surface} label="Écouter le mot" size="sm" />
                   {selectedToken.surface}
                   {selectedToken.baseForm && selectedToken.baseForm !== selectedToken.surface ? (
                     <span className="ml-3 text-lg font-medium text-[var(--muted)]">→ {selectedToken.baseForm}</span>

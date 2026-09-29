@@ -7,6 +7,7 @@ import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } fr
 import { NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
 import { CharacterDialog } from "@/components/character-dialog";
+import { readingsToSpeak } from "@/lib/speech";
 import { filterKanji, JLPT_KANJI, type KanjiEntry } from "@/lib/kanji/kanji";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
@@ -282,6 +283,7 @@ export default function KanjiPage() {
       </div>
       <CharacterDialog
         character={opened?.kanji ?? null}
+        speech={opened ? readingsToSpeak([...opened.kunReadings, ...opened.onReadings]) : undefined}
         details={
           opened ? (
             <>

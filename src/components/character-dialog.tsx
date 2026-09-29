@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import type HanziWriter from "hanzi-writer";
 
 import { FilterChips } from "@/components/reference-toolbar";
+import { SpeakButton } from "@/components/speak-button";
 import { WritingCanvas } from "@/components/writing-canvas";
 import { createWriter } from "@/lib/writing/hanzi";
 
@@ -83,10 +84,13 @@ function StrokeAnimation({ character, size }: { character: string; size: number 
 export function CharacterDialog({
   character,
   details,
+  speech,
   onClose,
 }: {
   character: string | null;
   details?: ReactNode;
+  // Texte lu par le bouton 🔊 (un kanji seul se lit mieux par ses lectures).
+  speech?: string;
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -126,8 +130,9 @@ export function CharacterDialog({
         <div className="flex flex-col items-center gap-4 p-5">
           <div className="flex w-full items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-5xl font-bold leading-none" lang="ja">
+              <p className="flex items-center gap-3 text-5xl font-bold leading-none" lang="ja">
                 {character}
+                <SpeakButton text={speech ?? character} label="Écouter" />
               </p>
               {details ? <div className="mt-2 text-sm text-[var(--muted)]">{details}</div> : null}
             </div>

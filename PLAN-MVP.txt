@@ -296,3 +296,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       Restent hors code : plafond de depense Anthropic et Vercel, 2FA,
       Dependabot et secret scanning GitHub, verification des emails
       (necessite un service d'envoi).
+63    Ecoute et lecture : boutons 🔊 avec la synthese vocale du navigateur
+      (Web Speech API, voix japonaise, gratuite, rien envoye a un serveur ;
+      bouton masque sans voix japonaise) sur la phrase analysee, le mot
+      touche, la reponse en revision, les kana/kanji (lectures du kanji),
+      le quiz de kana, les corrections et les exemples de grammaire et de
+      conjugaison. Vue de lecture de la phrase analysee : texte d'origine
+      avec ponctuation, furigana au-dessus des kanji seulement (pas de
+      l'okurigana), mots a toucher pour leur sens, case « Lectures » pour
+      masquer les furigana (src/lib/tokenizer/furigana.ts).

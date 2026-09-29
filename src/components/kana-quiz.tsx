@@ -3,6 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 
 import { ProgressBar } from "@/components/progress-bar";
+import { SpeakButton } from "@/components/speak-button";
 import { authClient } from "@/lib/auth/auth-client";
 import { KANA, KANA_GROUP_LABELS, type KanaEntry, type KanaGroup, isCorrectKanaAnswer } from "@/lib/kana/kana";
 import { shuffle } from "@/lib/shuffle";
@@ -303,6 +304,7 @@ export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
               <span className="ml-2 font-normal opacity-80">
                 (<span lang="ja">{lastResult.entry.counterpart}</span> dans l&apos;autre écriture)
               </span>
+              <SpeakButton text={lastResult.entry.kana} label="Écouter" size="sm" className="ml-2 align-middle" />
             </p>
           ) : format === "type" ? (
             <p className="mt-2 text-xs text-[var(--muted)]">

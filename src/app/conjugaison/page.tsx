@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { Chevron, NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
+import { SpeakButton } from "@/components/speak-button";
 import { conjugationForms, filterConjugationForms } from "@/lib/conjugation/forms";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
@@ -104,6 +105,7 @@ export default function ConjugationPage() {
                             {example.reading ? (
                               <span className="text-sm text-[var(--muted)]">({example.reading})</span>
                             ) : null}
+                            <SpeakButton text={example.conjugated} label="Écouter" size="sm" className="self-center" />
                           </p>
                           <p className="mt-1 text-sm text-[var(--muted)]">{example.meaning}</p>
                         </li>

@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
 import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
+import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { buildQuizChoices } from "@/lib/decks/card-utils";
 import type { DeckCard, DeckCardWithOccurrences, DeckSummary } from "@/types/shared";
@@ -486,7 +487,10 @@ export default function DeckTrainingPage() {
 
               {reviewMode !== "quiz" && showAnswer ? (
                 <div className="fade-in-up mt-5 border-t border-dashed border-[var(--line-strong)] pt-5">
-                  <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
+                  <p className="flex items-center justify-center gap-2 text-sm font-semibold text-[var(--accent-dark)]">
+                    Réponse
+                    <SpeakButton text={activeCard.reading ?? activeCard.lemma} label="Écouter le mot" size="sm" />
+                  </p>
                   {reviewMode !== "standard" ? (
                     <p className="mt-2 text-lg text-[var(--ink)]" lang="ja">
                       {activeCard.lemma} · {activeCard.reading ?? "lecture inconnue"}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
+import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import type { DueCard } from "@/types/shared";
 
@@ -208,7 +209,10 @@ export default function ReviewAllDuePage() {
 
                 {showAnswer ? (
                   <div className="fade-in-up mt-5 border-t border-dashed border-[var(--line-strong)] pt-5">
-                    <p className="text-sm font-semibold text-[var(--accent-dark)]">Réponse</p>
+                    <p className="flex items-center justify-center gap-2 text-sm font-semibold text-[var(--accent-dark)]">
+                    Réponse
+                    <SpeakButton text={activeCard.reading ?? activeCard.lemma} label="Écouter le mot" size="sm" />
+                  </p>
                     <p className="mt-1 text-lg font-medium text-[var(--ink)]">
                       {activeCard.meaning ?? "Sens à compléter"}
                     </p>

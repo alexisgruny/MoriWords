@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { FilterChips } from "@/components/reference-toolbar";
+import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
@@ -368,6 +369,14 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             <p className={`fade-in-up mt-4 rounded-2xl border p-4 text-sm ${VERDICT_STYLES[correction.correction.verdict]}`} role="status">
               <span className="font-bold">{VERDICT_LABELS[correction.correction.verdict]}.</span>{" "}
               {correction.correction.verdict === "correct" ? "Bien joué !" : "La bonne réponse est en vert."}
+              {isKanji && !isReading ? null : (
+                <SpeakButton
+                  text={isReading ? correction.reference.replace(/[.-]/g, "") : correction.reference}
+                  label="Écouter la bonne réponse"
+                  size="sm"
+                  className="ml-2 align-middle"
+                />
+              )}
               {isReading ? (
                 <>
                   {" "}
@@ -414,6 +423,9 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                   <p className="mt-3 text-sm text-[var(--ink)]">
                     <span className="font-semibold">{isReading ? "Lectures : " : "Sens attendu : "}</span>
                     <span lang={isReading ? "ja" : undefined}>{correction.reference}</span>
+                    {isReading ? (
+                      <SpeakButton text={correction.reference.replace(/[.-]/g, "")} label="Écouter" size="sm" className="ml-2 align-middle" />
+                    ) : null}
                   </p>
                 ) : null
               ) : (
@@ -425,6 +437,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     <span className="font-semibold">Référence : </span>
                     <span lang="ja">{correction.reference}</span>
+                    <SpeakButton text={correction.reference} label="Écouter la référence" size="sm" className="ml-2 align-middle" />
                   </p>
                 </>
               )}
