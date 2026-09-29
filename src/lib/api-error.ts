@@ -1,6 +1,6 @@
 // Message d'erreur renvoyé par une route API (champ { error }), sinon le
 // message de repli : pour que l'interface dise pourquoi une action a échoué
-// (ex. "Action réservée au propriétaire") au lieu d'un "a échoué" générique.
+// (ex. "Connecte-toi pour continuer.") au lieu d'un "a échoué" générique.
 export async function readApiError(response: Response, fallback: string): Promise<string> {
   try {
     const data: unknown = await response.json();

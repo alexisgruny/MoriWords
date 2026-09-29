@@ -98,12 +98,13 @@ Decisions et contraintes a connaitre
 - Contenu francais statique verifie par un correcteur orthographique
   (nspell + dictionary-fr) dans les tests ; liste d'exceptions pour le
   vocabulaire japonais romanise.
-- Securite en attendant des comptes (Priorite 45) : textes limites en taille
+- Securite (Priorite 45) : textes limites en taille
   (analyse 10 000 car., traduction 2 000), 200 requetes / 10 min par IP sur
   les 9 routes qui peuvent appeler Claude, budget global d'appels reels a
   Claude (200/heure, 600/jour, reglables par CLAUDE_MAX_CALLS_PER_HOUR /
-  _PER_DAY), compteurs en base (RateLimitCounter). DELETE/PATCH des decks
-  et cartes reserves au proprietaire (OWNER_SECRET + cookie signe).
+  _PER_DAY), compteurs en base (RateLimitCounter). Le mode proprietaire
+  (OWNER_SECRET, /proprietaire) a ete retire le 2026-09-29 : chaque compte
+  ne modifie que ses propres decks.
 - Comptes utilisateurs (Priorite 47, phase 1) : Better Auth, email + mot de
   passe (hache) et Google, pages /connexion et /inscription, bouton de compte
   dans la nav. Colonne userId (optionnelle) sur Deck, SourceText,
@@ -145,19 +146,12 @@ Decisions et contraintes a connaitre
 
 Points ouverts
 --------------
-- [A DECIDER par l'utilisateur] Mode proprietaire (OWNER_SECRET) : toujours
-  actif en plus des comptes ; a retirer quand les comptes sont en place en
-  production (les DELETE/PATCH sont deja limites au proprietaire du deck).
-- [A FAIRE par l'utilisateur] Variables Vercel pour les comptes :
-  BETTER_AUTH_SECRET (aleatoire, 32+ caracteres), BETTER_AUTH_URL
-  (https://moriwords.vercel.app), OWNER_EMAIL (son email, AVANT de creer son
-  compte), et pour Google GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (Google
-  Cloud, URI de redirection
-  https://moriwords.vercel.app/api/auth/callback/google).
-- [A FAIRE par l'utilisateur] Definir OWNER_SECRET dans les settings Vercel
-  (mot de passe long et aleatoire), puis deverrouiller son navigateur sur
-  /proprietaire. Sans lui, en production, personne ne peut supprimer,
-  renommer, modifier ni deplacer (protection fermee par defaut).
+- [A FAIRE par l'utilisateur] Creer son compte en production avec l'email
+  OWNER_EMAIL (recupere les donnees existantes). BETTER_AUTH_SECRET,
+  BETTER_AUTH_URL et OWNER_EMAIL sont definis sur Vercel (2026-09-29).
+  Optionnel : GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (Google Cloud, URI de
+  redirection https://moriwords.vercel.app/api/auth/callback/google).
+  OWNER_SECRET peut etre supprime des variables Vercel (plus utilise).
 - [A FAIRE par l'utilisateur] Definir CRON_SECRET dans les settings Vercel
   pour activer l'import quotidien nippon.com (vercel.json pret ; le bouton
   manuel fonctionne sans).
@@ -234,3 +228,4 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 49    Quota Claude par compte, suivi des tokens (ClaudeUsage), en-tetes HTTP.
 50    RGPD : Mon compte (export, suppression), confidentialite, mentions legales.
 51    Page /admin : cout Claude par jour, par action et par compte.
+52    Retrait du mode proprietaire (remplace par les comptes).

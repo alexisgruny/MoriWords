@@ -62,11 +62,9 @@ export function getClientIp(request: Request): string | null {
 
 // Limites par IP des routes sensibles. "claude" : routes qui peuvent appeler
 // Claude (assez large pour un ajout en masse d'un long texte, une requête
-// par mot) ; "owner-unlock" : essais de mot de passe propriétaire ; "auth" :
-// connexions et inscriptions (essais de mot de passe d'un compte).
+// par mot) ; "auth" : connexions et inscriptions (essais de mot de passe).
 const IP_LIMITS = {
   claude: { limit: 200, windowSeconds: 10 * 60 },
-  "owner-unlock": { limit: 10, windowSeconds: 15 * 60 },
   auth: { limit: 20, windowSeconds: 15 * 60 },
 } as const;
 

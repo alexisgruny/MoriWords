@@ -59,9 +59,6 @@ export default function Footer() {
               Mentions légales
             </Link>
           </div>
-          <Link href="/proprietaire" className="text-xs text-[var(--muted)] transition hover:text-[var(--ink)]">
-            Mode propriétaire
-          </Link>
         </div>
       </div>
     </footer>

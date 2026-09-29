@@ -302,12 +302,7 @@ export default function DeckWordsPage() {
       }
 
       if (failures.length > 0) {
-        // Un refus "propriétaire" vaut pour tout le lot : autant le dire.
-        const ownerRefusal = failures.find((failure) => (failure.reason as Error).message.includes("propriétaire"));
-        showToast(
-          ownerRefusal ? (ownerRefusal.reason as Error).message : `${failures.length} mot(s) n'ont pas pu être supprimés.`,
-          "error",
-        );
+        showToast(`${failures.length} mot(s) n'ont pas pu être supprimés.`, "error");
       }
 
       setSelectedIds(new Set());
@@ -360,14 +355,7 @@ export default function DeckWordsPage() {
       }
 
       if (otherFailedCount > 0) {
-        const ownerRefusal = results.find(
-          (result): result is PromiseRejectedResult =>
-            result.status === "rejected" && (result.reason as Error).message.includes("propriétaire"),
-        );
-        showToast(
-          ownerRefusal ? (ownerRefusal.reason as Error).message : `${otherFailedCount} mot(s) n'ont pas pu être déplacés.`,
-          "error",
-        );
+        showToast(`${otherFailedCount} mot(s) n'ont pas pu être déplacés.`, "error");
       }
 
       setSelectedIds(new Set());

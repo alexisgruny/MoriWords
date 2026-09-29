@@ -54,17 +54,17 @@ describe("getClientIp", () => {
 
 describe("limitByIp", () => {
   it("does nothing without an IP (local dev and tests)", async () => {
-    expect(await limitByIp(new Request("http://x"), "owner-unlock")).toBeNull();
+    expect(await limitByIp(new Request("http://x"), "auth")).toBeNull();
   });
 
   it("answers 429 with Retry-After once an IP exceeds its bucket", async () => {
     const request = () => new Request("http://x", { headers: { "x-real-ip": TEST_IP } });
 
-    for (let i = 0; i < 10; i += 1) {
-      expect(await limitByIp(request(), "owner-unlock")).toBeNull();
+    for (let i = 0; i < 20; i += 1) {
+      expect(await limitByIp(request(), "auth")).toBeNull();
     }
 
-    const refused = await limitByIp(request(), "owner-unlock");
+    const refused = await limitByIp(request(), "auth");
     expect(refused?.status).toBe(429);
     expect(refused?.headers.get("Retry-After")).toBeTruthy();
   });

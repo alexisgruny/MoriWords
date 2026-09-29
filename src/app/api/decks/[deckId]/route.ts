@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedDeck } from "@/lib/decks/ownership";
-import { requireOwner } from "@/lib/security/owner";
 
 // Renvoie un seul deck avec ses cartes, pour la page de détail d'un deck.
 export async function GET(
@@ -40,11 +39,6 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const denied = requireOwner(request);
-  if (denied) {
-    return denied;
-  }
-
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
@@ -99,11 +93,6 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ deckId: string }> },
 ) {
-  const denied = requireOwner(request);
-  if (denied) {
-    return denied;
-  }
-
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
