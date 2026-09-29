@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { TodayPanel } from "@/components/today-panel";
 import { useToast } from "@/components/toast-provider";
@@ -19,13 +19,20 @@ const starterText = "明日も一緒に頑張ろう！絶対にあきらめな�
 
 // Sources de contenu généré disponibles en un clic, chacune backée par
 // POST /api/source-texts/<key> (voir src/lib/feeds/).
+// Les deux premières sont mises en avant (les plus faciles pour débuter),
+// les autres restent derrière « Plus d'idées ».
 const GENERATED_SOURCES = [
   { key: "anime-quote", label: "Réplique d'anime" },
+  { key: "daily-dialogue", label: "Dialogue du quotidien" },
   { key: "news-summary", label: "Actu simplifiée" },
-  { key: "news-rss", label: "Actu nippon.com" },
-  { key: "daily-dialogue", label: "Dialogue quotidien" },
+  { key: "news-rss", label: "Actu du jour (nippon.com)" },
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
+const FEATURED_SOURCE_COUNT = 2;
+
+// Mots-outils cachés par défaut : particules (は, を) et auxiliaires (ます,
+// ない, う), qui déroutent une débutante et ne s'apprennent pas en fiche.
+const GRAMMAR_WORD_CATEGORIES = new Set(["助詞", "助動詞"]);
 
 const STEPS = ["Colle une réplique ou un texte", "Touche les mots", "Garde-les en fiches de révision"];
 
@@ -41,6 +48,10 @@ export default function Home() {
   const [loadingSourceKey, setLoadingSourceKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
+  const [showMoreSources, setShowMoreSources] = useState(false);
+  // Mot dont la traduction est attendue : une réponse arrivée après un autre
+  // clic ne doit pas s'afficher sous le mauvais mot.
+  const translatingPositionRef = useRef<number | null>(null);
   const [recentSourceTexts, setRecentSourceTexts] = useState<SourceTextSummary[]>([]);
   const [selectedSourceTextId, setSelectedSourceTextId] = useState<string | null>(null);
   const [translation, setTranslation] = useState<TranslationResult | null>(null);
@@ -70,7 +81,7 @@ export default function Home() {
   // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
   // aussi toujours le romaji et les chiffres arabes purs (pas du vocabulaire
   // japonais à proprement parler), sans case à cocher pour les réafficher.
-  const visibleTokens = (showParticles ? tokens : tokens.filter((token) => token.partOfSpeech !== "助詞"))
+  const visibleTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
     .filter((token) => !isNoiseToken(token));
 
   // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
@@ -438,8 +449,12 @@ export default function Home() {
     }
   }
 
-  // Traduit le mot actuellement sélectionné.
-  async function handleTranslateToken(token: TokenResult) {
+  // Traduit un mot. Sans contexte, la traduction vient du cache partagé par
+  // mot (instantané, sans appel à Claude la plupart du temps) : c'est ce qui
+  // s'affiche dès qu'on touche un mot. Avec contexte, le sens précis dans la
+  // phrase (jamais mis en cache, donc un appel à chaque fois).
+  async function handleTranslateToken(token: TokenResult, withContext = true) {
+    translatingPositionRef.current = token.position;
     setIsTranslating(true);
     setError(null);
 
@@ -451,10 +466,14 @@ export default function Home() {
           text: token.baseForm || token.surface,
           sourceLanguage: "ja",
           targetLanguage: "fr",
-          context: text,
+          ...(withContext ? { context: text } : {}),
         }),
       });
       const data: unknown = await response.json();
+
+      if (translatingPositionRef.current !== token.position) {
+        return;
+      }
 
       if (!response.ok || typeof data !== "object" || data === null) {
         throw new Error("Impossible de traduire le mot");
@@ -726,6 +745,13 @@ export default function Home() {
     // sélection restante n'aurait plus de panneau pour agir dessus).
     const remaining = visibleTokens.filter((candidate) => nextPositions.has(candidate.position));
     setSelectedToken(wasChecked ? (remaining[remaining.length - 1] ?? null) : token);
+
+    // Un seul mot touché : son sens s'affiche tout de suite (« je touche un
+    // mot, je comprends »), sans avoir à appuyer sur « Traduire ».
+    setTranslation(null);
+    if (!wasChecked && nextPositions.size === 1) {
+      void handleTranslateToken(token, false);
+    }
   }
 
   // Traduit tous les mots cochés en parallèle et garde le résultat de chacun
@@ -924,6 +950,8 @@ export default function Home() {
         Annuler
       </button>
     </div>
+  ) : decks.length === 0 ? (
+    <p className="text-sm text-[var(--muted)]">Ton premier deck, « Mon deck japonais », sera créé automatiquement.</p>
   ) : (
     <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
       Ajouter dans
@@ -938,7 +966,6 @@ export default function Home() {
         }}
         className="min-h-9 cursor-pointer rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
       >
-        {decks.length === 0 ? <option value="">Aucun deck</option> : null}
         {decks.map((deck) => (
           <option key={deck.id} value={deck.id}>
             {deck.name}
@@ -955,11 +982,10 @@ export default function Home() {
         <TodayPanel />
 
         <header className="mb-8 fade-in-up">
-          <p className="eyebrow mb-1">MoriWords</p>
           <h1 className="text-[var(--ink)]">Colle une réplique, comprends chaque mot</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
-            Une réplique de ton anime, une bulle de manga, des paroles de chanson : colle-la, touche les mots
-            pour les comprendre en français, et garde ceux que tu veux revoir.
+            Une réplique d&apos;anime, une bulle de manga, une chanson : touche un mot pour le comprendre en
+            français.
           </p>
           <ol className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Étapes">
             {STEPS.map((label, index) => {
@@ -980,7 +1006,12 @@ export default function Home() {
           <form onSubmit={handleSubmit} className="panel fade-in-up flex flex-col">
             <div className="mb-4 flex items-baseline justify-between gap-4">
               <h2 className="text-[var(--ink)]">Texte japonais</h2>
-              <span className="mono whitespace-nowrap text-xs text-[var(--muted)]">{text.length} caractères</span>
+              {/* Compteur seulement près de la limite : sinon, du bruit. */}
+              {text.length > MAX_ANALYSIS_TEXT_LENGTH * 0.8 ? (
+                <span className="mono whitespace-nowrap text-xs text-[var(--muted)]">
+                  {text.length} / {MAX_ANALYSIS_TEXT_LENGTH}
+                </span>
+              ) : null}
             </div>
 
             <label htmlFor="japanese-text" className="sr-only">
@@ -1007,9 +1038,9 @@ export default function Home() {
             </div>
 
             <div className="mt-5 border-t border-dashed border-[var(--line-strong)] pt-4">
-              <p className="mb-2.5 text-sm text-[var(--muted)]">Pas de texte sous la main ? Génère-en un :</p>
+              <p className="mb-2.5 text-sm text-[var(--muted)]">Pas de texte sous la main ? Essaie :</p>
               <div className="flex flex-wrap gap-2">
-                {GENERATED_SOURCES.map((source) => (
+                {GENERATED_SOURCES.slice(0, showMoreSources ? GENERATED_SOURCES.length : FEATURED_SOURCE_COUNT).map((source) => (
                   <button
                     key={source.key}
                     type="button"
@@ -1020,6 +1051,11 @@ export default function Home() {
                     {loadingSourceKey === source.key ? "Génération..." : source.label}
                   </button>
                 ))}
+                {showMoreSources ? null : (
+                  <button type="button" onClick={() => setShowMoreSources(true)} className="link-button text-sm!">
+                    Plus d&apos;idées
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1030,6 +1066,7 @@ export default function Home() {
             ) : null}
           </form>
 
+          {tokens.length > 0 || isLoading ? (
           <section className="panel fade-in-up" style={{ animationDelay: "80ms" }} aria-live="polite">
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-[var(--ink)]">Mots détectés</h2>
@@ -1041,7 +1078,7 @@ export default function Home() {
                     onChange={(event) => setShowParticles(event.target.checked)}
                     className="accent-[var(--accent)]"
                   />
-                  Particules
+                  Voir は, を, ます…
                 </label>
                 <span className="count-badge">{visibleTokens.length}</span>
               </div>
@@ -1108,7 +1145,7 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 sm:gap-x-10">
+              <div className="grid grid-cols-2 gap-x-2.5 sm:gap-x-10">
                 {visibleTokens.map((token) => {
                   const isSelected = selectedToken?.position === token.position;
                   const isChecked = selectedTokenPositions.has(token.position);
@@ -1123,22 +1160,28 @@ export default function Home() {
                         type="button"
                         aria-pressed={isChecked}
                         onClick={(event) => handleTokenClick(token, event.shiftKey)}
-                        className="flex w-full items-start gap-3 text-left"
+                        className="flex w-full flex-col gap-0.5 text-left"
                       >
-                        <span
-                          aria-hidden="true"
-                          className={`mt-2 grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-xs font-bold leading-none transition-colors ${
-                            isChecked
-                              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                              : "border-[var(--ink)] bg-[var(--paper)] text-transparent"
-                          }`}
-                        >
-                          ✓
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm text-[var(--muted)]" lang="ja">
-                            {token.reading ?? "lecture inconnue"}
+                        <span className="flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={`grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border text-xs font-bold leading-none transition-colors ${
+                              isChecked
+                                ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                                : "border-[var(--ink)] bg-[var(--paper)] text-transparent"
+                            }`}
+                          >
+                            ✓
                           </span>
+                          <span className={`ml-auto shrink-0 ${jlptBadgeClass(token.difficulty)}`}>
+                            {token.difficulty === "unknown" ? "—" : token.difficulty}
+                          </span>
+                        </span>
+                        {/* Lecture jamais tronquée : c'est elle qui aide à lire le mot. */}
+                        <span className="text-sm break-all text-[var(--muted)]" lang="ja">
+                          {token.reading ?? "lecture inconnue"}
+                        </span>
+                        <span className="min-w-0">
                           <span className="block text-2xl font-bold leading-tight text-[var(--ink)]" lang="ja">
                             {token.surface}
                           </span>
@@ -1156,9 +1199,6 @@ export default function Home() {
                               {tokenTranslation.translation}
                             </span>
                           ) : null}
-                        </span>
-                        <span className={`mt-1 shrink-0 ${jlptBadgeClass(token.difficulty)}`}>
-                          {token.difficulty === "unknown" ? "—" : token.difficulty}
                         </span>
                       </button>
                     </div>
@@ -1211,6 +1251,21 @@ export default function Home() {
                   ) : null}
                 </div>
 
+                {selectedTokenPositions.size <= 1 ? (
+                  translation ? (
+                    <div className="fade-in-up mt-3 border-l-4 border-[var(--accent)] pl-4">
+                      <p className="text-xl font-semibold text-[var(--ink)]">{translation.translation}</p>
+                      {/* Explication repliée : dépliée, le panneau couvrait tout l'écran du téléphone. */}
+                      <details className="mt-1 text-sm text-[var(--muted)]">
+                        <summary className="cursor-pointer hover:text-[var(--ink)]">Pourquoi ce sens ?</summary>
+                        <p className="mt-1 leading-6">{translation.explanation}</p>
+                      </details>
+                    </div>
+                  ) : isTranslating ? (
+                    <div className="skeleton mt-3 h-12 w-2/3" aria-label="Traduction en cours" />
+                  ) : null
+                ) : null}
+
                 <div className="mt-3">{deckPicker}</div>
 
                 {/* Avec plusieurs mots cochés, les boutons agissent sur TOUTE la
@@ -1232,9 +1287,9 @@ export default function Home() {
                       type="button"
                       onClick={() => void handleTranslateToken(selectedToken)}
                       disabled={isTranslating}
-                      className="primary-button"
+                      className="secondary-button"
                     >
-                      {isTranslating ? "Traduction..." : "Traduire"}
+                      {isTranslating ? "Traduction..." : "Sens dans cette phrase"}
                     </button>
                   )}
 
@@ -1281,20 +1336,10 @@ export default function Home() {
                   ) : null}
                 </div>
 
-                {translation ? (
-                  <div className="fade-in-up mt-5 border-l-4 border-[var(--accent)] pl-4">
-                    <p className="text-sm text-[var(--muted)]">Traduction</p>
-                    <p className="mt-1 text-xl font-semibold text-[var(--ink)]">
-                      {translation.translation}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                      {translation.explanation}
-                    </p>
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </section>
+          ) : null}
         </section>
 
         {recentSourceTexts.length > 0 ? (

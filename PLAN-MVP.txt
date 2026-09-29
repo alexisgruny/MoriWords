@@ -271,3 +271,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       depliees, niveau le plus facile garde). QCM de conjugaison : les 4
       choix sont le meme mot a d'autres formes (conjugueur local
       src/lib/conjugation/conjugate.ts).
+60    Passe UX pour Lea (mobile) : un mot touche affiche tout de suite son
+      sens (cache partage, sans contexte ; « Sens dans cette phrase » pour
+      l'appel contextuel), explication repliee ; mots en 2 colonnes, lecture
+      jamais tronquee, auxiliaires (ます, ない, う) caches avec les particules ;
+      en-tete raccourci, compteur de caracteres seulement pres de la limite,
+      2 generateurs mis en avant (« Plus d'idees ») ; plus de « Aucun deck »
+      (premier deck cree automatiquement) ; Decks vide renvoie vers l'analyse ;
+      descriptions des exercices a jour (QCM, ecriture) ; credits du pied de
+      page replies.

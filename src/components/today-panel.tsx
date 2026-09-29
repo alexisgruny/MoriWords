@@ -16,8 +16,7 @@ function isTodaySummary(value: unknown): value is TodaySummary {
 }
 
 // Bloc « Aujourd'hui » en haut de l'accueil : ce qu'il reste à réviser, la
-// série de jours et la progression, avec un seul gros bouton. Pour un
-// nouveau compte, explique comment créer sa première fiche.
+// série de jours et la progression, avec un seul gros bouton.
 export function TodayPanel() {
   const [summary, setSummary] = useState<TodaySummary | null>(null);
 
@@ -47,18 +46,10 @@ export function TodayPanel() {
     return null;
   }
 
+  // Nouveau compte : rien à réviser, les étapes de la page d'analyse guident
+  // déjà vers la première fiche (un bloc de plus repoussait la zone de texte).
   if (summary.totalCards === 0) {
-    return (
-      <section className="panel fade-in-up mb-8 bg-[var(--tint)]" aria-labelledby="today-title">
-        <h2 id="today-title" className="text-lg font-bold text-[var(--ink)]">
-          Ta première fiche t&apos;attend
-        </h2>
-        <p className="mt-1 text-[var(--ink)]">
-          Analyse la réplique ci-dessous, touche un mot, puis ajoute-le au deck. MoriWords le traduit et lui
-          trouve des exemples tout seul.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const { streak, dueCount } = summary;

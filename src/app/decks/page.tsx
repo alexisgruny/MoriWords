@@ -280,10 +280,13 @@ export default function DecksPage() {
                   <path d="M8 3h10a2 2 0 0 1 2 2v12" />
                 </svg>
               </span>
-              <p className="font-medium text-[var(--ink)]">Aucun deck pour le moment.</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Crée un deck puis ajoute-y des mots depuis la page Analyser.
+              <p className="font-medium text-[var(--ink)]">Pas encore de deck.</p>
+              <p className="mt-1 max-w-sm text-sm text-[var(--muted)]">
+                Analyse une réplique et ajoute un mot : ton premier deck se crée tout seul.
               </p>
+              <Link href="/" className="primary-button mt-4">
+                Analyser une réplique
+              </Link>
             </div>
           )}
         </section>

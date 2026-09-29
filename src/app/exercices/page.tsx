@@ -5,31 +5,31 @@ const EXERCISE_TYPES = [
     href: "/exercices/kana",
     glyph: "あ",
     title: "Hiragana et katakana",
-    description: "Lis un kana et tape sa prononciation en romaji. Idéal pour débuter.",
+    description: "Lis-les (au clavier ou en QCM) et apprends à les écrire. Idéal pour débuter.",
   },
   {
     href: "/exercices/grammaire",
     glyph: "文",
     title: "Grammaire",
-    description: "Traduis des phrases construites autour des points de grammaire par niveau JLPT.",
+    description: "Des phrases simples de ton niveau JLPT, en QCM ou à traduire toi-même.",
   },
   {
     href: "/exercices/conjugaison",
     glyph: "活",
     title: "Conjugaison",
-    description: "Traduis des phrases qui utilisent les formes verbales et adjectivales à réviser.",
+    description: "Retrouve la bonne forme d'un verbe (ます, ない, て…), en QCM ou à écrire.",
   },
   {
     href: "/exercices/kanji",
     glyph: "字",
     title: "Kanji",
-    description: "Regarde un kanji et écris son sens en français.",
+    description: "Son sens, sa lecture, et comment l'écrire trait par trait.",
   },
   {
     href: "/exercices/vocabulaire",
     glyph: "語",
     title: "Mon vocabulaire",
-    description: "Traduis des phrases construites autour des mots déjà ajoutés à tes decks.",
+    description: "Des phrases avec les mots de tes decks, pour les réutiliser.",
   },
 ];
 
@@ -44,8 +44,8 @@ export default function ExercisesPage() {
             <p className="eyebrow mb-1">S&apos;entraîner</p>
             <h1 className="text-[var(--ink)]">Exercices</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              Choisis un type d&apos;exercice : traduis une phrase en japonais (corrigée par
-              Claude) ou retrouve le sens d&apos;un kanji.
+              Choisis un exercice. Pour commencer en douceur, prends le mode QCM ; ensuite, écris
+              tes réponses toi-même.
             </p>
           </div>
           <Link href="/exercices/stats" className="secondary-button shrink-0">

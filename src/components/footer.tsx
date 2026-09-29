@@ -8,6 +8,9 @@ export default function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col gap-2 py-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p>MoriWords · Analyse et mémorisation du japonais, mot par mot.</p>
+          {/* Crédits repliés : exigés par les licences, mais très longs sur téléphone. */}
+          <details className="mt-1 text-xs">
+            <summary className="cursor-pointer transition hover:text-[var(--ink)]">Sources et licences</summary>
           <p className="mt-1 text-xs">
             Niveaux JLPT : listes de{" "}
             <a
@@ -60,6 +63,7 @@ export default function Footer() {
             </a>{" "}
             (MIT).
           </p>
+          </details>
         </div>
         <div className="flex flex-col gap-1 sm:items-end">
           <a
