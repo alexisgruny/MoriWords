@@ -1,13 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { FilterChips } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 
-type Exercise = { id: string; french: string; level: string | null; focus: string; hint?: string };
+type Exercise = {
+  id: string;
+  french: string;
+  level: string | null;
+  focus: string;
+  hint?: string;
+  // QCM : les choix proposés, bonne réponse comprise.
+  choices?: string[] | null;
+};
+
+type Format = "write" | "choice";
+
+const FORMATS: Array<{ value: Format; label: string }> = [
+  { value: "write", label: "Écrire" },
+  { value: "choice", label: "QCM" },
+];
+
+// Le choix correspond-il à la référence ? Pour une lecture de kanji, la
+// référence liste toutes les lectures (「ショク・た.べる」).
+function isReferenceChoice(choice: string, reference: string): boolean {
+  return choice === reference || reference.split("・").some((reading) => reading.replace(/[.-]/g, "") === choice);
+}
 
 type ExerciseError = { wrong: string; right: string; explanation: string };
 
@@ -62,18 +83,21 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
   const [isLoadingExercise, setIsLoadingExercise] = useState(false);
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [format, setFormat] = useState<Format>("write");
+  const [chosen, setChosen] = useState<string | null>(null);
 
-  async function loadExercise(nextLevel: GrammarLevel | "all", excludeIds: string[]) {
+  async function loadExercise(nextLevel: GrammarLevel | "all", excludeIds: string[], nextFormat: Format = format) {
     setIsLoadingExercise(true);
     setInfo(null);
     setCorrection(null);
     setAnswer("");
+    setChosen(null);
 
     try {
       const response = await fetch("/api/grammar/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source, level: nextLevel, excludeIds, focusIn }),
+        body: JSON.stringify({ source, level: nextLevel, excludeIds, focusIn, format: nextFormat }),
       });
       const data = (await response.json()) as { exercise: Exercise | null; message?: string; error?: string };
 
@@ -117,9 +141,21 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
     }
   }
 
-  async function handleSubmit() {
-    if (!exercise || !answer.trim()) {
+  function handleFormatChange(nextFormat: Format) {
+    setFormat(nextFormat);
+    setSeenIds([]);
+    if (exercise || info) {
+      void loadExercise(level, [], nextFormat);
+    }
+  }
+
+  async function handleSubmit(choice?: string) {
+    const submitted = (choice ?? answer).trim();
+    if (!exercise || !submitted || correction) {
       return;
+    }
+    if (choice) {
+      setChosen(choice);
     }
 
     setIsCorrecting(true);
@@ -128,7 +164,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
       const response = await fetch("/api/grammar/exercises/correct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exerciseId: exercise.id, answer: answer.trim() }),
+        body: JSON.stringify({ exerciseId: exercise.id, answer: submitted, format }),
       });
       const data = (await response.json()) as {
         correction?: Correction;
@@ -153,6 +189,29 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
     }
   }
 
+  // QCM : touches 1 à 4 pour répondre sans souris.
+  const submitRef = useRef(handleSubmit);
+  useEffect(() => {
+    submitRef.current = handleSubmit;
+  });
+
+  useEffect(() => {
+    const choices = exercise?.choices;
+    if (format !== "choice" || !choices || correction) {
+      return;
+    }
+
+    function handleKey(event: KeyboardEvent) {
+      const index = Number(event.key) - 1;
+      if (index >= 0 && index < choices!.length && !(event.target instanceof HTMLTextAreaElement)) {
+        void submitRef.current(choices![index]);
+      }
+    }
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [format, exercise, correction]);
+
   return (
     <section className="panel">
       {/* Pas de titre ici : chaque page qui affiche ce composant nomme déjà
@@ -175,6 +234,9 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
           onChange={handleLevelChange}
           label="Niveau JLPT de l'exercice"
         />
+        <div className="mt-2.5">
+          <FilterChips options={FORMATS} value={format} onChange={handleFormatChange} label="Format de l'exercice" />
+        </div>
       </div>
 
       <div className="mb-5">
@@ -217,44 +279,103 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             </p>
           </div>
 
-          <textarea
-            value={answer}
-            onChange={(event) => setAnswer(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                event.preventDefault();
-                void handleSubmit();
-              }
-            }}
-            placeholder={isReading ? "ひらがな ou カタカナ" : isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
-            lang={isKanji && !isReading ? "fr" : "ja"}
-            rows={3}
-            className="mt-4 min-h-24 w-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-lg text-[var(--ink)] outline-none"
-          />
+          {format === "choice" && exercise.choices ? (
+            <div className="mt-4">
+              <div className={`grid gap-2 ${isKanji ? "sm:grid-cols-2" : ""}`}>
+                {exercise.choices.map((choice, index) => {
+                  const isRight = correction !== null && isReferenceChoice(choice, correction.reference);
+                  const isWrongPick = correction !== null && choice === chosen && !isRight;
+                  return (
+                    <button
+                      key={choice}
+                      type="button"
+                      onClick={() => void handleSubmit(choice)}
+                      disabled={isCorrecting || correction !== null}
+                      lang={isKanji && !isReading ? "fr" : "ja"}
+                      className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-lg text-[var(--ink)] transition disabled:cursor-default ${
+                        isRight
+                          ? "border-[var(--success)] bg-[var(--success-soft)]"
+                          : isWrongPick
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                            : "border-[var(--line-strong)] bg-[var(--paper)] hover:border-[var(--ink)]"
+                      }`}
+                    >
+                      <span className="kbd shrink-0">{index + 1}</span>
+                      <span>{choice}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                {correction ? (
+                  <button type="button" onClick={() => void loadExercise(level, seenIds)} className="primary-button">
+                    Question suivante →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void loadExercise(level, seenIds)}
+                    disabled={isLoadingExercise}
+                    className="link-button"
+                  >
+                    Passer cette question
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <textarea
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                    event.preventDefault();
+                    void handleSubmit();
+                  }
+                }}
+                placeholder={isReading ? "ひらがな ou カタカナ" : isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
+                lang={isKanji && !isReading ? "fr" : "ja"}
+                rows={3}
+                className="mt-4 min-h-24 w-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-lg text-[var(--ink)] outline-none"
+              />
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={isCorrecting || !answer.trim()}
-              className="primary-button"
-            >
-              {isCorrecting ? "Correction..." : isKanji ? "Vérifier ma réponse" : "Corriger ma traduction"}
-            </button>
-            <span className="text-xs text-[var(--muted)]">
-              <span className="kbd">Ctrl</span> + <span className="kbd">Entrée</span> pour envoyer
-            </span>
-            <button
-              type="button"
-              onClick={() => void loadExercise(level, seenIds)}
-              disabled={isLoadingExercise}
-              className="link-button"
-            >
-              Passer cette phrase
-            </button>
-          </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleSubmit()}
+                  disabled={isCorrecting || !answer.trim()}
+                  className="primary-button"
+                >
+                  {isCorrecting ? "Correction..." : isKanji ? "Vérifier ma réponse" : "Corriger ma traduction"}
+                </button>
+                <span className="text-xs text-[var(--muted)]">
+                  <span className="kbd">Ctrl</span> + <span className="kbd">Entrée</span> pour envoyer
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void loadExercise(level, seenIds)}
+                  disabled={isLoadingExercise}
+                  className="link-button"
+                >
+                  Passer cette phrase
+                </button>
+              </div>
+            </>
+          )}
 
-          {correction ? (
+          {correction && format === "choice" ? (
+            <p className={`fade-in-up mt-4 rounded-2xl border p-4 text-sm ${VERDICT_STYLES[correction.correction.verdict]}`} role="status">
+              <span className="font-bold">{VERDICT_LABELS[correction.correction.verdict]}.</span>{" "}
+              {correction.correction.verdict === "correct" ? "Bien joué !" : "La bonne réponse est en vert."}
+              {isReading ? (
+                <>
+                  {" "}
+                  Lectures : <span lang="ja">{correction.reference}</span>
+                </>
+              ) : null}
+            </p>
+          ) : correction ? (
             <div className={`fade-in-up mt-4 rounded-2xl border p-4 ${VERDICT_STYLES[correction.correction.verdict]}`}>
               <p className="flex items-center gap-2 text-base font-bold">
                 <span

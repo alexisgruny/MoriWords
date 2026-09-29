@@ -19,7 +19,20 @@ const GROUPS: KanaGroup[] = ["base", "dakuten", "combo"];
 // Exercice de lecture des kana : un kana s'affiche, l'élève tape son romaji.
 // Corrigé localement (une seule lecture possible par kana, variantes comme
 // "si"/"shi" acceptées) : ni appel à Claude ni requête serveur.
-export function KanaQuiz() {
+// QCM : 3 leurres de la même écriture et du même groupe (sons proches).
+function buildChoices(entry: KanaEntry): string[] {
+  const others = [
+    ...new Set(
+      KANA.filter((other) => other.script === entry.script && other.group === entry.group && other.romaji !== entry.romaji).map(
+        (other) => other.romaji,
+      ),
+    ),
+  ];
+  return shuffle([entry.romaji, ...shuffle(others).slice(0, 3)]);
+}
+
+// format "choice" : 4 romaji au choix au lieu de les taper (plus facile).
+export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
   const { data: session } = authClient.useSession();
   const [scriptChoice, setScriptChoice] = useState<ScriptChoice>("hiragana");
   const [groups, setGroups] = useState<Set<KanaGroup>>(new Set(["base"]));
@@ -29,6 +42,8 @@ export function KanaQuiz() {
   const [lastResult, setLastResult] = useState<{ correct: boolean; entry: KanaEntry } | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [missed, setMissed] = useState<KanaEntry[]>([]);
+  // Choix du QCM, tirés au lancement de la série (un jeu par kana).
+  const [choices, setChoices] = useState<string[][]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pool = KANA.filter(
@@ -38,7 +53,9 @@ export function KanaQuiz() {
   const isFinished = queue.length > 0 && position >= queue.length;
 
   function start(entries: KanaEntry[]) {
-    setQueue(shuffle(entries));
+    const shuffled = shuffle(entries);
+    setQueue(shuffled);
+    setChoices(shuffled.map(buildChoices));
     setPosition(0);
     setAnswer("");
     setLastResult(null);
@@ -67,6 +84,13 @@ export function KanaQuiz() {
     resetSession();
   }
 
+  function goNext() {
+    setLastResult(null);
+    setAnswer("");
+    setPosition((value) => value + 1);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
   // Entrée valide la réponse, puis une seconde fois passe au kana suivant.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,18 +100,21 @@ export function KanaQuiz() {
     }
 
     if (lastResult) {
-      setLastResult(null);
-      setAnswer("");
-      setPosition((value) => value + 1);
-      requestAnimationFrame(() => inputRef.current?.focus());
+      goNext();
       return;
     }
 
-    if (!answer.trim()) {
+    if (answer.trim()) {
+      evaluate(answer);
+    }
+  }
+
+  function evaluate(value: string) {
+    if (!current || lastResult) {
       return;
     }
 
-    const correct = isCorrectKanaAnswer(current, answer);
+    const correct = isCorrectKanaAnswer(current, value);
     setLastResult({ correct, entry: current });
 
     // Trace pour les statistiques et les couleurs de la page Kana, seulement
@@ -112,7 +139,11 @@ export function KanaQuiz() {
 
   return (
     <section className="panel">
-      <p className="mb-4 text-sm text-[var(--muted)]">Regarde le kana et tape sa prononciation en romaji.</p>
+      <p className="mb-4 text-sm text-[var(--muted)]">
+        {format === "choice"
+          ? "Regarde le kana et choisis sa prononciation parmi 4."
+          : "Regarde le kana et tape sa prononciation en romaji."}
+      </p>
 
       <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Écriture">
         {SCRIPT_CHOICES.map((choice) => (
@@ -204,23 +235,59 @@ export function KanaQuiz() {
             </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap gap-3">
-            <input
-              ref={inputRef}
-              value={answer}
-              onChange={(event) => setAnswer(event.target.value)}
-              readOnly={lastResult !== null}
-              placeholder="romaji (ex. ka)"
-              aria-label="Prononciation en romaji"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              className="min-h-11 min-w-0 flex-1 border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-2 text-lg text-[var(--ink)] outline-none"
-            />
-            <button type="submit" disabled={!lastResult && !answer.trim()} className="primary-button">
-              {lastResult ? "Suivant →" : "Vérifier"}
-            </button>
-          </form>
+          {format === "choice" ? (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 gap-2">
+                {(choices[position] ?? []).map((choice) => {
+                  const isRight = lastResult !== null && choice === current.romaji;
+                  const isWrongPick = lastResult !== null && !lastResult.correct && choice === answer;
+                  return (
+                    <button
+                      key={choice}
+                      type="button"
+                      disabled={lastResult !== null}
+                      onClick={() => {
+                        setAnswer(choice);
+                        evaluate(choice);
+                      }}
+                      className={`min-h-12 cursor-pointer rounded-xl border px-4 py-2.5 text-lg font-semibold text-[var(--ink)] transition disabled:cursor-default ${
+                        isRight
+                          ? "border-[var(--success)] bg-[var(--success-soft)]"
+                          : isWrongPick
+                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                            : "border-[var(--line-strong)] bg-[var(--paper)] hover:border-[var(--ink)]"
+                      }`}
+                    >
+                      {choice}
+                    </button>
+                  );
+                })}
+              </div>
+              {lastResult ? (
+                <button type="button" onClick={goNext} className="primary-button mt-3">
+                  Suivant →
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap gap-3">
+              <input
+                ref={inputRef}
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                readOnly={lastResult !== null}
+                placeholder="romaji (ex. ka)"
+                aria-label="Prononciation en romaji"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="min-h-11 min-w-0 flex-1 border border-[var(--line-strong)] bg-[var(--paper)] px-3 py-2 text-lg text-[var(--ink)] outline-none"
+              />
+              <button type="submit" disabled={!lastResult && !answer.trim()} className="primary-button">
+                {lastResult ? "Suivant →" : "Vérifier"}
+              </button>
+            </form>
+          )}
 
           {lastResult ? (
             <p
@@ -237,11 +304,11 @@ export function KanaQuiz() {
                 (<span lang="ja">{lastResult.entry.counterpart}</span> dans l&apos;autre écriture)
               </span>
             </p>
-          ) : (
+          ) : format === "type" ? (
             <p className="mt-2 text-xs text-[var(--muted)]">
               <span className="kbd">Entrée</span> pour vérifier, puis encore pour passer au suivant.
             </p>
-          )}
+          ) : null}
         </div>
       ) : null}
     </section>

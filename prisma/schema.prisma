@@ -176,14 +176,17 @@ model CardExample {
 // Phrase à traduire (français -> japonais) pour un point de grammaire, avec sa
 // traduction de référence. Générée par Claude puis réutilisée sans nouvel appel.
 model GrammarExercise {
-  id        String   @id @default(cuid())
-  pointId   String
-  level     String
-  french    String
-  japanese  String
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  pointId    String
+  level      String
+  french     String
+  japanese   String
+  // Version de la consigne de génération : seules les phrases de la version
+  // actuelle sont proposées (la 1 donnait des phrases trop dures en N5).
+  generation Int      @default(2)
+  createdAt  DateTime @default(now())
 
-  @@index([pointId])
+  @@index([pointId, generation])
 }
 
 // Correction (verdict, explication...) déjà obtenue de Claude pour une

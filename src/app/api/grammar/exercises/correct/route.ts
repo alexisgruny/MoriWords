@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { correctChoice } from "@/lib/grammar/choices";
 import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import {
@@ -58,7 +59,10 @@ export async function POST(request: Request) {
       return Response.json({ error: "Exercice introuvable." }, { status: 404 });
     }
 
-    const correction = isKanjiReadingExerciseId(exerciseId)
+    // QCM : correction locale, jamais de Claude (même pour un mauvais choix).
+    const correction = candidate.format === "choice"
+      ? correctChoice({ exerciseId, reference: exercise.japanese, answer })
+      : isKanjiReadingExerciseId(exerciseId)
       ? correctKanjiReadingAnswer({ reference: exercise.japanese, answer })
       : isKanjiExerciseId(exerciseId)
       ? correctKanjiMeaningAnswer({ reference: exercise.japanese, answer })

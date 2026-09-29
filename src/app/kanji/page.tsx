@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
-import { filterKanji, JLPT_KANJI } from "@/lib/kanji/kanji";
+import { CharacterDialog } from "@/components/character-dialog";
+import { filterKanji, JLPT_KANJI, type KanjiEntry } from "@/lib/kanji/kanji";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import type { DeckSummary } from "@/types/shared";
@@ -30,6 +31,8 @@ export default function KanjiPage() {
 
   const [level, setLevel] = useState<GrammarLevel | "all">("N5");
   const [query, setQuery] = useState("");
+  // Kanji ouvert en grand (ordre des traits animé et tracé).
+  const [opened, setOpened] = useState<KanjiEntry | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const [decks, setDecks] = useState<DeckSummary[]>([]);
@@ -201,12 +204,16 @@ export default function KanjiPage() {
                       className={`token-card mb-0! flex gap-4 ${masteryClass(mastery[entry.kanji])}`}
                     >
                       <MasteryNote stat={mastery[entry.kanji]} />
-                      <span
-                        className="grid h-20 w-20 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-[var(--tint)] text-5xl font-bold text-[var(--ink)]"
+                      <button
+                        type="button"
+                        onClick={() => setOpened(entry)}
+                        aria-label={`${entry.kanji} : voir l'ordre des traits`}
+                        title="Voir l'ordre des traits"
+                        className="grid h-20 w-20 shrink-0 cursor-pointer place-items-center rounded-xl border border-[var(--line)] bg-[var(--tint)] text-5xl font-bold text-[var(--ink)] transition hover:border-[var(--accent)]"
                         lang="ja"
                       >
                         {entry.kanji}
-                      </span>
+                      </button>
 
                       <div className="flex min-w-0 flex-1 flex-col">
                         <div className="flex items-start justify-between gap-2">
@@ -273,6 +280,23 @@ export default function KanjiPage() {
           )}
         </section>
       </div>
+      <CharacterDialog
+        character={opened?.kanji ?? null}
+        details={
+          opened ? (
+            <>
+              <span className="font-semibold text-[var(--ink)]">{opened.meaning}</span>
+              <span className="mt-1 block" lang="ja">
+                {[...opened.onReadings, ...opened.kunReadings].join("・")}
+              </span>
+              <span className="block">
+                {opened.level} · {opened.strokeCount} trait{opened.strokeCount > 1 ? "s" : ""}
+              </span>
+            </>
+          ) : null
+        }
+        onClose={() => setOpened(null)}
+      />
     </main>
   );
 }

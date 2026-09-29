@@ -5,7 +5,8 @@ import { useState } from "react";
 
 import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { FilterChips, SearchField } from "@/components/reference-toolbar";
-import { KANA, KANA_GROUP_LABELS, type KanaGroup, type KanaScript, filterKana } from "@/lib/kana/kana";
+import { CharacterDialog } from "@/components/character-dialog";
+import { KANA, KANA_GROUP_LABELS, type KanaEntry, type KanaGroup, type KanaScript, filterKana } from "@/lib/kana/kana";
 
 const SCRIPT_LABELS: Record<KanaScript, string> = { hiragana: "Hiragana", katakana: "Katakana" };
 const GROUPS: KanaGroup[] = ["base", "dakuten", "combo"];
@@ -21,6 +22,8 @@ export default function KanaPage() {
   const [script, setScript] = useState<KanaScript>("hiragana");
   const [group, setGroup] = useState<KanaGroup | "all">("base");
   const [query, setQuery] = useState("");
+  // Kana ouvert en grand (ordre des traits animé et tracé).
+  const [opened, setOpened] = useState<KanaEntry | null>(null);
 
   const results = filterKana(KANA, script, group, query);
   const mastery = useMastery("kana");
@@ -83,10 +86,13 @@ export default function KanaPage() {
           {results.length > 0 ? (
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-8">
               {results.map((entry) => (
-                <div
+                <button
+                  type="button"
                   key={entry.kana}
-                  title={masteryLabel(mastery[entry.kana])}
-                  className={`token-card mb-0! flex flex-col items-center gap-1 py-3! text-center ${masteryClass(mastery[entry.kana])}`}
+                  onClick={() => setOpened(entry)}
+                  title={masteryLabel(mastery[entry.kana]) ?? "Voir l'ordre des traits"}
+                  aria-label={`${entry.kana} (${entry.romaji}) : voir l'ordre des traits`}
+                  className={`token-card mb-0! flex cursor-pointer flex-col items-center gap-1 py-3! text-center transition hover:border-[var(--accent)] ${masteryClass(mastery[entry.kana])}`}
                 >
                   <span className="text-4xl font-bold leading-tight text-[var(--ink)]" lang="ja">
                     {entry.kana}
@@ -98,7 +104,7 @@ export default function KanaPage() {
                   <span className="text-xs text-[var(--muted)]" lang="ja" title={SCRIPT_LABELS[script === "hiragana" ? "katakana" : "hiragana"]}>
                     {entry.counterpart}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
@@ -120,6 +126,18 @@ export default function KanaPage() {
           )}
         </section>
       </div>
+      <CharacterDialog
+        character={opened?.kana ?? null}
+        details={
+          opened ? (
+            <>
+              <span className="font-semibold text-[var(--accent-dark)]">{opened.romaji}</span> ·{" "}
+              {SCRIPT_LABELS[opened.script]} · <span lang="ja">{opened.counterpart}</span>
+            </>
+          ) : null
+        }
+        onClose={() => setOpened(null)}
+      />
     </main>
   );
 }

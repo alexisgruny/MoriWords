@@ -40,16 +40,60 @@ const generatedExercisesSchema = z.object({
     .min(1),
 });
 
+// Version actuelle de la consigne (voir GrammarExercise.generation).
+export const CURRENT_EXERCISE_GENERATION = 2;
+
+const LEVEL_ORDER: GrammarLevel[] = ["N5", "N4", "N3", "N2", "N1"];
+
+// Ce qu'un élève de chaque niveau peut traduire : la version 1 de la consigne
+// (« phrase courte ») donnait souvent des phrases trop dures en N5.
+const LEVEL_GUIDELINES: Record<GrammarLevel, string> = {
+  N5: "très courte (4 à 8 mots en français), une seule proposition, sans subordonnée, vocabulaire de débutant absolu (famille, école, nourriture, boissons, heures, jours, lieux et objets du quotidien), en japonais à la forme polie です/ます",
+  N4: "courte (5 à 10 mots en français), au plus deux propositions simples, vocabulaire courant de niveau N5-N4",
+  N3: "de longueur moyenne (au plus 14 mots en français), vocabulaire de niveau N3 ou plus facile",
+  N2: "naturelle (au plus 18 mots en français), vocabulaire de niveau N2 ou plus facile",
+  N1: "naturelle (au plus 20 mots en français), vocabulaire de niveau N1 ou plus facile",
+};
+
+// Longueur maximale de la phrase japonaise de référence (sans ponctuation).
+const MAX_JAPANESE_LENGTH: Record<GrammarLevel, number> = { N5: 20, N4: 28, N3: 36, N2: 45, N1: 55 };
+
+const KANJI_LEVELS = new Map(JLPT_KANJI.map((entry) => [entry.kanji, entry.level as GrammarLevel]));
+
+// Contrôle objectif d'une phrase générée : pas trop longue, et chaque kanji
+// au plus un niveau au-dessus du point (私 est N4 mais courant dès le N5) ;
+// un kanji hors des listes JLPT est refusé.
+export function fitsGrammarLevel(japanese: string, level: GrammarLevel): boolean {
+  const text = japanese.replace(/[\s。、！？!?「」『』…・]/g, "");
+
+  if (text.length > MAX_JAPANESE_LENGTH[level]) {
+    return false;
+  }
+
+  const maxIndex = LEVEL_ORDER.indexOf(level) + 1;
+
+  return [...text]
+    .filter((char) => /\p{Script=Han}/u.test(char))
+    .every((char) => {
+      const kanjiLevel = KANJI_LEVELS.get(char);
+      return kanjiLevel !== undefined && LEVEL_ORDER.indexOf(kanjiLevel) <= maxIndex;
+    });
+}
+
 // Demande à Claude des phrases françaises variées (avec leur traduction
 // japonaise de référence) qui obligent à utiliser le point de grammaire.
+// Quelques phrases de plus que nécessaire : celles trop dures pour le niveau
+// sont écartées (fitsGrammarLevel).
 export async function generateGrammarExercises(
   point: GrammarPoint,
   count = GENERATED_EXERCISES_PER_POINT,
 ): Promise<Array<{ french: string; japanese: string }>> {
+  const level = point.level as GrammarLevel;
+  const kanjiLimit = LEVEL_ORDER[Math.min(LEVEL_ORDER.indexOf(level) + 1, LEVEL_ORDER.length - 1)];
   const payload = await generateJsonFromClaude({
-    prompt: `Écris ${count} phrases en français à faire traduire en japonais pour s'entraîner sur ce point de grammaire japonaise : ${point.pattern} (${point.meaning}), niveau JLPT ${point.level}. Formation : ${point.formation}. Chaque phrase doit être courte, naturelle, avec un vocabulaire du niveau ${point.level} ou plus facile, se situer dans un contexte différent (vie quotidienne, école, voyage, famille, etc.) et nécessiter ce point de grammaire pour être traduite. Pour chacune, donne la traduction japonaise de référence (japonais naturel, poli, utilisant ce point). Réponds uniquement en JSON avec la structure suivante : {"exercises":[{"french":"...","japanese":"..."}]}.`,
+    prompt: `Écris ${count + 4} phrases en français à faire traduire en japonais par un élève de niveau JLPT ${level}, pour s'entraîner sur ce point de grammaire : ${point.pattern} (${point.meaning}). Formation : ${point.formation}. Chaque phrase doit être ${LEVEL_GUIDELINES[level]}, se situer dans un contexte différent et nécessiter ce point de grammaire. Pour chacune, donne la traduction japonaise de référence, naturelle, utilisant ce point, où seuls les kanji de niveau ${level} ou ${kanjiLimit} sont utilisés (les autres mots en hiragana). Réponds uniquement en JSON avec la structure suivante : {"exercises":[{"french":"...","japanese":"..."}]}.`,
     schema: generatedExercisesSchema,
-    maxTokens: 1500,
+    maxTokens: 1800,
     timeoutMs: 30_000,
     createError: (message) => new ExerciseServiceError(message),
     messages: {
@@ -62,10 +106,10 @@ export async function generateGrammarExercises(
     },
   });
 
-  return payload.exercises.slice(0, count).map((exercise) => ({
-    french: exercise.french.trim(),
-    japanese: exercise.japanese.trim(),
-  }));
+  return payload.exercises
+    .map((exercise) => ({ french: exercise.french.trim(), japanese: exercise.japanese.trim() }))
+    .filter((exercise) => fitsGrammarLevel(exercise.japanese, level))
+    .slice(0, count);
 }
 
 type ExerciseGenerator = typeof generateGrammarExercises;
@@ -89,15 +133,16 @@ type PoolEntry = { id: string; french: string };
 // fois qu'un point est travaillé (aucune phrase en base), on en génère une
 // dizaine ; si la génération échoue, on se rabat sur les exemples du référentiel.
 async function getPointPool(point: GrammarPoint, generate: ExerciseGenerator): Promise<PoolEntry[]> {
-  let stored = await prisma.grammarExercise.findMany({ where: { pointId: point.id } });
+  const current = { pointId: point.id, generation: CURRENT_EXERCISE_GENERATION };
+  let stored = await prisma.grammarExercise.findMany({ where: current });
 
   if (stored.length === 0) {
     try {
       const generated = await generate(point);
       await prisma.grammarExercise.createMany({
-        data: generated.map((exercise) => ({ pointId: point.id, level: point.level, ...exercise })),
+        data: generated.map((exercise) => ({ ...current, level: point.level, ...exercise })),
       });
-      stored = await prisma.grammarExercise.findMany({ where: { pointId: point.id } });
+      stored = await prisma.grammarExercise.findMany({ where: current });
     } catch (error) {
       console.error("Grammar exercise generation failed:", error);
     }

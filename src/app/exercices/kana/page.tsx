@@ -7,10 +7,11 @@ import { KanaQuiz } from "@/components/kana-quiz";
 import { KanaWritingQuiz } from "@/components/kana-writing-quiz";
 import { FilterChips } from "@/components/reference-toolbar";
 
-type Mode = "read" | "write";
+type Mode = "read" | "choice" | "write";
 
 const MODES: Array<{ value: Mode; label: string }> = [
   { value: "read", label: "Lire" },
+  { value: "choice", label: "QCM" },
   { value: "write", label: "Écrire" },
 ];
 
@@ -39,7 +40,7 @@ export default function KanaExercisePage() {
           </div>
         </header>
 
-        {mode === "read" ? <KanaQuiz /> : <KanaWritingQuiz />}
+        {mode === "write" ? <KanaWritingQuiz /> : <KanaQuiz key={mode} format={mode === "choice" ? "choice" : "type"} />}
       </div>
     </main>
   );

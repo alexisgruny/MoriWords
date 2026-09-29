@@ -254,3 +254,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       animCJK LGPL + Make Me a Hanzi Arphic PL, licences copiees) ; les 15
       hiragana a boucle decoupes pour l'animation sont refusionnes. Les
       ecritures comptent dans les couleurs des pages Kana et Kanji.
+58    Phrases de grammaire adaptees au niveau : consigne par niveau (N5 : une
+      proposition, 4-8 mots, forme polie), filtre fitsGrammarLevel (longueur
+      max, kanji au plus un niveau au-dessus), GrammarExercise.generation = 2
+      (les anciennes phrases trop dures ne sont plus proposees). QCM (4 choix,
+      leurres tires des donnees du site, corrige sans Claude) pour grammaire,
+      conjugaison (autres formes du meme verbe), kanji sens et lecture, mon
+      vocabulaire et kana ; touches 1-4. Ecriture plus tolerante (leniency
+      1.8). Fenetre au clic sur un kana/kanji des pages de reference : ordre
+      des traits anime en boucle et onglet « Tracer » (non compte).

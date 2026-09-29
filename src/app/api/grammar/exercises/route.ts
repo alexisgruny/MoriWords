@@ -8,6 +8,7 @@ import {
   pickGrammarExercise,
   pickKanjiExercise,
 } from "@/lib/grammar/exercises";
+import { buildChoices } from "@/lib/grammar/choices";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 
 // La première phrase d'un point de grammaire peut déclencher une génération Claude.
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
     const excludeIds = Array.isArray(candidate.excludeIds)
       ? candidate.excludeIds.filter((id): id is string => typeof id === "string")
       : [];
+    // "choice" : QCM, les choix (bonne réponse comprise) sont renvoyés avec l'exercice.
+    const isChoice = candidate.format === "choice";
     const focusIn = Array.isArray(candidate.focusIn)
       ? candidate.focusIn.filter((focus): focus is string => typeof focus === "string")
       : undefined;
@@ -82,6 +85,10 @@ export async function POST(request: Request) {
           : messages[source];
 
       return Response.json({ exercise: null, message });
+    }
+
+    if (isChoice) {
+      return Response.json({ exercise: { ...exercise, choices: await buildChoices(exercise.id, user.id) } });
     }
 
     return Response.json({ exercise });
