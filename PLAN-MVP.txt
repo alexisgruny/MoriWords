@@ -305,3 +305,11 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       avec ponctuation, furigana au-dessus des kanji seulement (pas de
       l'okurigana), mots a toucher pour leur sens, case « Lectures » pour
       masquer les furigana (src/lib/tokenizer/furigana.ts).
+64    App installable (PWA) : manifeste (src/app/manifest.ts, plein ecran,
+      raccourcis Reviser / Analyser), icones generees depuis le sceau 森
+      (192, 512, maskable, iPhone 180, onglet ; favicon Next par defaut
+      retire), meta iPhone (appleWebApp) et couleur de barre par theme.
+      Bouton « Installer l'app » (menu du compte, Mon compte) : invite du
+      navigateur sur Android/Chrome, marche a suivre sur iPhone. Pas de
+      service worker (inutile pour installer ; mode hors ligne a faire plus
+      tard si besoin). Diagnostic d'installabilite de Chrome : aucune erreur.

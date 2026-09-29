@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { InstallAppSection } from "@/components/install-app";
 import { readApiError } from "@/lib/api-error";
 import { DELETE_ACCOUNT_CONFIRMATION } from "@/lib/auth/account";
 import { authClient } from "@/lib/auth/auth-client";
@@ -65,6 +66,8 @@ export default function AccountPage() {
             </dl>
           ) : null}
         </section>
+
+        <InstallAppSection />
 
         <section className="panel">
           <h2 className="text-[var(--ink)]">Mes données</h2>

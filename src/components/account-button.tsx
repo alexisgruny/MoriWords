@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { InstallAppMenuItem } from "@/components/install-app";
 import { authClient } from "@/lib/auth/auth-client";
 
 // Bouton de compte de la barre de navigation : "Connexion" si personne
@@ -92,6 +93,7 @@ export function AccountButton() {
           >
             Mon compte
           </Link>
+          <InstallAppMenuItem onDone={() => setIsOpen(false)} />
           <button
             type="button"
             role="menuitem"

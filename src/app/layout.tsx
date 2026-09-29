@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito, Noto_Sans_JP } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
@@ -25,6 +25,17 @@ const notoSansJp = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "MoriWords",
   description: "Analyse et mémorisation du japonais, mot par mot.",
+  // Installée sur l'écran d'accueil d'un iPhone : plein écran, avec ce nom
+  // sous l'icône (src/app/apple-icon.png).
+  appleWebApp: { capable: true, title: "MoriWords", statusBarStyle: "default" },
+};
+
+// Couleur de la barre du navigateur / du système, selon le thème.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#171512" },
+  ],
 };
 
 // Lit le thème choisi explicitement (localStorage) avant le premier rendu,
