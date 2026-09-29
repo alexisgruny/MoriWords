@@ -13,7 +13,7 @@ export function costUsd(inputTokens: number, outputTokens: number): number {
 }
 
 // L'administration est réservée au compte du propriétaire (OWNER_EMAIL).
-export function isAdminEmail(email: string, env: Partial<Record<"OWNER_EMAIL", string>> = process.env): boolean {
+export function isAdminEmail(email: string, env: Record<string, string | undefined> = process.env): boolean {
   const ownerEmail = env.OWNER_EMAIL?.trim().toLowerCase();
   return Boolean(ownerEmail) && email.trim().toLowerCase() === ownerEmail;
 }
