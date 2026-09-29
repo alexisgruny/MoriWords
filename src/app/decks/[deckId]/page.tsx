@@ -562,7 +562,7 @@ export default function DeckTrainingPage() {
                         );
                       })}
                     </div>
-                    <p className="w-full text-xs text-[var(--muted)]">
+                    <p className="keyboard-hint w-full text-xs text-[var(--muted)]">
                       Raccourci clavier : <span className="kbd">1</span> à <span className="kbd">4</span>.
                     </p>
                   </>

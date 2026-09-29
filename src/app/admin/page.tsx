@@ -14,7 +14,7 @@ const ACTION_LABELS: Record<string, string> = {
   "translate-missing": "Traduction des mots sans sens",
   exercise: "Génération d'exercices",
   correction: "Correction d'exercice",
-  "anime-quote": "Citation d'anime",
+  "anime-quote": "Réplique d'anime",
   "daily-dialogue": "Dialogue du quotidien",
   "literary-excerpt": "Extrait littéraire",
   "news-summary": "Actu simplifiée",

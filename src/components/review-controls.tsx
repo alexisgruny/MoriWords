@@ -36,7 +36,7 @@ export function GradeButtons({
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs text-[var(--muted)]">
+      <p className="keyboard-hint mt-2 text-xs text-[var(--muted)]">
         Raccourci clavier : <span className="kbd">0</span> à <span className="kbd">5</span>.
       </p>
     </div>

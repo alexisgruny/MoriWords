@@ -13,19 +13,21 @@ import type { TokenResult } from "@/lib/tokenizer/types";
 import type { DeckSummary, SourceTextSummary, TranslationResult } from "@/types/shared";
 
 // Texte affiché par défaut dans la zone de saisie, au premier chargement.
-const starterText = "私は毎朝コーヒーを飲みながら、日本語を勉強しています。";
+// Exemple prérempli dans le ton d'une réplique d'anime (niveau N5-N4), pour
+// qu'un nouveau compte puisse cliquer sur "Analyser" sans rien chercher.
+const starterText = "明日も一緒に頑張ろう！絶対にあきらめないで。";
 
 // Sources de contenu généré disponibles en un clic, chacune backée par
 // POST /api/source-texts/<key> (voir src/lib/feeds/).
 const GENERATED_SOURCES = [
-  { key: "anime-quote", label: "Citation d'anime" },
+  { key: "anime-quote", label: "Réplique d'anime" },
   { key: "news-summary", label: "Actu simplifiée" },
   { key: "news-rss", label: "Actu nippon.com" },
   { key: "daily-dialogue", label: "Dialogue quotidien" },
   { key: "literary-excerpt", label: "Extrait littéraire" },
 ] as const;
 
-const STEPS = ["Colle ou génère un texte", "Choisis les mots", "Traduis-les ou garde-les dans un deck"];
+const STEPS = ["Colle une réplique ou un texte", "Touche les mots", "Garde-les en fiches de révision"];
 
 // Page d'accueil : coller un texte japonais, l'analyser mot par mot, le
 // traduire et ajouter des mots à un deck. C'est le cœur du parcours d'apprentissage.
@@ -954,9 +956,10 @@ export default function Home() {
 
         <header className="mb-8 fade-in-up">
           <p className="eyebrow mb-1">MoriWords</p>
-          <h1 className="text-[var(--ink)]">Analyser un texte</h1>
+          <h1 className="text-[var(--ink)]">Colle une réplique, comprends chaque mot</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted)]">
-            Colle du japonais ou génère un texte, puis garde dans un deck les mots qui t&apos;intéressent.
+            Une réplique de ton anime, une bulle de manga, des paroles de chanson : colle-la, touche les mots
+            pour les comprendre en français, et garde ceux que tu veux revoir.
           </p>
           <ol className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Étapes">
             {STEPS.map((label, index) => {
@@ -987,7 +990,7 @@ export default function Home() {
               id="japanese-text"
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="日本語の文章をここに貼り付けてください。"
+              placeholder="Colle ici ta réplique en japonais…"
               maxLength={MAX_ANALYSIS_TEXT_LENGTH}
               className="min-h-56 flex-1 resize-y border border-[var(--ink)] bg-[var(--paper)] p-4 text-xl leading-relaxed text-[var(--ink)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
               lang="ja"

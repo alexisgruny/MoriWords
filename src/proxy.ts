@@ -2,8 +2,9 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages accessibles sans compte : référentiels (sans données personnelles
-// ni appel à Claude), pages de connexion et pages légales.
+// ni appel à Claude), accueil public, pages de connexion et pages légales.
 const PUBLIC_PATHS = [
+  "/bienvenue",
   "/connexion",
   "/inscription",
   "/kana",
@@ -28,6 +29,11 @@ export function proxy(request: NextRequest) {
 
   if (hasSession && matches(pathname, AUTH_PATHS)) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Un visiteur sans compte découvre d'abord le site, pas un formulaire.
+  if (!hasSession && pathname === "/") {
+    return NextResponse.redirect(new URL("/bienvenue", request.url));
   }
 
   if (!hasSession && !matches(pathname, PUBLIC_PATHS)) {

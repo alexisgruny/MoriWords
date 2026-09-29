@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 
 import { AccountButton } from "@/components/account-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { authClient } from "@/lib/auth/auth-client";
 
 // Les pages du site, regroupées pour le menu mobile (sur grand écran elles
-// sont simplement alignées dans cet ordre).
-const groups = [
+// sont simplement alignées dans cet ordre). isPublic : visible sans compte
+// (même liste que PUBLIC_PATHS dans src/proxy.ts).
+const allGroups: Array<{ title: string; links: Array<{ href: string; label: string; isPublic?: boolean }> }> = [
   {
     title: "Apprendre",
     links: [
@@ -21,11 +23,11 @@ const groups = [
   {
     title: "Référence",
     links: [
-      { href: "/kana", label: "Kana" },
+      { href: "/kana", label: "Kana", isPublic: true },
       { href: "/vocabulaire", label: "Vocabulaire" },
-      { href: "/grammaire", label: "Grammaire" },
-      { href: "/conjugaison", label: "Conjugaison" },
-      { href: "/kanji", label: "Kanji" },
+      { href: "/grammaire", label: "Grammaire", isPublic: true },
+      { href: "/conjugaison", label: "Conjugaison", isPublic: true },
+      { href: "/kanji", label: "Kanji", isPublic: true },
     ],
   },
   {
@@ -34,7 +36,14 @@ const groups = [
   },
 ];
 
-const links = groups.flatMap((group) => group.links);
+// Sans compte, seuls les liens publics : les autres renverraient tous vers
+// la page de connexion.
+const publicGroups = [
+  { title: "Découvrir", links: [{ href: "/bienvenue", label: "Accueil" }] },
+  ...allGroups
+    .map((group) => ({ ...group, links: group.links.filter((link) => link.isPublic) }))
+    .filter((group) => group.links.length > 0),
+];
 
 function isActiveLink(href: string, pathname: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -47,6 +56,11 @@ function isActiveLink(href: string, pathname: string): boolean {
 export default function Nav() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+  // Pendant le chargement de la session, la navigation complète (la plupart
+  // des visites d'une page privée viennent d'un compte connecté).
+  const groups = isPending || session ? allGroups : publicGroups;
+  const links = groups.flatMap((group) => group.links);
 
   // Referme le menu après une navigation, pendant le rendu plutôt que dans
   // un effet (motif recommandé par React pour un état dérivé d'une valeur).
@@ -112,12 +126,14 @@ export default function Nav() {
             onClick={() => setIsMenuOpen((open) => !open)}
             aria-expanded={isMenuOpen}
             aria-controls="mobile-menu"
-            className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-3.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--ink)] xl:hidden"
+            className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--paper)] px-3.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--ink)] max-sm:px-2.5 xl:hidden"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               {isMenuOpen ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
             </svg>
-            <span>{isMenuOpen ? "Fermer" : (activeLabel ?? "Menu")}</span>
+            {/* Sur téléphone, icône seule : avec le bouton Connexion, le libellé
+                faisait déborder la barre (390 px). */}
+            <span className="max-sm:sr-only">{isMenuOpen ? "Fermer" : (activeLabel ?? "Menu")}</span>
           </button>
         </div>
       </div>

@@ -761,3 +761,12 @@ details[open] > summary ~ * {
 .font-display {
   font-weight: 800;
 }
+
+/* Écran tactile sans clavier (Léa révise dans le métro) : les raccourcis
+   clavier ne servent à rien et encombrent l'écran. */
+@media (hover: none) and (pointer: coarse) {
+  .kbd,
+  .keyboard-hint {
+    display: none;
+  }
+}

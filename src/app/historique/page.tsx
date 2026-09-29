@@ -11,7 +11,7 @@ const PAGE_SIZE = 12;
 // Libellés lisibles pour l'origine d'un texte, affichés en petit badge.
 const ORIGIN_LABELS: Record<string, string> = {
   manual: "Collé à la main",
-  "anime-quote": "Citation d'anime",
+  "anime-quote": "Réplique d'anime",
   "news-summary": "Actualité simplifiée",
   "nippon-news-rss": "Actualité réelle",
   "daily-dialogue": "Dialogue quotidien",

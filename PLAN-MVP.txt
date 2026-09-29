@@ -229,3 +229,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 50    RGPD : Mon compte (export, suppression), confidentialite, mentions legales.
 51    Page /admin : cout Claude par jour, par action et par compte.
 52    Retrait du mode proprietaire (remplace par les comptes).
+53    Adaptation aux personas (PERSONAS.txt) : accueil public /bienvenue avec
+      demo figee, textes orientes « colle une replique d'anime », navigation
+      publique sans compte, barre mobile sans debordement, raccourcis
+      clavier masques sur ecran tactile.
