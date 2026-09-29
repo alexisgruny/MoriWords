@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
-import { StreakBanner } from "@/components/streak-banner";
+import { TodayPanel } from "@/components/today-panel";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
@@ -952,7 +952,7 @@ export default function Home() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <StreakBanner />
+        <TodayPanel />
 
         <header className="mb-8 fade-in-up">
           <p className="eyebrow mb-1">MoriWords</p>

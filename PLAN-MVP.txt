@@ -233,3 +233,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       demo figee, textes orientes « colle une replique d'anime », navigation
       publique sans compte, barre mobile sans debordement, raccourcis
       clavier masques sur ecran tactile.
+54    Bloc « Aujourd'hui » en haut de l'accueil (GET /api/today) : cartes a
+      revoir et duree estimee, serie, mots, mots bien ancres, revisions du
+      jour ; message de premiere fiche pour un nouveau compte.
