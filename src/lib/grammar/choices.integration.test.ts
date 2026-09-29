@@ -17,6 +17,10 @@ import { POST as correct } from "@/app/api/grammar/exercises/correct/route";
 import { buildChoices, correctChoice } from "./choices";
 import { grammarPoints } from "./points";
 
+// La première découpe en mots charge le dictionnaire japonais (kuromoji) :
+// plusieurs secondes quand toute la suite de tests tourne en parallèle.
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeAll(async () => {
   Object.assign(testUser, await createTestUser("choices"));
 });
@@ -44,7 +48,27 @@ describe("buildChoices", () => {
     const choices = (await buildChoices(`conj:${form.id}:${index}`, testUser.id))!;
 
     expect(choices).toContain(form.examples[index].conjugated);
-    expect(choices.filter((choice) => choice.startsWith("食べ")).length).toBeGreaterThanOrEqual(3);
+    expect(choices).toHaveLength(4);
+    expect(choices.every((choice) => choice.startsWith("食べ"))).toBe(true);
+  });
+
+  it("always offers exactly 4 distinct choices for every conjugation example", async () => {
+    for (const form of conjugationForms) {
+      for (let index = 0; index < form.examples.length; index += 1) {
+        const choices = (await buildChoices(`conj:${form.id}:${index}`, testUser.id))!;
+        expect(new Set(choices).size, `${form.id}:${index} ${choices.join(" / ")}`).toBe(4);
+        expect(choices, form.id).toContain(form.examples[index].conjugated);
+      }
+    }
+  });
+
+  it("keeps the same word in all 4 choices even for a word seen in a single form", async () => {
+    const form = conjugationForms.find((candidate) => candidate.examples.some((example) => example.base === "知る"))!;
+    const index = form.examples.findIndex((example) => example.base === "知る");
+    const choices = (await buildChoices(`conj:${form.id}:${index}`, testUser.id))!;
+
+    expect(choices).toHaveLength(4);
+    expect(choices.every((choice) => choice.startsWith("知"))).toBe(true);
   });
 
   it("offers one reading of the kanji and readings of other kanji in the same script", async () => {

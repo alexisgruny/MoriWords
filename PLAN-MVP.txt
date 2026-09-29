@@ -263,3 +263,11 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       vocabulaire et kana ; touches 1-4. Ecriture plus tolerante (leniency
       1.8). Fenetre au clic sur un kana/kanji des pages de reference : ordre
       des traits anime en boucle et onglet « Tracer » (non compte).
+59    Vocabulaire des phrases de grammaire limite au niveau : en N5/N4 la
+      consigne donne la liste des mots autorises, et chaque phrase (generee
+      ou ecrite a la main) est decoupee en mots (kuromoji) : tout mot hors
+      liste du niveau est refuse (compteurs et quelques noms propres admis),
+      generation = 3. Classement JLPT corrige (entrees groupees « いい; よい »
+      depliees, niveau le plus facile garde). QCM de conjugaison : les 4
+      choix sont le meme mot a d'autres formes (conjugueur local
+      src/lib/conjugation/conjugate.ts).

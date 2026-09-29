@@ -16,6 +16,7 @@ import { conjugationForms } from "@/lib/conjugation/forms";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import {
+  CURRENT_EXERCISE_GENERATION,
   correctKanjiMeaningAnswer,
   correctKanjiReadingAnswer,
   correctTranslation,
@@ -30,6 +31,10 @@ import {
   resolveExercise,
 } from "./exercises";
 import { grammarPoints } from "./points";
+
+// La première découpe en mots charge le dictionnaire japonais (kuromoji) :
+// plusieurs secondes quand toute la suite de tests tourne en parallèle.
+vi.setConfig({ testTimeout: 30_000 });
 
 const testPoint = grammarPoints.find((point) => point.id === "n5-wa-desu")!;
 const deckIdsToCleanUp: string[] = [];
@@ -63,7 +68,8 @@ afterAll(async () => {
 describe("pickGrammarExercise", () => {
   it("generates and stores exercises for a point that has none yet, then reuses them", async () => {
     generateJsonFromClaudeMock.mockResolvedValue({
-      exercises: [{ french: "Je suis japonais.", japanese: "私は日本人です。" }],
+      // Phrase N5 valide (fitsGrammarLevel écarte les phrases hors niveau).
+      exercises: [{ french: "Je suis étudiant.", japanese: "私は学生です。" }],
     });
 
     const staticIds = testPoint.examples.map((_, index) => `static:${testPoint.id}:${index}`);
@@ -78,6 +84,7 @@ describe("pickGrammarExercise", () => {
         pointId: point.id,
         level: point.level,
         french: "(placeholder de test, déjà vu)",
+        generation: CURRENT_EXERCISE_GENERATION,
         japanese: "（プレースホルダー）",
       })),
     });

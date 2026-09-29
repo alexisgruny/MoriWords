@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/prisma";
-import { classifyDifficulty } from "@/lib/difficulty/classify";
+import { WORD_LEVELS, classifyDifficulty } from "@/lib/difficulty/classify";
+import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
+import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import { generateJsonFromClaude } from "@/lib/feeds/claude-json-generator";
 import { shuffle } from "@/lib/shuffle";
 
@@ -40,8 +42,10 @@ const generatedExercisesSchema = z.object({
     .min(1),
 });
 
-// Version actuelle de la consigne (voir GrammarExercise.generation).
-export const CURRENT_EXERCISE_GENERATION = 2;
+// Version actuelle de la consigne (voir GrammarExercise.generation) : 3 =
+// vocabulaire limité aux listes JLPT du niveau (la 2 laissait passer des mots
+// hors niveau comme スプーン ou ワンピース en N5).
+export const CURRENT_EXERCISE_GENERATION = 3;
 
 const LEVEL_ORDER: GrammarLevel[] = ["N5", "N4", "N3", "N2", "N1"];
 
@@ -60,24 +64,95 @@ const MAX_JAPANESE_LENGTH: Record<GrammarLevel, number> = { N5: 20, N4: 28, N3: 
 
 const KANJI_LEVELS = new Map(JLPT_KANJI.map((entry) => [entry.kanji, entry.level as GrammarLevel]));
 
-// Contrôle objectif d'une phrase générée : pas trop longue, et chaque kanji
-// au plus un niveau au-dessus du point (私 est N4 mais courant dès le N5) ;
-// un kanji hors des listes JLPT est refusé.
-export function fitsGrammarLevel(japanese: string, level: GrammarLevel): boolean {
+// Mots-outils (particules, auxiliaires comme ます/です, ponctuation) : leur
+// niveau ne compte pas, c'est le point de grammaire qui les introduit.
+const FUNCTION_WORD_CATEGORIES = new Set(["助動詞", "助詞", "記号", "フィラー"]);
+
+const tokenizer = new JapaneseTokenizer();
+
+// Noms propres absents des listes JLPT mais présents dès les premières leçons.
+const BEGINNER_PROPER_NOUNS = ["日本", "日本語", "東京", "フランス", "フランス語"];
+
+// Vocabulaire autorisé pour les niveaux débutants, donné à Claude dans la
+// consigne : un mot inconnu reste illisible même écrit en hiragana.
+export function allowedVocabulary(level: GrammarLevel): string[] | null {
+  const levels = level === "N5" ? ["N5"] : level === "N4" ? ["N5", "N4"] : null;
+  return levels
+    ? [...Object.keys(WORD_LEVELS).filter((word) => levels.includes(WORD_LEVELS[word])), ...BEGINNER_PROPER_NOUNS]
+    : null;
+}
+
+// Niveau le plus facile trouvé pour un mot : sa forme de base, ou sa forme
+// écrite (ください est N5 même si sa base くださる ne l'est pas).
+function wordLevelIndex(token: { surface: string; baseForm: string; reading?: string; partOfSpeech: string }): number | null {
+  if (BEGINNER_PROPER_NOUNS.includes(token.surface)) {
+    return 0;
+  }
+  const levels = [
+    classifyDifficulty(token.baseForm, token.reading, token.partOfSpeech),
+    classifyDifficulty(token.surface, null, token.partOfSpeech),
+  ].filter((value) => value !== "unknown");
+  return levels.length > 0 ? Math.min(...levels.map((value) => LEVEL_ORDER.indexOf(value as GrammarLevel))) : null;
+}
+
+// Contrôle objectif d'une phrase : pas trop longue, chaque kanji au plus un
+// niveau au-dessus du point (私 est N4 mais courant dès le N5), et chaque mot
+// du niveau du point ou plus facile. En N5/N4, un mot absent des listes JLPT
+// est refusé ; au-delà, les listes sont moins complètes, on le tolère.
+const fitCache = new Map<string, boolean>();
+const NUMERAL = /^[0-9０-９一二三四五六七八九十百千万何]+$/;
+
+export async function fitsGrammarLevel(japanese: string, level: GrammarLevel): Promise<boolean> {
+  const key = `${level}:${japanese}`;
+  const cached = fitCache.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const fits = await checkGrammarLevel(japanese, level);
+  fitCache.set(key, fits);
+  return fits;
+}
+
+async function checkGrammarLevel(japanese: string, level: GrammarLevel): Promise<boolean> {
   const text = japanese.replace(/[\s。、！？!?「」『』…・]/g, "");
 
   if (text.length > MAX_JAPANESE_LENGTH[level]) {
     return false;
   }
 
-  const maxIndex = LEVEL_ORDER.indexOf(level) + 1;
+  const levelIndex = LEVEL_ORDER.indexOf(level);
+  const tokens = await tokenizer.tokenize(japanese);
 
-  return [...text]
-    .filter((char) => /\p{Script=Han}/u.test(char))
-    .every((char) => {
-      const kanjiLevel = KANJI_LEVELS.get(char);
-      return kanjiLevel !== undefined && LEVEL_ORDER.indexOf(kanjiLevel) <= maxIndex;
-    });
+  return tokens.every((token, index) => {
+    // Nombre, ou compteur juste après un nombre (七時 : 時 n'est pas ici le
+    // mot とき de niveau N4).
+    const isNumber = NUMERAL.test(token.surface);
+    const isCounter = index > 0 && NUMERAL.test(tokens[index - 1].surface);
+    if (FUNCTION_WORD_CATEGORIES.has(token.partOfSpeech) || isNoiseToken(token) || isNumber || isCounter) {
+      return true;
+    }
+
+    const wordLevel = wordLevelIndex(token);
+    const wordFits = wordLevel === null ? levelIndex >= LEVEL_ORDER.indexOf("N3") : wordLevel <= levelIndex;
+    if (!wordFits) {
+      return false;
+    }
+
+    // Kanji : l'écriture usuelle d'un mot de la liste du niveau est admise
+    // (猫, 一緒 sont des mots N5 même si leurs kanji sont classés plus haut) ;
+    // sinon, chaque kanji au plus un niveau au-dessus du point.
+    const writtenLevels = [WORD_LEVELS[token.surface], WORD_LEVELS[token.baseForm]].filter(Boolean);
+    const isListedSpelling = writtenLevels.some((written) => LEVEL_ORDER.indexOf(written as GrammarLevel) <= levelIndex);
+    return (
+      isListedSpelling ||
+      [...token.surface]
+        .filter((char) => /\p{Script=Han}/u.test(char))
+        .every((char) => {
+          const kanjiLevel = KANJI_LEVELS.get(char);
+          return kanjiLevel !== undefined && LEVEL_ORDER.indexOf(kanjiLevel) <= levelIndex + 1;
+        })
+    );
+  });
 }
 
 // Demande à Claude des phrases françaises variées (avec leur traduction
@@ -90,10 +165,14 @@ export async function generateGrammarExercises(
 ): Promise<Array<{ french: string; japanese: string }>> {
   const level = point.level as GrammarLevel;
   const kanjiLimit = LEVEL_ORDER[Math.min(LEVEL_ORDER.indexOf(level) + 1, LEVEL_ORDER.length - 1)];
+  const vocabulary = allowedVocabulary(level);
+  const vocabularyRule = vocabulary
+    ? ` N'utilise QUE des mots de cette liste (formes conjuguées permises, en plus des particules et de ce point de grammaire), aucun autre mot : ${vocabulary.join("、")}.`
+    : "";
   const payload = await generateJsonFromClaude({
-    prompt: `Écris ${count + 4} phrases en français à faire traduire en japonais par un élève de niveau JLPT ${level}, pour s'entraîner sur ce point de grammaire : ${point.pattern} (${point.meaning}). Formation : ${point.formation}. Chaque phrase doit être ${LEVEL_GUIDELINES[level]}, se situer dans un contexte différent et nécessiter ce point de grammaire. Pour chacune, donne la traduction japonaise de référence, naturelle, utilisant ce point, où seuls les kanji de niveau ${level} ou ${kanjiLimit} sont utilisés (les autres mots en hiragana). Réponds uniquement en JSON avec la structure suivante : {"exercises":[{"french":"...","japanese":"..."}]}.`,
+    prompt: `Écris ${count + 8} phrases en français à faire traduire en japonais par un élève de niveau JLPT ${level}, pour s'entraîner sur ce point de grammaire : ${point.pattern} (${point.meaning}). Formation : ${point.formation}. Chaque phrase doit être ${LEVEL_GUIDELINES[level]}, se situer dans un contexte différent et nécessiter ce point de grammaire. Pour chacune, donne la traduction japonaise de référence, naturelle, utilisant ce point, où seuls les kanji de niveau ${level} ou ${kanjiLimit} sont utilisés (les autres mots en hiragana).${vocabularyRule} Réponds uniquement en JSON avec la structure suivante : {"exercises":[{"french":"...","japanese":"..."}]}.`,
     schema: generatedExercisesSchema,
-    maxTokens: 1800,
+    maxTokens: 2600,
     timeoutMs: 30_000,
     createError: (message) => new ExerciseServiceError(message),
     messages: {
@@ -106,10 +185,13 @@ export async function generateGrammarExercises(
     },
   });
 
-  return payload.exercises
-    .map((exercise) => ({ french: exercise.french.trim(), japanese: exercise.japanese.trim() }))
-    .filter((exercise) => fitsGrammarLevel(exercise.japanese, level))
-    .slice(0, count);
+  const candidates = payload.exercises.map((exercise) => ({
+    french: exercise.french.trim(),
+    japanese: exercise.japanese.trim(),
+  }));
+  const fits = await Promise.all(candidates.map((exercise) => fitsGrammarLevel(exercise.japanese, level)));
+
+  return candidates.filter((_, index) => fits[index]).slice(0, count);
 }
 
 type ExerciseGenerator = typeof generateGrammarExercises;
@@ -148,11 +230,13 @@ async function getPointPool(point: GrammarPoint, generate: ExerciseGenerator): P
     }
   }
 
+  // Les exemples écrits à la main passent le même contrôle de niveau.
+  const staticFits = await Promise.all(point.examples.map((example) => fitsGrammarLevel(example.ja, point.level as GrammarLevel)));
+
   return [
-    ...point.examples.map((example, index) => ({
-      id: `${STATIC_PREFIX}${point.id}:${index}`,
-      french: example.fr,
-    })),
+    ...point.examples
+      .map((example, index) => ({ id: `${STATIC_PREFIX}${point.id}:${index}`, french: example.fr }))
+      .filter((_, index) => staticFits[index]),
     ...stored.map((exercise) => ({ id: exercise.id, french: exercise.french })),
   ];
 }

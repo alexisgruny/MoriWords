@@ -1,17 +1,20 @@
 import { prisma } from "@/lib/db/prisma";
+import { conjugationsOf } from "@/lib/conjugation/conjugate";
 import { conjugationForms } from "@/lib/conjugation/forms";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import { shuffle } from "@/lib/shuffle";
 
 import {
   type Correction,
+  CURRENT_EXERCISE_GENERATION,
+  fitsGrammarLevel,
   KANJI_PREFIX,
   KANJI_READING_PREFIX,
   correctKanjiReadingAnswer,
   normalizeAnswerKey,
   resolveExercise,
 } from "./exercises";
-import { grammarPoints } from "./points";
+import { type GrammarLevel, grammarPoints } from "./points";
 
 // QCM : la bonne réponse et 3 leurres tirés des données du site (jamais de
 // Claude). Les leurres ressemblent à la bonne réponse (même niveau, même
@@ -32,10 +35,22 @@ function pickDistractors(candidates: string[], answer: string, closeTo = answer)
   return shuffle(closest.slice(0, DISTRACTOR_COUNT * 3)).slice(0, DISTRACTOR_COUNT);
 }
 
-function grammarSentencesOfLevel(level: string | null, excludeFocus?: string): string[] {
-  return grammarPoints
-    .filter((point) => (!level || point.level === level) && point.pattern !== excludeFocus)
-    .flatMap((point) => point.examples.map((example) => example.ja));
+// Phrases de grammaire d'un niveau (exemples du référentiel et phrases
+// générées), seulement celles qui passent le contrôle de niveau : un leurre
+// plein de mots inconnus serait éliminé d'office.
+async function grammarSentencesOfLevel(level: string | null, excludeFocus?: string): Promise<string[]> {
+  const points = grammarPoints.filter((point) => (!level || point.level === level) && point.pattern !== excludeFocus);
+  const generated = await prisma.grammarExercise.findMany({
+    where: { pointId: { in: points.map((point) => point.id) }, generation: CURRENT_EXERCISE_GENERATION },
+    select: { japanese: true },
+    take: 200,
+  });
+  const sentences = [...points.flatMap((point) => point.examples.map((example) => example.ja)), ...generated.map((row) => row.japanese)];
+  if (!level) {
+    return sentences;
+  }
+  const fits = await Promise.all(sentences.map((sentence) => fitsGrammarLevel(sentence, level as GrammarLevel)));
+  return sentences.filter((_, index) => fits[index]);
 }
 
 // Choix proposés pour un exercice (bonne réponse comprise, mélangés), ou null
@@ -67,16 +82,18 @@ export async function buildChoices(exerciseId: string, userId: string): Promise<
       answer,
     );
   } else if (exerciseId.startsWith(CONJUGATION_PREFIX)) {
-    // Même verbe à d'autres formes d'abord (食べます / 食べました / 食べて).
-    const base = conjugationForms.flatMap((form) => form.examples).find((example) => example.conjugated === answer)?.base;
-    const sameVerb = conjugationForms.flatMap((form) => form.examples).filter((example) => example.base === base).map((example) => example.conjugated);
-    const sameLevel = conjugationForms
-      .filter((form) => form.level === exercise.level)
-      .flatMap((form) => form.examples.map((example) => example.conjugated));
-    distractors = pickDistractors(sameVerb, answer);
-    if (distractors.length < DISTRACTOR_COUNT) {
-      distractors = [...distractors, ...pickDistractors(sameLevel.filter((value) => !distractors.includes(value)), answer)].slice(0, DISTRACTOR_COUNT);
-    }
+    // Uniquement le même mot à d'autres formes (食べます / 食べない / 食べて) :
+    // avec 4 verbes différents, le sens du verbe suffirait à répondre. Formes
+    // du référentiel, complétées par le conjugueur local.
+    const examples = conjugationForms.flatMap((form) => form.examples);
+    const example = examples.find((candidate) => candidate.conjugated === answer);
+    const sameWord = example
+      ? [
+          ...examples.filter((candidate) => candidate.base === example.base).map((candidate) => candidate.conjugated),
+          ...conjugationsOf(example.base, example.reading),
+        ]
+      : [];
+    distractors = shuffle([...new Set(sameWord)].filter((value) => value !== answer)).slice(0, DISTRACTOR_COUNT);
   } else if (exerciseId.startsWith(EXAMPLE_PREFIX)) {
     // Autres phrases d'exemple des decks de l'utilisateur, sinon de grammaire.
     const own = await prisma.cardExample.findMany({
@@ -85,12 +102,12 @@ export async function buildChoices(exerciseId: string, userId: string): Promise<
       take: 200,
     });
     distractors = pickDistractors(
-      [...own.map((example) => example.japanese), ...grammarSentencesOfLevel(exercise.level)],
+      [...own.map((example) => example.japanese), ...(await grammarSentencesOfLevel(exercise.level))],
       answer,
     );
   } else {
     // Grammaire : phrases d'autres points du même niveau.
-    distractors = pickDistractors(grammarSentencesOfLevel(exercise.level, exercise.focus), answer);
+    distractors = pickDistractors(await grammarSentencesOfLevel(exercise.level, exercise.focus), answer);
   }
 
   return shuffle([answer, ...distractors]);
