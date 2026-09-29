@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { KanjiWritingExercise } from "@/components/kanji-writing-exercise";
 import { FilterChips } from "@/components/reference-toolbar";
 import { TranslationExercise } from "@/components/translation-exercise";
 
-type Mode = "kanji" | "kanji-reading";
+type Mode = "kanji" | "kanji-reading" | "kanji-writing";
 
 const MODES: Array<{ value: Mode; label: string }> = [
   { value: "kanji", label: "Kanji → français" },
   { value: "kanji-reading", label: "Kanji → lecture" },
+  { value: "kanji-writing", label: "Écrire le kanji" },
 ];
 
 export default function KanjiExercisePage() {
@@ -39,7 +41,7 @@ export default function KanjiExercisePage() {
         </header>
 
         {/* key : changer de sens repart d'une session neuve. */}
-        <TranslationExercise key={mode} source={mode} />
+        {mode === "kanji-writing" ? <KanjiWritingExercise /> : <TranslationExercise key={mode} source={mode} />}
       </div>
     </main>
   );

@@ -323,7 +323,15 @@ export async function resolveExercise(
   return { french: stored.french, japanese: stored.japanese, focus: point?.pattern ?? "", level: stored.level };
 }
 
-export type ExerciseSource = "grammar" | "conjugation" | "kanji" | "kanji-reading" | "examples" | "kana";
+export type ExerciseSource =
+  | "grammar"
+  | "conjugation"
+  | "kanji"
+  | "kanji-reading"
+  | "kanji-writing"
+  | "examples"
+  | "kana"
+  | "kana-writing";
 
 // Déduit le type d'exercice à partir de son identifiant (même logique que
 // resolveExercise), pour l'enregistrer dans les statistiques de progression.

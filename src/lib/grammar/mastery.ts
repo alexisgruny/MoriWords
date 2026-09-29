@@ -12,9 +12,9 @@ export const MASTERY_KINDS: MasteryKind[] = ["kana", "kanji", "grammar", "conjug
 export type MasteryStat = { total: number; correct: number };
 
 const SOURCES: Record<MasteryKind, ExerciseSource[]> = {
-  kana: ["kana"],
-  // Les deux sens de l'exercice (sens et lecture) comptent pour le kanji.
-  kanji: ["kanji", "kanji-reading"],
+  // Lire et écrire comptent tous les deux pour un kana ou un kanji.
+  kana: ["kana", "kana-writing"],
+  kanji: ["kanji", "kanji-reading", "kanji-writing"],
   grammar: ["grammar"],
   conjugation: ["conjugation"],
 };

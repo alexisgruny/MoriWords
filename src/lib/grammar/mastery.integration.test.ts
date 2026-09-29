@@ -11,7 +11,7 @@ import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import { POST as recordKanaAttempt } from "@/app/api/exercise-attempts/route";
 import { getMastery } from "./mastery";
 
-const kana = (body: unknown) =>
+const record = (body: unknown) =>
   recordKanaAttempt(new Request("http://localhost/api/exercise-attempts", { method: "POST", body: JSON.stringify(body) }));
 
 beforeAll(async () => {
@@ -25,11 +25,14 @@ afterAll(async () => {
 
 describe("getMastery", () => {
   it("records kana answers and counts them per kana, refusing unknown kana", async () => {
-    expect((await kana({ kana: "か", correct: true })).status).toBe(201);
-    expect((await kana({ kana: "か", correct: false })).status).toBe(201);
-    expect((await kana({ kana: "x", correct: true })).status).toBe(400);
-    expect((await kana({ kana: "か" })).status).toBe(400);
+    expect((await record({ source: "kana", focus: "か", correct: true })).status).toBe(201);
+    expect((await record({ source: "kana-writing", focus: "か", correct: false })).status).toBe(201);
+    expect((await record({ source: "kana", focus: "x", correct: true })).status).toBe(400);
+    expect((await record({ source: "kana", focus: "か" })).status).toBe(400);
+    expect((await record({ source: "grammar", focus: "か", correct: true })).status).toBe(400);
+    expect((await record({ source: "kanji-writing", focus: "か", correct: true })).status).toBe(400);
 
+    // Lecture et écriture comptent ensemble pour la couleur du kana.
     expect(await getMastery(testUser.id, "kana")).toEqual({ か: { total: 2, correct: 1 } });
   });
 
@@ -42,11 +45,12 @@ describe("getMastery", () => {
         { userId: testUser.id, source: "kanji", focus: readings, level: "N5", correct: true },
         { userId: testUser.id, source: "kanji", focus: "食", level: "N5", correct: true },
         { userId: testUser.id, source: "kanji-reading", focus: "食", level: "N5", correct: false },
+        { userId: testUser.id, source: "kanji-writing", focus: "食", level: "N5", correct: true },
         { userId: testUser.id, source: "grammar", focus: "〜は〜です", level: "N5", correct: true },
       ],
     });
 
-    expect(await getMastery(testUser.id, "kanji")).toEqual({ 食: { total: 3, correct: 2 } });
+    expect(await getMastery(testUser.id, "kanji")).toEqual({ 食: { total: 4, correct: 3 } });
     expect(await getMastery(testUser.id, "grammar")).toEqual({ "〜は〜です": { total: 1, correct: 1 } });
     expect(await getMastery(testUser.id, "conjugation")).toEqual({});
   });

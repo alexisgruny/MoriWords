@@ -96,7 +96,7 @@ export function KanaQuiz() {
       void fetch("/api/exercise-attempts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kana: current.kana, correct }),
+        body: JSON.stringify({ source: "kana", focus: current.kana, correct }),
       }).catch(() => undefined);
     }
 

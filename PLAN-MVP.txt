@@ -245,3 +245,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       /api/exercise-mastery) ; reponses du quiz de kana enregistrees ;
       exercice kanji en deux sens (kanji -> francais, kanji -> lecture,
       corriges localement) ; focus des tentatives kanji = le caractere.
+57    Exercice d'ecriture (Hanzi Writer, MIT) : kana (mode « Ecrire » de
+      /exercices/kana) et kanji (« Ecrire le kanji »), trait par trait,
+      corrige dans le navigateur ; ordre des traits anime, modele a afficher
+      (essai alors non compte) ; reussi = au plus 1 erreur. Traces servis par
+      le site (public/strokes, 2 377 fichiers par code point, generes par
+      scripts/generate-stroke-data.mjs depuis @k1low/hanzi-writer-data-jp :
+      animCJK LGPL + Make Me a Hanzi Arphic PL, licences copiees) ; les 15
+      hiragana a boucle decoupes pour l'animation sont refusionnes. Les
+      ecritures comptent dans les couleurs des pages Kana et Kanji.

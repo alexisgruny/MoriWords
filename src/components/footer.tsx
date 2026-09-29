@@ -41,6 +41,25 @@ export default function Footer() {
             </a>{" "}
             (MIT), sens traduits en français par Claude.
           </p>
+          <p className="mt-1 text-xs">
+            Tracés d&apos;écriture :{" "}
+            <a
+              href="/strokes/README.txt"
+              className="underline transition hover:text-[var(--ink)]"
+            >
+              animCJK (LGPL) et Make Me a Hanzi (Arphic PL)
+            </a>
+            , animés avec{" "}
+            <a
+              href="https://github.com/chanind/hanzi-writer"
+              target="_blank"
+              rel="noreferrer"
+              className="underline transition hover:text-[var(--ink)]"
+            >
+              Hanzi Writer
+            </a>{" "}
+            (MIT).
+          </p>
         </div>
         <div className="flex flex-col gap-1 sm:items-end">
           <a
