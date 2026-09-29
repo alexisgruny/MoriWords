@@ -1,0 +1,130 @@
+PERSONAS MORIWORDS
+==================
+
+Défini le 2026-09-29. Sert à trancher les choix de fonctionnalités, de ton,
+de prix et de communication. Question à se poser à chaque décision :
+« Est-ce que ça aide Léa ? »
+
+
+------------------------------------------------------------------
+PERSONA PRINCIPAL : LÉA, LA FAN D'ANIME QUI VEUT PASSER AU NIVEAU SUPÉRIEUR
+------------------------------------------------------------------
+
+Profil
+  - 20-30 ans, étudiante ou jeune active, en France (ou ailleurs en francophonie)
+  - Niveau : débutante AVEC des bases. Elle connaît les hiragana et les
+    katakana, quelques centaines de mots, début N5 à N4.
+  - Apprend seule, 15 à 30 minutes par jour, souvent le soir ou dans les
+    transports (mobile).
+
+Comment elle apprend aujourd'hui
+  - Duolingo depuis un moment, mais elle plafonne
+  - Vidéos YouTube et TikTok sur le japonais
+  - A essayé Anki et l'a abandonné (« trop austère, trop long à configurer »)
+
+Sa motivation
+  - Comprendre ses animes et ses mangas sans sous-titres
+  - Peut-être partir au Japon un jour
+  - Le plaisir avant tout : si ça devient une corvée, elle arrête
+
+Ses frustrations
+  - Les applis « jeu » ne la font plus progresser
+  - Les ressources sérieuses sont en anglais
+  - Elle ne sait pas comment passer des leçons aux vrais textes
+  - Elle oublie les mots si elle ne les revoit pas
+
+Ce qui la ferait payer
+  - « Je colle une réplique de mon anime et je comprends tout, en français. »
+  - Des fiches créées toutes seules, sans configurer quoi que ce soit
+  - Voir sa série de jours et ses progrès
+
+Où la trouver
+  - TikTok, Instagram (Reels), YouTube Shorts
+  - Discord et groupes Facebook d'apprentissage du japonais
+  - Événements : Japan Expo, festivals, conventions
+
+Budget
+  - Serré : 5 €/mois maximum, sensible à une offre de lancement
+
+
+------------------------------------------------------------------
+PERSONA SECONDAIRE : THOMAS, L'AUTODIDACTE SÉRIEUX
+------------------------------------------------------------------
+
+Profil
+  - 25-35 ans, actif (souvent un métier technique), apprend le soir
+  - Niveau : N4 à N3, prépare le JLPT (défi perso ou projet d'expatriation)
+
+Comment il apprend aujourd'hui
+  - Anki bien configuré, WaniKani, manuels (Minna no Nihongo)
+  - Jongle entre plusieurs outils, presque tous en anglais
+
+Sa motivation
+  - Progresser efficacement et mesurer ses progrès
+  - Réussir le JLPT
+
+Ses frustrations
+  - Tout est éparpillé
+  - Personne pour corriger ses phrases en japonais
+
+Ce qui le ferait payer
+  - La correction de ses traductions par Claude
+  - Les statistiques et l'entraînement sur ses points faibles
+  - L'export Anki (il garde ses habitudes)
+
+Où le trouver
+  - Reddit, YouTube, forums, Discord de préparation au JLPT
+
+Budget
+  - 5 à 10 €/mois sans problème, attiré par l'abonnement annuel
+
+
+------------------------------------------------------------------
+QUI N'EST PAS LA CIBLE (POUR L'INSTANT)
+------------------------------------------------------------------
+
+  - Les grands débutants qui ne connaissent pas encore les kanas :
+    MoriWords suppose surtout qu'on sait les lire. La page Kana et son
+    exercice de lecture peuvent leur servir de porte d'entrée, sans
+    en faire la cible principale.
+  - Les voyageurs pressés (« le japonais de survie en 2 semaines »)
+  - Les niveaux avancés N2-N1 : pas la cible, mais de précieux
+    BÊTA-TESTEURS (les amis N3-N2) pour vérifier traductions et
+    explications.
+
+
+------------------------------------------------------------------
+CE QUE ÇA CHANGE CONCRÈTEMENT
+------------------------------------------------------------------
+
+Produit
+  - Priorité au contenu N5-N4 (exemples, grammaire, pré-remplissage des caches)
+  - Mettre en avant « colle une réplique d'anime » dès la page d'accueil
+  - Parcours ultra simple : aucun réglage avant la première carte
+  - Mobile d'abord : Léa révise dans le métro
+  - Garder la série de jours, les rappels et les statistiques bien visibles
+  - Pour Thomas : correction, points faibles, export Anki
+
+Communication
+  - Ton : tutoiement, chaleureux, un peu fun, jamais infantilisant
+  - Contenu vidéo : répliques d'anime décortiquées, « 1 mot d'anime par jour »,
+    erreurs de débutant
+  - Message clé : « Tes animes deviennent tes cours de japonais, en français. »
+
+Prix
+  - 4,99 €/mois (dans le budget de Léa)
+  - 39 €/an (pour Thomas)
+  - Offre fondateur pour les 100 premiers
+
+
+------------------------------------------------------------------
+À VALIDER SUR LE TERRAIN
+------------------------------------------------------------------
+
+Ces personas sont des hypothèses. À confirmer en parlant à 10 vrais
+apprenants (voir docs/FEUILLE-DE-ROUTE-LANCEMENT.txt, section 6) :
+  [ ] Ont-ils vraiment déjà appris les kanas quand ils cherchent un outil ?
+  [ ] Regardent-ils des animes en VO pour apprendre ?
+  [ ] Quels outils utilisent-ils et qu'est-ce qui les frustre ?
+  [ ] Combien paient-ils déjà (Duolingo Super, WaniKani...) ?
+Mettre à jour ce fichier avec leurs réponses.

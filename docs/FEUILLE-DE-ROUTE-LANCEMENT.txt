@@ -151,8 +151,10 @@ OPTIONNELLES mais rentables :
 5. SE FAIRE CONNAÎTRE
 ------------------------------------------------------------------
 
-Cible : francophones débutants à intermédiaires (JLPT N5 à N3), souvent
-fans d'anime et de manga, lassés des applis en anglais.
+Cible : francophones débutants AVEC des bases (kanas acquis, N5-N4),
+fans d'anime et de manga, lassés des applis en anglais. Cible secondaire :
+autodidactes sérieux N4-N3 qui préparent le JLPT.
+Détail des personas (Léa et Thomas) : docs/PERSONAS.txt
 
 Message clé : « Colle n'importe quel texte japonais et MoriWords en fait
 des fiches de révision en français, adaptées à ton niveau. »
