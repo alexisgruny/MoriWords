@@ -15,7 +15,6 @@ const PUBLIC_PATHS = [
   "/confidentialite",
   "/mentions-legales",
 ];
-const AUTH_PATHS = ["/connexion", "/inscription"];
 
 function matches(pathname: string, paths: string[]) {
   return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -26,10 +25,6 @@ function matches(pathname: string, paths: string[]) {
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSession = getSessionCookie(request) !== null;
-
-  if (hasSession && matches(pathname, AUTH_PATHS)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
 
   // Un visiteur sans compte découvre d'abord le site, pas un formulaire.
   if (!hasSession && pathname === "/") {

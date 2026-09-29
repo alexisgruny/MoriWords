@@ -1,9 +1,20 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import { AuthForm } from "@/components/auth-form";
-import { isGoogleConfigured } from "@/lib/auth/auth";
+import { auth, isGoogleConfigured } from "@/lib/auth/auth";
 import { safeRedirectPath } from "@/lib/auth/redirect";
 
 export default async function SignInPage({ searchParams }: PageProps<"/connexion">) {
   const redirectTo = safeRedirectPath((await searchParams).suivant);
+
+  // Déjà connecté : inutile de montrer le formulaire. Vérifié ici avec la
+  // vraie session, pas dans src/proxy.ts : un cookie périmé (compte supprimé,
+  // session expirée) y renvoyait en boucle vers l'accueil.
+  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+  if (session) {
+    redirect(redirectTo);
+  }
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
