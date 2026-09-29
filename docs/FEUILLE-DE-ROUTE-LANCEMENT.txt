@@ -78,11 +78,11 @@ Déjà bien :
   [ ] GitHub : protéger la branche main
 
 (!) À FAIRE CETTE SEMAINE (code) :
-  [ ] Limiter la taille des textes sur /api/translate et /api/tokenize
+  [x] Limiter la taille des textes sur /api/translate et /api/tokenize
       (ex. 2 000 caractères pour une traduction, 10 000 pour l'analyse)
-  [ ] Limiter le nombre de requêtes par IP sur les routes qui appellent Claude
+  [x] Limiter le nombre de requêtes par IP sur les routes qui appellent Claude
       (Upstash Ratelimit ou règles du pare-feu Vercel)
-  [ ] Protéger temporairement les routes qui modifient ou suppriment
+  [x] Protéger temporairement les routes qui modifient ou suppriment
       (DELETE decks/cartes) tant qu'il n'y a pas de comptes
 
 Problème actuel : toutes les routes API sont publiques. N'importe qui peut

@@ -1,29 +1,10 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedSourceText } from "@/lib/decks/ownership";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
-import type { TokenResult } from "@/lib/tokenizer/types";
+import { parseTokenList } from "@/lib/security/token-payload";
 
-// Forme attendue du corps de la requête pour enregistrer des tokens.
-type SaveTokensBody = {
-  sourceTextId: string;
-  tokens: TokenResult[];
-};
-
-// Vérifie que le corps de la requête a bien un sourceTextId et une liste de tokens.
-function isSaveTokensBody(value: unknown): value is SaveTokensBody {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-
-  return (
-    typeof candidate.sourceTextId === "string" &&
-    candidate.sourceTextId.trim().length > 0 &&
-    Array.isArray(candidate.tokens)
-  );
-}
 
 // Récupère les tokens d'un texte donné pour les réafficher depuis la DB.
 export async function GET(request: Request) {
@@ -82,23 +63,32 @@ export async function POST(request: Request) {
     return user;
   }
 
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
+  }
+
   try {
     const body: unknown = await request.json();
+    const candidate = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+    const sourceTextId = typeof candidate.sourceTextId === "string" ? candidate.sourceTextId : "";
+    const tokens = parseTokenList(candidate.tokens);
 
-    if (!isSaveTokensBody(body) || body.tokens.length === 0) {
-      return Response.json(
-        { error: "sourceTextId et tokens sont requis." },
-        { status: 400 },
-      );
+    if (!sourceTextId || !tokens) {
+      return Response.json({ error: "sourceTextId et tokens sont requis." }, { status: 400 });
     }
 
-    if (!(await findOwnedSourceText(body.sourceTextId, user.id))) {
+    if (!(await findOwnedSourceText(sourceTextId, user.id))) {
       return Response.json({ error: "Texte introuvable." }, { status: 404 });
     }
 
+    // Un texte n'a qu'une analyse : un nouvel envoi remplace l'ancien au lieu
+    // de s'y ajouter (sinon on pouvait gonfler la base en boucle).
+    await prisma.token.deleteMany({ where: { sourceTextId } });
+
     const created = await prisma.token.createMany({
-      data: body.tokens.map((token) => ({
-        sourceTextId: body.sourceTextId,
+      data: tokens.map((token) => ({
+        sourceTextId,
         surface: token.surface,
         lemma: token.baseForm,
         reading: token.reading ?? null,

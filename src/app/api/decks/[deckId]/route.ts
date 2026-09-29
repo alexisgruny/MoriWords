@@ -1,6 +1,8 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedDeck } from "@/lib/decks/ownership";
+import { MAX_DECK_DESCRIPTION_LENGTH, MAX_DECK_NAME_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 // Renvoie un seul deck avec ses cartes, pour la page de détail d'un deck.
 export async function GET(
@@ -44,6 +46,11 @@ export async function PATCH(
     return user;
   }
 
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
+  }
+
   try {
     const { deckId } = await params;
     const body: unknown = await request.json();
@@ -62,7 +69,15 @@ export async function PATCH(
         return Response.json({ error: "Le nom du deck est requis." }, { status: 400 });
       }
 
+      if (name.length > MAX_DECK_NAME_LENGTH) {
+        return tooLongResponse("Le nom du deck", MAX_DECK_NAME_LENGTH);
+      }
+
       data.name = name;
+    }
+
+    if (typeof candidate.description === "string" && candidate.description.length > MAX_DECK_DESCRIPTION_LENGTH) {
+      return tooLongResponse("La description", MAX_DECK_DESCRIPTION_LENGTH);
     }
 
     if ("description" in candidate) {
@@ -96,6 +111,11 @@ export async function DELETE(
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

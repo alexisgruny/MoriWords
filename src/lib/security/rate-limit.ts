@@ -92,3 +92,23 @@ export async function limitByIp(request: Request, bucket: IpLimitBucket): Promis
     { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } },
   );
 }
+
+// Écritures d'un compte (decks, révisions, textes, réponses...) : aucune ne
+// coûte d'appel à Claude, mais un script pourrait en envoyer des milliers.
+// Large pour un usage humain (réviser 300 cartes d'affilée reste possible),
+// et par compte plutôt que par IP (changer d'IP ne contourne rien).
+const USER_WRITE_LIMIT = { limit: 1200, windowSeconds: 10 * 60 };
+
+export async function limitUserWrites(userId: string): Promise<Response | null> {
+  const result = await hitRateLimit(`user:write:${userId}`, USER_WRITE_LIMIT.limit, USER_WRITE_LIMIT.windowSeconds);
+
+  if (result.allowed) {
+    return null;
+  }
+
+  const minutes = Math.ceil(result.retryAfterSeconds / 60);
+  return Response.json(
+    { error: `Trop d'actions d'affilée. Réessaie dans ${minutes} minute${minutes > 1 ? "s" : ""}.` },
+    { status: 429, headers: { "Retry-After": String(result.retryAfterSeconds) } },
+  );
+}

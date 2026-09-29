@@ -1,26 +1,9 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 import { classifyDifficulty } from "@/lib/difficulty/classify";
-import type { TokenResult } from "@/lib/tokenizer/types";
+import { parseTokenList } from "@/lib/security/token-payload";
 import { buildVocabularySummary } from "@/lib/vocabulary/build-vocabulary";
-
-// Forme attendue du corps de la requête.
-type SaveVocabularyBody = {
-  tokens: TokenResult[];
-  sourceLanguage?: string;
-  targetLanguage?: string;
-};
-
-// Vérifie que le corps de la requête a bien une liste de tokens.
-function isSaveVocabularyBody(value: unknown): value is SaveVocabularyBody {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-
-  return Array.isArray(candidate.tokens);
-}
 
 // Renvoie les 20 mots les plus fréquents du vocabulaire de l'utilisateur.
 export async function GET(request: Request) {
@@ -63,19 +46,23 @@ export async function POST(request: Request) {
     return user;
   }
 
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
+  }
+
   try {
     const body: unknown = await request.json();
+    const tokens = parseTokenList(typeof body === "object" && body !== null ? (body as Record<string, unknown>).tokens : null);
 
-    if (!isSaveVocabularyBody(body) || body.tokens.length === 0) {
-      return Response.json(
-        { error: "tokens est requis." },
-        { status: 400 },
-      );
+    if (!tokens) {
+      return Response.json({ error: "tokens est requis." }, { status: 400 });
     }
 
-    const sourceLanguage = body.sourceLanguage ?? "ja";
-    const targetLanguage = body.targetLanguage ?? "fr";
-    const vocabulary = buildVocabularySummary(body.tokens);
+    // Seule paire de langues du site : pas de valeur libre dans la clé unique.
+    const sourceLanguage = "ja";
+    const targetLanguage = "fr";
+    const vocabulary = buildVocabularySummary(tokens);
 
     const saved = await Promise.all(
       vocabulary.map((entry) =>

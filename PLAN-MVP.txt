@@ -284,3 +284,15 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       (titre court, sans sous-titre ni etapes, zone plus basse), defilement
       automatique vers les mots apres l'analyse ; bloc « Aujourd'hui »
       (serie, revisions) deplace sur la page Decks (remplace StreakBanner).
+62    Audit securite : mots et vocabulaire valides et bornes (parseTokenList,
+      10 000 max, une analyse remplace la precedente) ; limite d'ecritures
+      par compte (1 200 / 10 min, limitUserWrites) ; longueurs et types
+      verifies (decks, cartes, recherche, listes d'identifiants) ; origine
+      d'un texte colle fixee cote serveur (sinon injection dans le pool de
+      textes partages entre comptes) ; langues fixees ja -> fr ; controle
+      d'origine (CSRF) dans requireUser ; compte proprietaire non supprimable
+      (emails non verifies : OWNER_EMAIL reinscriptible) ; secret du cron
+      compare en temps constant ; en-tete Cross-Origin-Opener-Policy.
+      Restent hors code : plafond de depense Anthropic et Vercel, 2FA,
+      Dependabot et secret scanning GitHub, verification des emails
+      (necessite un service d'envoi).

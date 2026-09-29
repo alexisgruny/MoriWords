@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedCard } from "@/lib/decks/ownership";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 import { scheduleReview } from "@/lib/srs/scheduler";
 
 // Enregistre le résultat d'une révision (note de 0 à 5) : calcule le
@@ -13,6 +14,11 @@ export async function POST(
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

@@ -1,16 +1,12 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
-import { MAX_ANALYSIS_TEXT_LENGTH, MAX_TITLE_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { MAX_ANALYSIS_TEXT_LENGTH, MAX_SEARCH_LENGTH, MAX_TITLE_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 // Forme attendue du corps de la requête pour créer un texte source.
 type CreateSourceTextBody = {
   content: string;
   title?: string;
-  origin?: string;
-  category?: string;
-  sourceLanguage?: string;
-  targetLanguage?: string;
-  sourceUrl?: string;
 };
 
 // Vérifie que le corps de la requête a au moins un champ "content".
@@ -25,6 +21,11 @@ export async function POST(request: Request) {
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {
@@ -45,6 +46,10 @@ export async function POST(request: Request) {
       return tooLongResponse("Le texte", MAX_ANALYSIS_TEXT_LENGTH);
     }
 
+    if (body.title !== undefined && typeof body.title !== "string") {
+      return Response.json({ error: "Le titre doit être un texte." }, { status: 400 });
+    }
+
     if (typeof body.title === "string" && body.title.length > MAX_TITLE_LENGTH) {
       return tooLongResponse("Le titre", MAX_TITLE_LENGTH);
     }
@@ -54,11 +59,13 @@ export async function POST(request: Request) {
         userId: user.id,
         content: body.content,
         title: body.title,
-        origin: body.origin ?? "manual",
-        category: body.category,
-        sourceLanguage: body.sourceLanguage ?? "ja",
-        targetLanguage: body.targetLanguage ?? "fr",
-        sourceUrl: body.sourceUrl,
+        // Origine fixée ici, jamais par le client : un texte déclaré « anime-quote »
+        // entrerait dans le pool partagé entre comptes (voir
+        // src/lib/feeds/shared-texts.ts) et serait servi à d'autres utilisateurs.
+        origin: "manual",
+        category: "practice",
+        sourceLanguage: "ja",
+        targetLanguage: "fr",
       },
     });
 
@@ -89,7 +96,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q")?.trim() ?? "";
+    const query = (searchParams.get("q")?.trim() ?? "").slice(0, MAX_SEARCH_LENGTH);
 
     const limitParam = Number(searchParams.get("limit"));
     const limit = Number.isInteger(limitParam) && limitParam > 0

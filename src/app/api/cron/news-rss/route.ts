@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { prisma } from "@/lib/db/prisma";
 import { NewsRssServiceError, ingestNextNewsArticle } from "@/lib/feeds/news-rss";
 
@@ -19,7 +21,11 @@ export async function GET(request: Request) {
     return Response.json({ error: "Cron non configuré." }, { status: 500 });
   }
 
-  if (request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  // Comparaison en temps constant : le temps de réponse ne doit rien dire
+  // du secret.
+  const received = Buffer.from(request.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${cronSecret}`);
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
     return Response.json({ error: "Non autorisé." }, { status: 401 });
   }
 

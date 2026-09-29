@@ -9,6 +9,7 @@ import {
   pickKanjiExercise,
 } from "@/lib/grammar/exercises";
 import { buildChoices } from "@/lib/grammar/choices";
+import { boundedStringList } from "@/lib/security/input-limits";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 
 // La première phrase d'un point de grammaire peut déclencher une génération Claude.
@@ -48,14 +49,10 @@ export async function POST(request: Request) {
     const level = GRAMMAR_LEVELS.includes(candidate.level as GrammarLevel)
       ? (candidate.level as GrammarLevel)
       : "all";
-    const excludeIds = Array.isArray(candidate.excludeIds)
-      ? candidate.excludeIds.filter((id): id is string => typeof id === "string")
-      : [];
+    const excludeIds = boundedStringList(candidate.excludeIds);
     // "choice" : QCM, les choix (bonne réponse comprise) sont renvoyés avec l'exercice.
     const isChoice = candidate.format === "choice";
-    const focusIn = Array.isArray(candidate.focusIn)
-      ? candidate.focusIn.filter((focus): focus is string => typeof focus === "string")
-      : undefined;
+    const focusIn = Array.isArray(candidate.focusIn) ? boundedStringList(candidate.focusIn, 100) : undefined;
 
     const pickers: Record<Source, () => Promise<Awaited<ReturnType<typeof pickGrammarExercise>>>> = {
       grammar: () => pickGrammarExercise(level, excludeIds, undefined, focusIn),

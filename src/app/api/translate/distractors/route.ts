@@ -16,13 +16,15 @@ export async function GET(request: Request) {
     const excludeMeanings = excludeParam
       .split("|")
       .map((meaning) => meaning.trim())
-      .filter((meaning) => meaning.length > 0);
+      .filter((meaning) => meaning.length > 0 && meaning.length <= 500)
+      .slice(0, 20);
 
     const countParam = Number(searchParams.get("count"));
     const count = Number.isInteger(countParam) && countParam > 0 ? Math.min(countParam, 10) : 3;
 
-    const sourceLanguage = searchParams.get("sourceLanguage") ?? "ja";
-    const targetLanguage = searchParams.get("targetLanguage") ?? "fr";
+    // Seule paire de langues du site.
+    const sourceLanguage = "ja";
+    const targetLanguage = "fr";
 
     const translations = await getDistractorTranslations(
       excludeMeanings,

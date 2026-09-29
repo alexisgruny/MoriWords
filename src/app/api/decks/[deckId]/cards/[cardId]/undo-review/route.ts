@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedCard } from "@/lib/decks/ownership";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 // Annule la dernière révision d'une carte : restaure l'état SM-2 (répétitions,
 // intervalle, facilité, échéance) tel qu'il était juste avant, et supprime
@@ -14,6 +15,11 @@ export async function POST(
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

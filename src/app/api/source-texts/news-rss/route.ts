@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 import { NewsRssServiceError, ingestNextNewsArticle } from "@/lib/feeds/news-rss";
 
 // Importe le prochain article non encore vu depuis le flux RSS de
@@ -8,6 +9,11 @@ export async function POST(request: Request) {
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

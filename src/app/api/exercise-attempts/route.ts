@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { KANA } from "@/lib/kana/kana";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 const KNOWN_KANA = new Set(KANA.map((entry) => entry.kana));
 const KANJI_LEVELS = new Map(JLPT_KANJI.map((entry) => [entry.kanji, entry.level]));
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

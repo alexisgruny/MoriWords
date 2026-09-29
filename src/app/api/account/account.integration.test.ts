@@ -54,6 +54,22 @@ describe("/api/account", () => {
     expect(await prisma.user.count({ where: { id: testUser.id } })).toBe(1);
   });
 
+  it("never deletes the site owner's account from this page", async () => {
+    process.env.OWNER_EMAIL = testUser.email;
+    try {
+      const response = await deleteAccount(
+        new Request("http://localhost/api/account", {
+          method: "DELETE",
+          body: JSON.stringify({ confirmation: "SUPPRIMER" }),
+        }),
+      );
+      expect(response.status).toBe(403);
+      expect(await prisma.user.count({ where: { id: testUser.id } })).toBe(1);
+    } finally {
+      delete process.env.OWNER_EMAIL;
+    }
+  });
+
   it("deletes the account and everything attached to it, and nothing else", async () => {
     const response = await deleteAccount(
       new Request("http://localhost/api/account", {

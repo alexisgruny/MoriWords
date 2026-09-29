@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
+import { boundedStringList } from "@/lib/security/input-limits";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedDeck } from "@/lib/decks/ownership";
 import { autoTranslateLemma } from "@/lib/decks/auto-translate";
@@ -34,9 +35,7 @@ export async function POST(
     const body: unknown = await request.json().catch(() => ({}));
     const rawExcluded =
       typeof body === "object" && body !== null && "excludeIds" in body ? body.excludeIds : [];
-    const excludeIds = Array.isArray(rawExcluded)
-      ? rawExcluded.filter((id): id is string => typeof id === "string")
-      : [];
+    const excludeIds = boundedStringList(rawExcluded, 1000);
 
     const deck = await findOwnedDeck(deckId, user.id);
 

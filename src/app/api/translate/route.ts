@@ -7,8 +7,6 @@ import { TranslationServiceError, translateText } from "@/lib/translation/transl
 // Forme attendue du corps de la requête.
 type TranslateRequest = {
   text: string;
-  sourceLanguage?: string;
-  targetLanguage?: string;
   context?: string;
 };
 
@@ -60,8 +58,10 @@ export async function POST(request: Request) {
 
     const result = await translateText(
       body.text,
-      body.sourceLanguage ?? "ja",
-      body.targetLanguage ?? "fr",
+      // Seule paire du site : une langue libre finissait dans la consigne
+      // envoyée à Claude et dans la clé du cache partagé.
+      "ja",
+      "fr",
       body.context,
     );
 

@@ -1,7 +1,8 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { findOwnedCard, findOwnedDeck } from "@/lib/decks/ownership";
-import { normalizeNullable } from "@/lib/decks/card-utils";
+import { MAX_MEANING_LENGTH, MAX_READING_LENGTH, optionalText } from "@/lib/security/input-limits";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 // Modifie une carte : sa lecture et/ou son sens, ou la déplace vers un autre
 // deck. Un déplacement est refusé si le deck cible a déjà ce mot (la
@@ -14,6 +15,11 @@ export async function PATCH(
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {
@@ -64,14 +70,21 @@ export async function PATCH(
       return Response.json({ card: moved });
     }
 
-    const data: { reading?: string | null; meaning?: string | null } = {};
+    const reading = optionalText(candidate.reading, MAX_READING_LENGTH);
+    const meaning = optionalText(candidate.meaning, MAX_MEANING_LENGTH);
 
-    if ("reading" in candidate) {
-      data.reading = normalizeNullable(candidate.reading as string | null | undefined);
+    if (reading === "invalid" || meaning === "invalid") {
+      return Response.json({ error: "Lecture ou sens invalide (texte trop long ?)." }, { status: 400 });
     }
 
-    if ("meaning" in candidate) {
-      data.meaning = normalizeNullable(candidate.meaning as string | null | undefined);
+    const data: { reading?: string | null; meaning?: string | null } = {};
+
+    if (reading !== undefined) {
+      data.reading = reading;
+    }
+
+    if (meaning !== undefined) {
+      data.meaning = meaning;
     }
 
     const updated = await prisma.card.update({ where: { id: cardId }, data });
@@ -91,6 +104,11 @@ export async function DELETE(
   const user = await requireUser(request);
   if (user instanceof Response) {
     return user;
+  }
+
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
   }
 
   try {

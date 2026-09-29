@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/admin/usage-stats";
 import { DELETE_ACCOUNT_CONFIRMATION } from "@/lib/auth/account";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
@@ -103,6 +104,16 @@ export async function DELETE(request: Request) {
       return Response.json(
         { error: `Tape ${DELETE_ACCOUNT_CONFIRMATION} pour confirmer la suppression.` },
         { status: 400 },
+      );
+    }
+
+    // Le compte propriétaire ne se supprime pas d'ici : les emails n'étant
+    // pas vérifiés, l'adresse OWNER_EMAIL libérée pourrait être réinscrite
+    // par quelqu'un d'autre, qui obtiendrait alors l'accès à /admin.
+    if (isAdminEmail(user.email)) {
+      return Response.json(
+        { error: "Le compte propriétaire du site ne peut pas être supprimé depuis cette page." },
+        { status: 403 },
       );
     }
 

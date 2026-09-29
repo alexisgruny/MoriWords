@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { MAX_DECK_DESCRIPTION_LENGTH, MAX_DECK_NAME_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
+import { limitUserWrites } from "@/lib/security/rate-limit";
 
 // Renvoie les decks de l'utilisateur avec leurs cartes, du plus récent au plus ancien.
 export async function GET(request: Request) {
@@ -39,6 +41,11 @@ export async function POST(request: Request) {
     return user;
   }
 
+  const writesLimited = await limitUserWrites(user.id);
+  if (writesLimited) {
+    return writesLimited;
+  }
+
   try {
     const body: unknown = await request.json();
 
@@ -49,10 +56,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const candidate = body as Record<string, unknown>;
+    const name = (candidate.name as string).trim();
+    if (!name) {
+      return Response.json({ error: "Le nom du deck est requis." }, { status: 400 });
+    }
+    if (name.length > MAX_DECK_NAME_LENGTH) {
+      return tooLongResponse("Le nom du deck", MAX_DECK_NAME_LENGTH);
+    }
+    if (typeof candidate.description === "string" && candidate.description.length > MAX_DECK_DESCRIPTION_LENGTH) {
+      return tooLongResponse("La description", MAX_DECK_DESCRIPTION_LENGTH);
+    }
+
     const deck = await prisma.deck.create({
       data: {
         userId: user.id,
-        name: (body as Record<string, unknown>).name as string,
+        name,
         description: typeof (body as Record<string, unknown>).description === "string"
           ? ((body as Record<string, unknown>).description as string)
           : null,
