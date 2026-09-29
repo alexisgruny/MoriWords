@@ -770,3 +770,20 @@ details[open] > summary ~ * {
     display: none;
   }
 }
+
+/* Réussite aux exercices sur les pages de référence (voir
+   src/components/mastery.tsx) : rien tant qu'un élément n'a pas été essayé. */
+.mastery-good {
+  border-color: var(--success) !important;
+  background: color-mix(in srgb, var(--success) 16%, var(--paper)) !important;
+}
+
+.mastery-mid {
+  border-color: var(--warning) !important;
+  background: color-mix(in srgb, var(--warning) 18%, var(--paper)) !important;
+}
+
+.mastery-weak {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper)) !important;
+}

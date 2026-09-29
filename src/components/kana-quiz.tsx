@@ -3,6 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 
 import { ProgressBar } from "@/components/progress-bar";
+import { authClient } from "@/lib/auth/auth-client";
 import { KANA, KANA_GROUP_LABELS, type KanaEntry, type KanaGroup, isCorrectKanaAnswer } from "@/lib/kana/kana";
 import { shuffle } from "@/lib/shuffle";
 
@@ -19,6 +20,7 @@ const GROUPS: KanaGroup[] = ["base", "dakuten", "combo"];
 // Corrigé localement (une seule lecture possible par kana, variantes comme
 // "si"/"shi" acceptées) : ni appel à Claude ni requête serveur.
 export function KanaQuiz() {
+  const { data: session } = authClient.useSession();
   const [scriptChoice, setScriptChoice] = useState<ScriptChoice>("hiragana");
   const [groups, setGroups] = useState<Set<KanaGroup>>(new Set(["base"]));
   const [queue, setQueue] = useState<KanaEntry[]>([]);
@@ -87,6 +89,16 @@ export function KanaQuiz() {
 
     const correct = isCorrectKanaAnswer(current, answer);
     setLastResult({ correct, entry: current });
+
+    // Trace pour les statistiques et les couleurs de la page Kana, seulement
+    // avec un compte (le quiz reste ouvert à tous). Un échec n'a pas d'effet.
+    if (session) {
+      void fetch("/api/exercise-attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kana: current.kana, correct }),
+      }).catch(() => undefined);
+    }
 
     if (correct) {
       setCorrectCount((value) => value + 1);

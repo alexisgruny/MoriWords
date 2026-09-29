@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
+import { reuseSharedText } from "@/lib/feeds/shared-texts";
 import { LiteraryExcerptServiceError, generateLiteraryExcerpt } from "@/lib/feeds/literary-excerpt";
 
 // Génère un court extrait littéraire pastiche via Claude et l'enregistre
@@ -21,6 +22,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Un texte déjà généré pour un autre compte et pas encore vu : aucun
+    // appel à Claude (voir src/lib/feeds/shared-texts.ts).
+    const shared = await reuseSharedText(user.id, "literary-excerpt");
+    if (shared) {
+      return Response.json({ sourceText: shared }, { status: 201 });
+    }
+
     // Récupère les styles récents pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({
       where: { origin: "literary-excerpt", userId: user.id },

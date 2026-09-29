@@ -20,8 +20,11 @@ export type Exercise = {
   id: string;
   french: string;
   level: string | null;
-  // Ce que l'exercice fait travailler : un motif de grammaire ou un mot du deck.
+  // Ce que l'exercice fait travailler : un motif de grammaire, une forme,
+  // un kanji ou un mot du deck (clé des statistiques par point).
   focus: string;
+  // Indice affiché sous la question (lectures ou sens d'un kanji).
+  hint?: string;
 };
 
 export class ExerciseServiceError extends Error {
@@ -71,6 +74,13 @@ const STATIC_PREFIX = "static:";
 const EXAMPLE_PREFIX = "ex:";
 const CONJUGATION_PREFIX = "conj:";
 export const KANJI_PREFIX = "kanji:";
+// Kanji -> lecture (l'élève écrit une lecture en kana).
+export const KANJI_READING_PREFIX = "kanji-yomi:";
+
+export type KanjiMode = "meaning" | "reading";
+
+const readingsOf = (entry: { onReadings: string[]; kunReadings: string[] }) =>
+  [...entry.onReadings, ...entry.kunReadings].join("・");
 
 type PoolEntry = { id: string; french: string };
 
@@ -212,17 +222,21 @@ export async function pickKanjiExercise(
   level: GrammarLevel | "all",
   excludeIds: string[],
   focusIn?: string[],
+  mode: KanjiMode = "meaning",
 ): Promise<Exercise | null> {
   const seen = new Set(excludeIds);
+  const prefix = mode === "reading" ? KANJI_READING_PREFIX : KANJI_PREFIX;
 
   const pool = JLPT_KANJI.filter((entry) => level === "all" || entry.level === level)
+    // focusIn : le kanji, ou ses lectures (clé des tentatives d'avant).
+    .filter((entry) => !focusIn || focusIn.includes(entry.kanji) || focusIn.includes(readingsOf(entry)))
     .map((entry) => ({
-      id: `${KANJI_PREFIX}${entry.kanji}`,
+      id: `${prefix}${entry.kanji}`,
       french: entry.kanji,
       level: entry.level,
-      focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+      focus: entry.kanji,
+      hint: mode === "reading" ? `Sens : ${entry.meaning}` : `Lectures : ${readingsOf(entry)}`,
     }))
-    .filter((entry) => !focusIn || focusIn.includes(entry.focus))
     .filter((entry) => !seen.has(entry.id));
 
   if (pool.length === 0) {
@@ -260,18 +274,19 @@ export async function resolveExercise(
       : null;
   }
 
-  if (id.startsWith(KANJI_PREFIX)) {
-    const kanji = id.slice(KANJI_PREFIX.length);
+  if (id.startsWith(KANJI_PREFIX) || id.startsWith(KANJI_READING_PREFIX)) {
+    const isReading = id.startsWith(KANJI_READING_PREFIX);
+    const kanji = id.slice((isReading ? KANJI_READING_PREFIX : KANJI_PREFIX).length);
     const entry = JLPT_KANJI.find((candidate) => candidate.kanji === kanji);
 
-    // "french"/"japanese" sont inversés par rapport aux autres sources : la
-    // question ("french") est le kanji lui-même, la réponse attendue
-    // ("japanese") est son sens en français.
+    // "french"/"japanese" sont détournés : la question ("french") est le
+    // kanji lui-même, la réponse attendue ("japanese") est son sens en
+    // français, ou ses lectures en mode lecture.
     return entry
       ? {
           french: entry.kanji,
-          japanese: entry.meaning,
-          focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+          japanese: isReading ? readingsOf(entry) : entry.meaning,
+          focus: entry.kanji,
           level: entry.level,
         }
       : null;
@@ -308,11 +323,15 @@ export async function resolveExercise(
   return { french: stored.french, japanese: stored.japanese, focus: point?.pattern ?? "", level: stored.level };
 }
 
-export type ExerciseSource = "grammar" | "conjugation" | "kanji" | "examples";
+export type ExerciseSource = "grammar" | "conjugation" | "kanji" | "kanji-reading" | "examples" | "kana";
 
 // Déduit le type d'exercice à partir de son identifiant (même logique que
 // resolveExercise), pour l'enregistrer dans les statistiques de progression.
 export function getExerciseSource(id: string): ExerciseSource {
+  if (id.startsWith(KANJI_READING_PREFIX)) {
+    return "kanji-reading";
+  }
+
   if (id.startsWith(KANJI_PREFIX)) {
     return "kanji";
   }
@@ -384,6 +403,45 @@ export function isKanjiExerciseId(id: string): boolean {
   return id.startsWith(KANJI_PREFIX);
 }
 
+export function isKanjiReadingExerciseId(id: string): boolean {
+  return id.startsWith(KANJI_READING_PREFIX);
+}
+
+// Katakana -> hiragana (même décalage Unicode que toKatakana, en sens inverse).
+function toHiragana(value: string): string {
+  return value.replace(/[\u30a1-\u30f6]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0x60));
+}
+
+const normalizeReading = (value: string) => toHiragana(value.normalize("NFKC").replace(/[\s.\-・]/g, ""));
+
+// Lecture d'un kanji : on (katakana) ou kun (hiragana, "." avant l'okurigana,
+// "-" pour un préfixe/suffixe). Acceptées en hiragana ou katakana, en entier
+// (かつ) ou seulement la partie lue par le kanji (か). Correction locale.
+export function correctKanjiReadingAnswer(params: { reference: string; answer: string }): Correction {
+  const readings = params.reference.split("・").filter(Boolean);
+  const accepted = new Set(
+    readings.flatMap((reading) => [normalizeReading(reading), normalizeReading(reading.split(".")[0])]),
+  );
+  const answer = normalizeReading(params.answer);
+
+  if (answer && accepted.has(answer)) {
+    return { verdict: "correct", corrected: params.reference, summary: "Bonne lecture !", errors: [] };
+  }
+
+  return {
+    verdict: "incorrect",
+    corrected: params.reference,
+    summary: "Ce n'est pas une lecture de ce kanji.",
+    errors: [
+      {
+        wrong: params.answer.trim(),
+        right: params.reference,
+        explanation: `Lectures possibles : ${params.reference} (en katakana : lectures on, en hiragana : lectures kun).`,
+      },
+    ],
+  };
+}
+
 // Ignore accents, casse, ponctuation finale et article de tête (« un »,
 // « la »...) pour comparer un sens sans être bloqué par une formulation
 // différente mais équivalente ("un puits" doit matcher "puits").
@@ -425,14 +483,16 @@ export function correctKanjiMeaningAnswer(params: { reference: string; answer: s
   };
 }
 
-// Clé de cache pour une réponse : espaces et ponctuation finale ignorés
-// (「です。」= 「です」= 「 です 」), le reste (kanji vs kana, particules...)
-// est gardé tel quel car ça peut changer si la réponse est correcte.
-function normalizeAnswerKey(value: string): string {
+// Clé de cache pour une réponse : pleine/demi-chasse (NFKC), espaces,
+// ponctuation et guillemets ignorés partout (「です。」= 「です」= 「 です！」,
+// 「はい、そうです」= 「はいそうです」) : autant de corrections Claude en moins.
+// Le reste (kanji vs kana, particules...) est gardé tel quel car ça peut
+// changer si la réponse est correcte.
+export function normalizeAnswerKey(value: string): string {
   return value
-    .trim()
+    .normalize("NFKC")
     .replace(/\s+/g, "")
-    .replace(/[。.!！?？、,]+$/g, "");
+    .replace(/[。.!?、,…「」『』"'“”‘’]+/g, "");
 }
 
 // Corrige la traduction de l'élève, en recyclant les corrections déjà

@@ -5,8 +5,10 @@ import {
   ExerciseServiceError,
   MAX_ANSWER_LENGTH,
   correctKanjiMeaningAnswer,
+  correctKanjiReadingAnswer,
   getTranslationCorrection,
   isKanjiExerciseId,
+  isKanjiReadingExerciseId,
   logExerciseAttempt,
   resolveExercise,
 } from "@/lib/grammar/exercises";
@@ -56,7 +58,9 @@ export async function POST(request: Request) {
       return Response.json({ error: "Exercice introuvable." }, { status: 404 });
     }
 
-    const correction = isKanjiExerciseId(exerciseId)
+    const correction = isKanjiReadingExerciseId(exerciseId)
+      ? correctKanjiReadingAnswer({ reference: exercise.japanese, answer })
+      : isKanjiExerciseId(exerciseId)
       ? correctKanjiMeaningAnswer({ reference: exercise.japanese, answer })
       : await getTranslationCorrection({
           exerciseId,

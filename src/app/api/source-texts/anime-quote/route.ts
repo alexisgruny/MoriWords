@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
+import { reuseSharedText } from "@/lib/feeds/shared-texts";
 import { QuoteServiceError, generateAnimeQuote } from "@/lib/feeds/anime-quote";
 
 // Génère une citation d'anime via Claude et l'enregistre comme nouveau
@@ -20,6 +21,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Un texte déjà généré pour un autre compte et pas encore vu : aucun
+    // appel à Claude (voir src/lib/feeds/shared-texts.ts).
+    const shared = await reuseSharedText(user.id, "anime-quote");
+    if (shared) {
+      return Response.json({ sourceText: shared }, { status: 201 });
+    }
+
     // Récupère les citations récentes pour éviter que Claude se répète.
     const recentQuotes = await prisma.sourceText.findMany({
       where: { origin: "anime-quote", userId: user.id },

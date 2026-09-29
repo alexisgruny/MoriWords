@@ -236,3 +236,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 54    Bloc « Aujourd'hui » en haut de l'accueil (GET /api/today) : cartes a
       revoir et duree estimee, serie, mots, mots bien ancres, revisions du
       jour ; message de premiere fiche pour un nouveau compte.
+55    Cout Claude : textes generes partages entre comptes (un texte deja
+      genere et pas encore vu est copie au lieu d'appeler Claude,
+      src/lib/feeds/shared-texts.ts) ; cle du cache de corrections plus
+      souple (NFKC, espaces, ponctuation, guillemets).
+56    Couleurs de reussite sur /kana, /kanji, /grammaire, /conjugaison
+      (acquis / fragile / a revoir / blanc si jamais essaye, GET
+      /api/exercise-mastery) ; reponses du quiz de kana enregistrees ;
+      exercice kanji en deux sens (kanji -> francais, kanji -> lecture,
+      corriges localement) ; focus des tentatives kanji = le caractere.

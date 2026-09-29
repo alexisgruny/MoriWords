@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { FadeIn } from "@/components/fade-in";
 import { ProgressBar } from "@/components/progress-bar";
 
-type ExerciseSource = "grammar" | "conjugation" | "kanji" | "examples";
+type ExerciseSource = "kana" | "grammar" | "conjugation" | "kanji" | "kanji-reading" | "examples";
 
 type SourceStats = { source: ExerciseSource; total: number; correct: number; rate: number };
 
@@ -22,16 +22,20 @@ type WeakPoint = {
 type ExerciseStats = { bySource: SourceStats[]; weakPoints: WeakPoint[] };
 
 const SOURCE_LABELS: Record<ExerciseSource, string> = {
+  kana: "Kana",
   grammar: "Grammaire",
   conjugation: "Conjugaison",
-  kanji: "Kanji",
+  kanji: "Kanji (sens)",
+  "kanji-reading": "Kanji (lecture)",
   examples: "Mon vocabulaire",
 };
 
 const EXERCISE_LINKS: Record<ExerciseSource, string> = {
+  kana: "/exercices/kana",
   grammar: "/exercices/grammaire",
   conjugation: "/exercices/conjugaison",
   kanji: "/exercices/kanji",
+  "kanji-reading": "/exercices/kanji",
   examples: "/exercices/vocabulaire",
 };
 

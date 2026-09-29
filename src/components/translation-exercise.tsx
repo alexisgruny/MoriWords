@@ -7,7 +7,7 @@ import { useToast } from "@/components/toast-provider";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 
-type Exercise = { id: string; french: string; level: string | null; focus: string };
+type Exercise = { id: string; french: string; level: string | null; focus: string; hint?: string };
 
 type ExerciseError = { wrong: string; right: string; explanation: string };
 
@@ -18,7 +18,7 @@ type Correction = {
   errors: ExerciseError[];
 };
 
-export type Source = "grammar" | "examples" | "conjugation" | "kanji";
+export type Source = "grammar" | "examples" | "conjugation" | "kanji" | "kanji-reading";
 
 const VERDICT_STYLES: Record<Correction["verdict"], string> = {
   correct: "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success-dark)]",
@@ -49,7 +49,10 @@ const VERDICT_ICONS: Record<Correction["verdict"], string> = {
 // faibles remontés par les statistiques.
 export function TranslationExercise({ source, focusIn }: { source: Source; focusIn?: string[] }) {
   const { showToast } = useToast();
-  const isKanji = source === "kanji";
+  // Kanji : sens en français ("kanji") ou lecture en kana ("kanji-reading"),
+  // corrigés localement sans Claude.
+  const isKanji = source === "kanji" || source === "kanji-reading";
+  const isReading = source === "kanji-reading";
 
   const [level, setLevel] = useState<GrammarLevel | "all">("all");
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -155,7 +158,11 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
       {/* Pas de titre ici : chaque page qui affiche ce composant nomme déjà
           l'exercice (titre de sous-page, ou libellé de section en révision). */}
       <p className="mb-4 text-sm text-[var(--muted)]">
-        {isKanji ? "Regarde le kanji, écris son sens en français." : "Écris ta traduction en japonais, Claude la corrige."}
+        {isReading
+          ? "Regarde le kanji, écris une de ses lectures en hiragana ou en katakana."
+          : isKanji
+            ? "Regarde le kanji, écris son sens en français."
+            : "Écris ta traduction en japonais, Claude la corrige."}
       </p>
 
       <div className="mb-4">
@@ -192,7 +199,9 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             className={`fade-in-up rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-5 ${isKanji ? "text-center" : ""}`}
           >
             <div className={`flex flex-wrap items-center gap-2 ${isKanji ? "justify-center" : ""}`}>
-              <span className="eyebrow">{isKanji ? "Que veut dire ce kanji ?" : "À traduire en japonais"}</span>
+              <span className="eyebrow">
+                {isReading ? "Comment se lit ce kanji ?" : isKanji ? "Que veut dire ce kanji ?" : "À traduire en japonais"}
+              </span>
               {exercise.level ? <span className={jlptBadgeClass(exercise.level)}>{exercise.level}</span> : null}
             </div>
             <p
@@ -203,8 +212,8 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
             >
               {exercise.french}
             </p>
-            <p className="mt-2 text-sm text-[var(--muted)]" lang={isKanji ? "ja" : undefined}>
-              {isKanji ? `Lectures : ${exercise.focus}` : `Point travaillé : ${exercise.focus}`}
+            <p className="mt-2 text-sm text-[var(--muted)]" lang={isKanji && !isReading ? "ja" : undefined}>
+              {exercise.hint ?? `Point travaillé : ${exercise.focus}`}
             </p>
           </div>
 
@@ -217,8 +226,8 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                 void handleSubmit();
               }
             }}
-            placeholder={isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
-            lang={isKanji ? "fr" : "ja"}
+            placeholder={isReading ? "ひらがな ou カタカナ" : isKanji ? "Écris le sens en français" : "日本語で書いてみよう"}
+            lang={isKanji && !isReading ? "fr" : "ja"}
             rows={3}
             className="mt-4 min-h-24 w-full border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-3 text-lg text-[var(--ink)] outline-none"
           />
@@ -282,8 +291,8 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                 // sens attendu ; sur une bonne, on rappelle tous les synonymes.
                 correction.correction.verdict === "correct" ? (
                   <p className="mt-3 text-sm text-[var(--ink)]">
-                    <span className="font-semibold">Sens attendu : </span>
-                    {correction.reference}
+                    <span className="font-semibold">{isReading ? "Lectures : " : "Sens attendu : "}</span>
+                    <span lang={isReading ? "ja" : undefined}>{correction.reference}</span>
                   </p>
                 ) : null
               ) : (

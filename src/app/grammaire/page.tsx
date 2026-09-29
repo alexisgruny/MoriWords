@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { Chevron, NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import {
   GRAMMAR_LEVELS,
@@ -24,6 +25,7 @@ export default function GrammarPage() {
   const [query, setQuery] = useState("");
 
   const results = filterGrammarPoints(grammarPoints, level, query);
+  const mastery = useMastery("grammar");
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
@@ -58,16 +60,25 @@ export default function GrammarPage() {
             {results.length} point{results.length > 1 ? "s" : ""}
           </p>
 
+          <MasteryLegend items={mastery} />
+
           {results.length > 0 ? (
             <div className="grid gap-3">
               {results.map((point) => (
-                <details key={point.id} className="token-card group mb-0!">
+                <details
+                  key={point.id}
+                  title={masteryLabel(mastery[point.pattern])}
+                  className={`token-card group mb-0! ${masteryClass(mastery[point.pattern])}`}
+                >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                     <span className="min-w-0">
                       <span className="text-xl font-semibold text-[var(--ink)]" lang="ja">
                         {point.pattern}
                       </span>
-                      <span className="mt-1 block text-sm text-[var(--muted)]">{point.meaning}</span>
+                      <span className="mt-1 block text-sm text-[var(--muted)]">
+                        {point.meaning}
+                        <MasteryNote stat={mastery[point.pattern]} />
+                      </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className={jlptBadgeClass(point.level)}>{point.level}</span>

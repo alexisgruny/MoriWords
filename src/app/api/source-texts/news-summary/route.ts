@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { setClaudeContext } from "@/lib/security/claude-usage";
 import { limitByIp } from "@/lib/security/rate-limit";
 import { prisma } from "@/lib/db/prisma";
+import { reuseSharedText } from "@/lib/feeds/shared-texts";
 import { NewsSummaryServiceError, generateNewsSummary } from "@/lib/feeds/news-summary";
 
 // Génère un court paragraphe d'actualité simplifiée via Claude et
@@ -21,6 +22,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Un texte déjà généré pour un autre compte et pas encore vu : aucun
+    // appel à Claude (voir src/lib/feeds/shared-texts.ts).
+    const shared = await reuseSharedText(user.id, "news-summary");
+    if (shared) {
+      return Response.json({ sourceText: shared }, { status: 201 });
+    }
+
     // Récupère les sujets récents pour éviter que Claude se répète.
     const recentTexts = await prisma.sourceText.findMany({
       where: { origin: "news-summary", userId: user.id },

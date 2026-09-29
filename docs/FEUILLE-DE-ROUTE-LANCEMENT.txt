@@ -130,13 +130,13 @@ NÉCESSAIRES avant de faire payer :
   [ ] Vérifier le droit des citations d'anime (src/lib/feeds/anime-quote.ts)
 
 OPTIONNELLES mais rentables :
-  [ ] Un seul texte du jour pour tout le monde au lieu d'un appel Claude
+  [x] Un seul texte du jour pour tout le monde au lieu d'un appel Claude
       à chaque clic (src/app/api/source-texts/*)
   [ ] Pré-remplir les caches avec l'API Batch (-50 %) : exemples des mots
       N5-N3 et tous les points de grammaire (~8 $ une seule fois)
   [ ] Sorties structurées (output_config.format) à la place de
       extractJsonPayload, pour avoir moins de réponses inexploitables
-  [ ] Mieux normaliser la clé du cache de corrections (espaces, 。)
+  [x] Mieux normaliser la clé du cache de corrections (espaces, 。)
   [ ] Offre annuelle (moins de frais Stripe, moins de désabonnements)
   [~] Page /admin pour suivre coût Claude / CA / marge (coût fait, CA et
       marge à ajouter avec Stripe)

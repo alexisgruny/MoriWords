@@ -12,7 +12,8 @@ type ExerciseStats = { weakPoints: WeakPoint[] };
 const SOURCE_LABELS: Record<Source, string> = {
   grammar: "Grammaire",
   conjugation: "Conjugaison",
-  kanji: "Kanji",
+  kanji: "Kanji (sens)",
+  "kanji-reading": "Kanji (lecture)",
   examples: "Mon vocabulaire",
 };
 
@@ -65,7 +66,10 @@ export default function RevisionPage() {
   }, []);
 
   const bySource = stats ? groupBySource(stats.weakPoints) : {};
-  const sourcesWithWeakPoints = (Object.keys(bySource) as Source[]).filter((source) => bySource[source]!.length > 0);
+  // Les kana ont leur propre quiz (/exercices/kana) : pas de section ici.
+  const sourcesWithWeakPoints = (Object.keys(bySource) as Source[]).filter(
+    (source) => source in SOURCE_LABELS && bySource[source]!.length > 0,
+  );
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">

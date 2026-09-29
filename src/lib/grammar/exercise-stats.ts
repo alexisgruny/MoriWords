@@ -23,7 +23,7 @@ export type WeakPoint = {
 
 export type ExerciseStats = { bySource: SourceStats[]; weakPoints: WeakPoint[] };
 
-const ALL_SOURCES: ExerciseSource[] = ["grammar", "conjugation", "kanji", "examples"];
+const ALL_SOURCES: ExerciseSource[] = ["kana", "grammar", "conjugation", "kanji", "kanji-reading", "examples"];
 
 // Additionne deux comptages groupés (total toutes réponses, puis bonnes
 // réponses seulement) en un seul totalCorrect par clé de groupe.

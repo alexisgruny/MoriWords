@@ -17,6 +17,7 @@ import { JLPT_KANJI } from "@/lib/kanji/kanji";
 
 import {
   correctKanjiMeaningAnswer,
+  correctKanjiReadingAnswer,
   correctTranslation,
   getExerciseSource,
   getTranslationCorrection,
@@ -316,14 +317,34 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     expect(exercise?.id).toBe(`kanji:${entry.kanji}`);
     expect(exercise?.french).toBe(entry.kanji);
     expect(exercise?.level).toBe(entry.level);
+    expect(exercise?.focus).toBe(entry.kanji);
+    expect(exercise?.hint).toBe(`Lectures : ${[...entry.onReadings, ...entry.kunReadings].join("・")}`);
 
     const resolved = await resolveExercise(exercise!.id, userId);
     expect(resolved).toEqual({
       french: entry.kanji,
       japanese: entry.meaning,
-      focus: [...entry.onReadings, ...entry.kunReadings].join("・"),
+      focus: entry.kanji,
       level: entry.level,
     });
+  });
+
+  it("in reading mode, asks for a reading and gives the meaning as a hint", async () => {
+    const entry = JLPT_KANJI.find((candidate) => candidate.kanji === "食")!;
+    const otherIds = JLPT_KANJI.filter((candidate) => candidate.kanji !== entry.kanji).map(
+      (candidate) => `kanji-yomi:${candidate.kanji}`,
+    );
+
+    const exercise = await pickKanjiExercise("all", otherIds, undefined, "reading");
+
+    expect(exercise).toMatchObject({ id: "kanji-yomi:食", french: "食", focus: "食", hint: `Sens : ${entry.meaning}` });
+    expect(await resolveExercise(exercise!.id, userId)).toEqual({
+      french: entry.kanji,
+      japanese: [...entry.onReadings, ...entry.kunReadings].join("・"),
+      focus: entry.kanji,
+      level: entry.level,
+    });
+    expect(getExerciseSource(exercise!.id)).toBe("kanji-reading");
   });
 
   it("filters by JLPT level", async () => {
@@ -338,14 +359,33 @@ describe("pickKanjiExercise and resolveExercise round-trip", () => {
     await expect(pickKanjiExercise("all", allIds)).resolves.toBeNull();
   });
 
-  it("restricts to the readings listed in focusIn", async () => {
+  it("restricts to the kanji listed in focusIn, or to their readings (older attempts)", async () => {
     const entry = JLPT_KANJI.find((candidate) => candidate.kanji === "食")!;
-    const focus = [...entry.onReadings, ...entry.kunReadings].join("・");
+    const readings = [...entry.onReadings, ...entry.kunReadings].join("・");
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const exercise = await pickKanjiExercise("all", [], [focus]);
-      expect(exercise?.focus).toBe(focus);
+    for (const focus of ["食", readings]) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const exercise = await pickKanjiExercise("all", [], [focus]);
+        expect(exercise?.focus).toBe("食");
+      }
     }
+  });
+});
+
+describe("correctKanjiReadingAnswer", () => {
+  const reference = "ショク・ジキ・く.う・た.べる";
+
+  it("accepts any reading, in hiragana or katakana, with or without okurigana", () => {
+    for (const answer of ["しょく", "ショク", "たべる", "た", "く", " クウ "]) {
+      expect(correctKanjiReadingAnswer({ reference, answer }).verdict).toBe("correct");
+    }
+  });
+
+  it("refuses anything else and shows every reading", () => {
+    const correction = correctKanjiReadingAnswer({ reference, answer: "のむ" });
+    expect(correction.verdict).toBe("incorrect");
+    expect(correction.errors[0].right).toBe(reference);
+    expect(correctKanjiReadingAnswer({ reference: "おと-・きのと", answer: "おと" }).verdict).toBe("correct");
   });
 });
 

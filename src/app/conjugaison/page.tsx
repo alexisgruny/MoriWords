@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { Chevron, NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { conjugationForms, filterConjugationForms } from "@/lib/conjugation/forms";
 import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
@@ -22,6 +23,7 @@ export default function ConjugationPage() {
   const [query, setQuery] = useState("");
 
   const results = filterConjugationForms(conjugationForms, level, query);
+  const mastery = useMastery("conjugation");
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
@@ -57,13 +59,22 @@ export default function ConjugationPage() {
             {results.length} forme{results.length > 1 ? "s" : ""}
           </p>
 
+          <MasteryLegend items={mastery} />
+
           {results.length > 0 ? (
             <div className="grid gap-3">
               {results.map((form) => (
-                <details key={form.id} className="token-card group mb-0!">
+                <details
+                  key={form.id}
+                  title={masteryLabel(mastery[form.name])}
+                  className={`token-card group mb-0! ${masteryClass(mastery[form.name])}`}
+                >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                     <span className="min-w-0">
-                      <span className="eyebrow">{form.category}</span>
+                      <span className="eyebrow">
+                        {form.category}
+                        <MasteryNote stat={mastery[form.name]} />
+                      </span>
                       <span className="mt-1 block text-lg font-semibold text-[var(--ink)]">{form.name}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">

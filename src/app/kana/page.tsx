@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { FilterChips, SearchField } from "@/components/reference-toolbar";
 import { KANA, KANA_GROUP_LABELS, type KanaGroup, type KanaScript, filterKana } from "@/lib/kana/kana";
 
@@ -22,6 +23,7 @@ export default function KanaPage() {
   const [query, setQuery] = useState("");
 
   const results = filterKana(KANA, script, group, query);
+  const mastery = useMastery("kana");
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
@@ -76,14 +78,23 @@ export default function KanaPage() {
 
           <p className="mb-4 text-sm text-[var(--muted)]">{results.length} kana</p>
 
+          <MasteryLegend items={mastery} />
+
           {results.length > 0 ? (
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-8">
               {results.map((entry) => (
-                <div key={entry.kana} className="token-card mb-0! flex flex-col items-center gap-1 py-3! text-center">
+                <div
+                  key={entry.kana}
+                  title={masteryLabel(mastery[entry.kana])}
+                  className={`token-card mb-0! flex flex-col items-center gap-1 py-3! text-center ${masteryClass(mastery[entry.kana])}`}
+                >
                   <span className="text-4xl font-bold leading-tight text-[var(--ink)]" lang="ja">
                     {entry.kana}
                   </span>
-                  <span className="text-sm font-semibold text-[var(--accent-dark)]">{entry.romaji}</span>
+                  <span className="text-sm font-semibold text-[var(--accent-dark)]">
+                    {entry.romaji}
+                    <MasteryNote stat={mastery[entry.kana]} />
+                  </span>
                   <span className="text-xs text-[var(--muted)]" lang="ja" title={SCRIPT_LABELS[script === "hiragana" ? "katakana" : "hiragana"]}>
                     {entry.counterpart}
                   </span>

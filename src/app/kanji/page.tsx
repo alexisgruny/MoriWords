@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { MasteryLegend, MasteryNote, masteryClass, masteryLabel, useMastery } from "@/components/mastery";
 import { NoResults, ReferenceToolbar } from "@/components/reference-toolbar";
 import { useToast } from "@/components/toast-provider";
 import { filterKanji, JLPT_KANJI } from "@/lib/kanji/kanji";
@@ -122,6 +123,7 @@ export default function KanjiPage() {
   }
 
   const results = filterKanji(JLPT_KANJI, level, query);
+  const mastery = useMastery("kanji");
   const visibleResults = results.slice(0, visibleCount);
 
   const deckControl =
@@ -183,6 +185,7 @@ export default function KanjiPage() {
           />
 
           <p className="mb-4 text-sm text-[var(--muted)]">{results.length} kanji</p>
+          <MasteryLegend items={mastery} />
 
           {visibleResults.length > 0 ? (
             <>
@@ -192,7 +195,12 @@ export default function KanjiPage() {
                   const isAdded = existingLemmas.has(entry.kanji);
 
                   return (
-                    <div key={entry.kanji} className="token-card mb-0! flex gap-4">
+                    <div
+                      key={entry.kanji}
+                      title={masteryLabel(mastery[entry.kanji])}
+                      className={`token-card mb-0! flex gap-4 ${masteryClass(mastery[entry.kanji])}`}
+                    >
+                      <MasteryNote stat={mastery[entry.kanji]} />
                       <span
                         className="grid h-20 w-20 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-[var(--tint)] text-5xl font-bold text-[var(--ink)]"
                         lang="ja"

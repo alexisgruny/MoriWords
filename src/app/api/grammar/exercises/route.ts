@@ -13,9 +13,9 @@ import { GRAMMAR_LEVELS, type GrammarLevel } from "@/lib/grammar/points";
 // La première phrase d'un point de grammaire peut déclencher une génération Claude.
 export const maxDuration = 60;
 
-type Source = "grammar" | "examples" | "conjugation" | "kanji";
+type Source = "grammar" | "examples" | "conjugation" | "kanji" | "kanji-reading";
 
-const SOURCES: Source[] = ["examples", "conjugation", "kanji"];
+const SOURCES: Source[] = ["examples", "conjugation", "kanji", "kanji-reading"];
 
 // Propose une phrase française à traduire en japonais. source "grammar" : phrases
 // liées aux points de grammaire (du niveau choisi) ; "examples" : phrases
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       examples: () => pickExampleExercise(user.id, level, excludeIds, focusIn),
       conjugation: () => pickConjugationExercise(level, excludeIds, focusIn),
       kanji: () => pickKanjiExercise(level, excludeIds, focusIn),
+      "kanji-reading": () => pickKanjiExercise(level, excludeIds, focusIn, "reading"),
     };
 
     const exercise = await pickers[source]();
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
             : `Aucune phrase d'exemple de niveau ${level} disponible. Essaie un autre niveau ou ajoute des mots de ce niveau à un deck.`,
         conjugation: "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
         kanji: "Tu as fait tous les kanji disponibles pour ce niveau. Change de niveau pour continuer.",
+        "kanji-reading": "Tu as fait tous les kanji disponibles pour ce niveau. Change de niveau pour continuer.",
         grammar: "Tu as fait toutes les phrases disponibles pour ce niveau. Change de niveau pour continuer.",
       };
 
