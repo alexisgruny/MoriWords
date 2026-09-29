@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // ni appel à Claude), accueil public, pages de connexion et pages légales.
 const PUBLIC_PATHS = [
   "/bienvenue",
+  "/parcours",
   "/connexion",
   "/inscription",
   "/kana",

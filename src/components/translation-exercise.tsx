@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { JapaneseText } from "@/components/japanese-text";
 import { FilterChips } from "@/components/reference-toolbar";
 import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
@@ -18,7 +19,7 @@ type Exercise = {
   choices?: string[] | null;
 };
 
-type Format = "write" | "choice";
+export type Format = "write" | "choice";
 
 const FORMATS: Array<{ value: Format; label: string }> = [
   { value: "write", label: "Écrire" },
@@ -69,7 +70,19 @@ const VERDICT_ICONS: Record<Correction["verdict"], string> = {
 // focusIn (optionnel) restreint le tirage aux points/formes/kanji/mots
 // listés, utilisé par /exercices/revision pour s'entraîner sur les points
 // faibles remontés par les statistiques.
-export function TranslationExercise({ source, focusIn }: { source: Source; focusIn?: string[] }) {
+// defaultFormat : format de départ (le QCM pour une leçon ou un débutant).
+export function TranslationExercise({
+  source,
+  focusIn,
+  defaultFormat = "write",
+  onAnswered,
+}: {
+  source: Source;
+  focusIn?: string[];
+  defaultFormat?: Format;
+  // Appelé à chaque correction (le parcours débutant compte les bonnes réponses).
+  onAnswered?: (correct: boolean) => void;
+}) {
   const { showToast } = useToast();
   // Kanji : sens en français ("kanji") ou lecture en kana ("kanji-reading"),
   // corrigés localement sans Claude.
@@ -84,7 +97,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
   const [isLoadingExercise, setIsLoadingExercise] = useState(false);
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
-  const [format, setFormat] = useState<Format>("write");
+  const [format, setFormat] = useState<Format>(defaultFormat);
   const [chosen, setChosen] = useState<string | null>(null);
 
   async function loadExercise(nextLevel: GrammarLevel | "all", excludeIds: string[], nextFormat: Format = format) {
@@ -178,6 +191,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
       }
 
       setCorrection({ correction: data.correction, reference: data.reference });
+      onAnswered?.(data.correction.verdict === "correct");
     } catch (error) {
       showToast(
         error instanceof Error && error.message !== "correction failed"
@@ -222,20 +236,24 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
           ? "Regarde le kanji, écris une de ses lectures en hiragana ou en katakana."
           : isKanji
             ? "Regarde le kanji, écris son sens en français."
-            : "Écris ta traduction en japonais, Claude la corrige."}
+            : format === "choice"
+              ? "Choisis la bonne traduction en japonais parmi les 4."
+              : "Écris ta traduction en japonais, Claude la corrige."}
       </p>
 
       <div className="mb-4">
-        <FilterChips
-          options={[
-            { value: "all" as const, label: "Tous niveaux" },
-            ...GRAMMAR_LEVELS.map((candidate) => ({ value: candidate, label: candidate })),
-          ]}
-          value={level}
-          onChange={handleLevelChange}
-          label="Niveau JLPT de l'exercice"
-        />
-        <div className="mt-2.5">
+        {focusIn ? null : (
+          <FilterChips
+            options={[
+              { value: "all" as const, label: "Tous niveaux" },
+              ...GRAMMAR_LEVELS.map((candidate) => ({ value: candidate, label: candidate })),
+            ]}
+            value={level}
+            onChange={handleLevelChange}
+            label="Niveau JLPT de l'exercice"
+          />
+        )}
+        <div className={focusIn ? "" : "mt-2.5"}>
           <FilterChips options={FORMATS} value={format} onChange={handleFormatChange} label="Format de l'exercice" />
         </div>
       </div>
@@ -302,7 +320,7 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                       }`}
                     >
                       <span className="kbd shrink-0">{index + 1}</span>
-                      <span>{choice}</span>
+                      <span>{isKanji ? choice : <JapaneseText text={choice} />}</span>
                     </button>
                   );
                 })}
@@ -432,11 +450,11 @@ export function TranslationExercise({ source, focusIn }: { source: Source; focus
                 <>
                   <p className="mt-3 text-sm text-[var(--ink)]">
                     <span className="font-semibold">Ta traduction corrigée : </span>
-                    <span lang="ja">{correction.correction.corrected}</span>
+                    <JapaneseText text={correction.correction.corrected} interactive />
                   </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     <span className="font-semibold">Référence : </span>
-                    <span lang="ja">{correction.reference}</span>
+                    <JapaneseText text={correction.reference} interactive />
                     <SpeakButton text={correction.reference} label="Écouter la référence" size="sm" className="ml-2 align-middle" />
                   </p>
                 </>

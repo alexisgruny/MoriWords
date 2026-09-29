@@ -15,6 +15,7 @@ const allGroups: Array<{ title: string; links: Array<{ href: string; label: stri
   {
     title: "Apprendre",
     links: [
+      { href: "/parcours", label: "Parcours", isPublic: true },
       { href: "/", label: "Analyser" },
       { href: "/decks", label: "Decks" },
       { href: "/exercices", label: "Exercices" },

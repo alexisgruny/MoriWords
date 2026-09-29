@@ -94,6 +94,13 @@ export default function GrammarPage() {
                     </p>
                     <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{point.explanation}</p>
 
+                    <Link
+                      href={`/exercices/grammaire?point=${encodeURIComponent(point.id)}`}
+                      className="secondary-button mt-4 inline-flex text-sm!"
+                    >
+                      S&apos;entraîner sur ce point →
+                    </Link>
+
                     <p className="eyebrow mt-4">Exemples</p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {point.examples.map((example) => (

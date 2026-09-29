@@ -88,17 +88,17 @@ export default function WelcomePage() {
             </ul>
           </div>
           <div className="panel">
-            <h2 className="text-[var(--ink)]">Pas encore les kana ?</h2>
+            <h2 className="text-[var(--ink)]">Tu pars de zéro ?</h2>
             <p className="mt-3 text-[var(--muted)]">
-              MoriWords suppose que tu sais lire les hiragana et les katakana. Commence par le tableau et
-              l&apos;exercice de lecture : c&apos;est ouvert à tous, sans compte.
+              Le parcours débutant gratuit t&apos;emmène des hiragana à ton premier texte en 10 leçons de 5 à 10
+              minutes. Les leçons se lisent sans compte.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/parcours" className="primary-button">
+                Voir le parcours débutant
+              </Link>
               <Link href="/kana" className="secondary-button">
                 Tableau des kana
-              </Link>
-              <Link href="/exercices/kana" className="secondary-button">
-                S&apos;entraîner à les lire
               </Link>
             </div>
           </div>

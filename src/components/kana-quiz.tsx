@@ -33,10 +33,20 @@ function buildChoices(entry: KanaEntry): string[] {
 }
 
 // format "choice" : 4 romaji au choix au lieu de les taper (plus facile).
-export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
+// preset : écriture et groupes imposés (leçon du parcours), sans sélecteurs.
+// onAnswered : appelé à chaque réponse (le parcours compte les bonnes).
+export function KanaQuiz({
+  format = "type",
+  preset,
+  onAnswered,
+}: {
+  format?: "type" | "choice";
+  preset?: { script: "hiragana" | "katakana"; groups: KanaGroup[] };
+  onAnswered?: (correct: boolean) => void;
+}) {
   const { data: session } = authClient.useSession();
-  const [scriptChoice, setScriptChoice] = useState<ScriptChoice>("hiragana");
-  const [groups, setGroups] = useState<Set<KanaGroup>>(new Set(["base"]));
+  const [scriptChoice, setScriptChoice] = useState<ScriptChoice>(preset?.script ?? "hiragana");
+  const [groups, setGroups] = useState<Set<KanaGroup>>(new Set(preset?.groups ?? ["base"]));
   const [queue, setQueue] = useState<KanaEntry[]>([]);
   const [position, setPosition] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -116,6 +126,7 @@ export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
     }
 
     const correct = isCorrectKanaAnswer(current, value);
+    onAnswered?.(correct);
     setLastResult({ correct, entry: current });
 
     // Trace pour les statistiques et les couleurs de la page Kana, seulement
@@ -146,6 +157,8 @@ export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
           : "Regarde le kana et tape sa prononciation en romaji."}
       </p>
 
+      {preset ? null : (
+      <>
       <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Écriture">
         {SCRIPT_CHOICES.map((choice) => (
           <button
@@ -175,6 +188,8 @@ export function KanaQuiz({ format = "type" }: { format?: "type" | "choice" }) {
           </button>
         ))}
       </div>
+      </>
+      )}
 
       {queue.length === 0 ? (
         <button type="button" onClick={() => start(pool)} className="primary-button">

@@ -91,6 +91,13 @@ export default function ConjugationPage() {
                     </p>
                     <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{form.explanation}</p>
 
+                    <Link
+                      href={`/exercices/conjugaison?forme=${encodeURIComponent(form.id)}`}
+                      className="secondary-button mt-4 inline-flex text-sm!"
+                    >
+                      S&apos;entraîner sur cette forme →
+                    </Link>
+
                     <p className="eyebrow mt-4">Exemples</p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {form.examples.map((example) => (

@@ -322,3 +322,19 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       mots grammaticaux caches par defaut, sens au toucher avec 🔊, lecture
       masquee quand elle est celle d'une forme conjuguee. Conseil « Commence
       par les kana » pour un compte sans carte (masquable).
+66    Idees 1-2-3 de IDEES.txt :
+      - Parcours debutant gratuit (/parcours, public, 10 lecons de 5-10 min
+        dans src/lib/course/lessons.ts : hiragana x2, katakana, AはBです,
+        好き/たい, particules, verbes en ます, adjectifs, 20 premiers kanji,
+        texte bilan). Chaque lecon : explications, exemples avec lecture et
+        🔊, exercice existant (quiz kana, QCM grammaire/conjugaison/kanji,
+        lecture avec furigana) valide a un nombre de bonnes reponses ;
+        progression par compte (table LessonProgress, /api/course). Contenu
+        a faire relire par une personne N3+. Verifie par test : exercices
+        existants, francais correct (correcteur).
+      - Exercice par lecon : bouton « S'entrainer sur ce point / cette
+        forme » sur /grammaire et /conjugaison (?point=, ?forme=, QCM par
+        defaut) ; furigana dans les phrases japonaises des exercices (choix
+        du QCM, reference et correction, mots touchables : JapaneseText).
+      - Carte de progression JLPT sur /decks : part du vocabulaire de chaque
+        niveau appris (reussi au moins une fois) et bien ancre (/api/progress).

@@ -22,6 +22,15 @@ export const FRENCH_ALLOWLIST: string[] = [
   "katakana",
   "kun'yomi",
   "on'yomi",
+  // Parcours débutant (src/lib/course/lessons.ts) : syllabes et mots en
+  // rōmaji donnés comme prononciation, noms des signes diacritiques.
+  "ten",
+  "maru",
+  "ka", "ki", "ku", "ko", "ga", "sa", "shi", "su", "so", "sho", "sha", "shin",
+  "za", "da", "de", "t", "te", "tsu", "na", "ne", "n", "wa", "fu", "pa", "k",
+  "kō", "kya", "kyō", "kitte", "kōhī", "suki", "desu",
+  // Mot anglais cité comme origine d'un emprunt (コーヒー < coffee).
+  "coffee",
   "keigo",
   "sonkeigo",
   "kenjougo",

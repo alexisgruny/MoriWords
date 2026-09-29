@@ -50,9 +50,9 @@ export function KanaHint() {
   return (
     <p className="fade-in-up mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--muted)]">
       <span>
-        Tu ne sais pas encore lire les hiragana ?{" "}
-        <Link href="/exercices/kana" className="link-button text-sm!">
-          Commence par les kana →
+        Tu débutes complètement ?{" "}
+        <Link href="/parcours" className="link-button text-sm!">
+          Commence par le parcours débutant →
         </Link>
       </span>
       <button

@@ -247,6 +247,17 @@ model ClaudeUsage {
   @@index([createdAt])
 }
 
+// Leçons validées du parcours débutant (voir src/lib/course/lessons.ts) :
+// une ligne par leçon et par compte, le contenu des leçons restant dans le code.
+model LessonProgress {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  completedAt DateTime @default(now())
+
+  @@id([userId, lessonId])
+}
+
 // Historique des tentatives d'exercice (grammaire/conjugaison/kanji/mon
 // vocabulaire), pour calculer un taux de réussite par point/forme/kanji/mot
 // et repérer ce qui mérite d'être revu (page /exercices/stats). Écrit après
@@ -288,6 +299,7 @@ model User {
   exerciseAttempts ExerciseAttempt[]
   vocabularyEntries VocabularyEntry[]
   claudeUsages     ClaudeUsage[]
+  lessonProgress   LessonProgress[]
 
   @@map("user")
 }

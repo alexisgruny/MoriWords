@@ -1,0 +1,12 @@
+-- CreateTable
+CREATE TABLE "LessonProgress" (
+    "userId" TEXT NOT NULL,
+    "lessonId" TEXT NOT NULL,
+    "completedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "LessonProgress_pkey" PRIMARY KEY ("userId","lessonId")
+);
+
+-- AddForeignKey
+ALTER TABLE "LessonProgress" ADD CONSTRAINT "LessonProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
