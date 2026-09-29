@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
-import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
+import { GradeButtons, ReviewDone, SessionProgress, qualityForKey } from "@/components/review-controls";
 import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { buildQuizChoices } from "@/lib/decks/card-utils";
@@ -15,12 +15,13 @@ import type { DeckCard, DeckCardWithOccurrences, DeckSummary } from "@/types/sha
 // propose 4 choix de sens au lieu d'une auto-évaluation.
 type ReviewMode = "standard" | "kanji" | "context" | "quiz";
 
-// La liste des modes affichés dans le sélecteur, avec leur libellé.
-const reviewModes: Array<{ id: ReviewMode; label: string }> = [
-  { id: "standard", label: "Standard" },
-  { id: "kanji", label: "Kanji" },
-  { id: "context", label: "Contexte" },
-  { id: "quiz", label: "Quiz" },
+// Les modes du sélecteur : un libellé qui dit ce qu'on voit (« Standard »
+// ou « Kanji » ne l'expliquaient pas) et une phrase sur ce qu'on doit trouver.
+const reviewModes: Array<{ id: ReviewMode; label: string; description: string }> = [
+  { id: "standard", label: "Mot + lecture", description: "Tu vois le mot et sa lecture : retrouve son sens." },
+  { id: "kanji", label: "Kanji seul", description: "Tu vois le mot sans sa lecture : retrouve comment il se lit et ce qu'il veut dire." },
+  { id: "context", label: "Dans la phrase", description: "Tu vois le mot dans une phrase où tu l'as rencontré : comprends-le en contexte." },
+  { id: "quiz", label: "QCM", description: "Choisis le bon sens parmi 4 propositions." },
 ];
 
 // Note de qualité SM-2 (0-5) envoyée automatiquement selon la réponse au
@@ -293,9 +294,9 @@ export default function DeckTrainingPage() {
         return;
       }
 
-      const quality = Number(event.key);
+      const quality = qualityForKey(event.key);
 
-      if (Number.isInteger(quality) && quality >= 0 && quality <= 5) {
+      if (quality !== null) {
         event.preventDefault();
         void submitReviewCard(activeCard.id, quality);
       }
@@ -390,7 +391,9 @@ export default function DeckTrainingPage() {
 
       <section className="panel">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-[var(--ink)]">Entraînement</h2>
+          <p className="text-sm text-[var(--muted)]">
+            <strong className="text-[var(--ink)]">{dueCards.length}</strong> à revoir aujourd&apos;hui
+          </p>
           <div className="flex items-center gap-3">
             {canUndoLastReview && undoableCardId ? (
               <button
@@ -402,25 +405,7 @@ export default function DeckTrainingPage() {
                 {isUndoing ? "Annulation..." : "Annuler la dernière réponse"}
               </button>
             ) : null}
-            <span className="count-badge" aria-label={`${dueCards.length} carte(s) à revoir`}>
-              {dueCards.length}
-            </span>
           </div>
-        </div>
-
-        <div className="mb-4 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-          <span className="rounded-full bg-[var(--tint)] px-3 py-1.5">
-            Total <strong className="mono text-[var(--ink)]">{deck?.cards.length ?? 0}</strong>
-          </span>
-          <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5">
-            À revoir <strong className="mono text-[var(--accent-dark)]">{dueCards.length}</strong>
-          </span>
-          <span className="rounded-full bg-[var(--tint)] px-3 py-1.5">
-            Plus tard{" "}
-            <strong className="mono text-[var(--ink)]">
-              {Math.max(0, (deck?.cards.length ?? 0) - dueCards.length)}
-            </strong>
-          </span>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -442,6 +427,9 @@ export default function DeckTrainingPage() {
             </button>
           ))}
         </div>
+        <p className="-mt-2 mb-4 text-sm text-[var(--muted)]">
+          {reviewModes.find((mode) => mode.id === reviewMode)?.description}
+        </p>
 
         <SessionProgress reviewed={sessionReviewed} remaining={dueCards.length} />
 

@@ -226,41 +226,11 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
                 ) : (
                   <div className="skeleton mt-1 h-10 w-56" aria-label="Chargement du deck" />
                 )}
-                {deck ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditedName(deck.name);
-                      setIsEditingName(true);
-                    }}
-                    aria-label="Renommer le deck"
-                    className="link-button text-sm!"
-                  >
-                    Renommer
-                  </button>
-                ) : null}
               </div>
             )}
             {deck ? (
               <p className="mt-2 text-sm text-[var(--muted)]">{deck.cardCount} carte(s)</p>
             ) : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => void handleExportAnki()}
-              disabled={isExporting}
-              className="secondary-button px-4! py-2! text-xs!"
-            >
-              {isExporting ? "Export..." : "Exporter vers Anki"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeletionPending(true)}
-              className="secondary-button px-4! py-2! text-xs! text-[var(--danger)]! hover:bg-[var(--accent-soft)]!"
-            >
-              Supprimer le deck
-            </button>
           </div>
         </header>
 
@@ -284,6 +254,42 @@ export default function DeckLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {children}
+
+        {/* Gestion repliée en bas : sur téléphone, ces boutons (dont une
+            suppression) passaient avant la carte à réviser. */}
+        {deck ? (
+          <details className="mt-10 border-t border-[var(--line)] pt-4 text-sm">
+            <summary className="cursor-pointer font-semibold text-[var(--muted)] hover:text-[var(--ink)]">Gérer le deck</summary>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditedName(deck.name);
+                  setIsEditingName(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="secondary-button px-4! py-2! text-xs!"
+              >
+                Renommer
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleExportAnki()}
+                disabled={isExporting}
+                className="secondary-button px-4! py-2! text-xs!"
+              >
+                {isExporting ? "Export..." : "Exporter vers Anki"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDeletionPending(true)}
+                className="secondary-button px-4! py-2! text-xs! text-[var(--danger)]! hover:bg-[var(--accent-soft)]!"
+              >
+                Supprimer le deck
+              </button>
+            </div>
+          </details>
+        ) : null}
       </div>
 
       <ConfirmDialog

@@ -2,16 +2,20 @@ import Link from "next/link";
 
 import { ProgressBar } from "@/components/progress-bar";
 
-// Note SM-2 (0-5) -> libellé et ton du bouton. 0-1 : raté (la carte revient
-// vite), 2 : moyen, 3-5 : réussi.
-const GRADES = [
-  { quality: 0, label: "Encore", tone: "grade-again" },
-  { quality: 1, label: "Difficile", tone: "grade-again" },
-  { quality: 2, label: "Ok", tone: "grade-hard" },
-  { quality: 3, label: "Bien", tone: "grade-good" },
-  { quality: 4, label: "Très bien", tone: "grade-good" },
-  { quality: 5, label: "Parfait", tone: "grade-good" },
+// Quatre choix, comme Anki : six notes (0 à 5) étaient trop pour décider
+// vite sur un téléphone, et « Difficile » y valait un échec. Chaque bouton
+// donne une note SM-2 : sous 3, la carte est ratée et revient vite.
+export const GRADES = [
+  { key: "1", quality: 1, label: "À revoir", hint: "oublié", tone: "grade-again" },
+  { key: "2", quality: 3, label: "Difficile", hint: "avec effort", tone: "grade-hard" },
+  { key: "3", quality: 4, label: "Bien", hint: "je savais", tone: "grade-good" },
+  { key: "4", quality: 5, label: "Facile", hint: "sans hésiter", tone: "grade-good" },
 ] as const;
+
+// Raccourci clavier (1 à 4) -> note SM-2, ou null pour une autre touche.
+export function qualityForKey(key: string): number | null {
+  return GRADES.find((grade) => grade.key === key)?.quality ?? null;
+}
 
 export function GradeButtons({
   onGrade,
@@ -22,7 +26,7 @@ export function GradeButtons({
 }) {
   return (
     <div className="fade-in-up w-full">
-      <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
         {GRADES.map((grade) => (
           <button
             key={grade.quality}
@@ -32,12 +36,12 @@ export function GradeButtons({
             className={`grade-button ${grade.tone}`}
           >
             {grade.label}
-            <span className="mono text-xs font-medium opacity-60">{grade.quality}</span>
+            <span className="text-xs font-medium opacity-70">{grade.hint}</span>
           </button>
         ))}
       </div>
       <p className="keyboard-hint mt-2 text-xs text-[var(--muted)]">
-        Raccourci clavier : <span className="kbd">0</span> à <span className="kbd">5</span>.
+        Raccourci clavier : <span className="kbd">1</span> à <span className="kbd">4</span>.
       </p>
     </div>
   );

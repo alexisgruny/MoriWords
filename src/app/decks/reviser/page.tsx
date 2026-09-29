@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { GradeButtons, ReviewDone, SessionProgress } from "@/components/review-controls";
+import { GradeButtons, ReviewDone, SessionProgress, qualityForKey } from "@/components/review-controls";
 import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import type { DueCard } from "@/types/shared";
@@ -75,9 +75,9 @@ export default function ReviewAllDuePage() {
         return;
       }
 
-      const quality = Number(event.key);
+      const quality = qualityForKey(event.key);
 
-      if (Number.isInteger(quality) && quality >= 0 && quality <= 5) {
+      if (quality !== null) {
         event.preventDefault();
         void submitReview(activeCard, quality);
       }

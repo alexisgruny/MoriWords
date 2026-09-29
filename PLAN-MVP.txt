@@ -313,3 +313,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       navigateur sur Android/Chrome, marche a suivre sur iPhone. Pas de
       service worker (inutile pour installer ; mode hors ligne a faire plus
       tard si besoin). Diagnostic d'installabilite de Chrome : aucune erreur.
+65    Revision et Vocabulaire sur mobile : 4 boutons de note comme Anki
+      (A revoir = echec, Difficile, Bien, Facile ; touches 1-4 ; l'ancien
+      « Difficile » valait un echec) ; page d'un deck avec la carte d'abord
+      (renommer, export Anki, suppression replies dans « Gerer le deck » en
+      bas), modes renommes (Mot + lecture, Kanji seul, Dans la phrase, QCM)
+      avec une phrase d'explication. Vocabulaire : tous les mots (pas 20),
+      mots grammaticaux caches par defaut, sens au toucher avec 🔊, lecture
+      masquee quand elle est celle d'une forme conjuguee. Conseil « Commence
+      par les kana » pour un compte sans carte (masquable).

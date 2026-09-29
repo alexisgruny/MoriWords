@@ -5,7 +5,9 @@ import { classifyDifficulty } from "@/lib/difficulty/classify";
 import { parseTokenList } from "@/lib/security/token-payload";
 import { buildVocabularySummary } from "@/lib/vocabulary/build-vocabulary";
 
-// Renvoie les 20 mots les plus fréquents du vocabulaire de l'utilisateur.
+// Renvoie le vocabulaire de l'utilisateur, des mots les plus vus aux plus
+// rares. (Avant : seulement les 20 premiers, alors que la page annonçait
+// « tous les mots ».) Borné pour garder une réponse raisonnable.
 export async function GET(request: Request) {
   const user = await requireUser(request);
   if (user instanceof Response) {
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
       orderBy: {
         occurrenceCount: "desc",
       },
-      take: 20,
+      take: 3000,
     });
 
     // Calcule le niveau JLPT à la volée plutôt que de relire la colonne

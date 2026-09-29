@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { FuriganaSentence } from "@/components/furigana-sentence";
+import { KanaHint } from "@/components/kana-hint";
 import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
@@ -1020,6 +1021,7 @@ export default function Home() {
 
         <header className="mb-4 fade-in-up sm:mb-8">
           <h1 className="text-2xl! text-[var(--ink)] sm:text-[2.1rem]!">Colle une réplique, comprends chaque mot</h1>
+          <KanaHint />
           <p className="mt-2 hidden max-w-2xl text-[var(--muted)] sm:block">
             Une réplique d&apos;anime, une bulle de manga, une chanson : touche un mot pour le comprendre en
             français.
