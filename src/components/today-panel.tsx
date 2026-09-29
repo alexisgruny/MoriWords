@@ -15,8 +15,9 @@ function isTodaySummary(value: unknown): value is TodaySummary {
   return typeof value === "object" && value !== null && "dueCount" in value && "streak" in value;
 }
 
-// Bloc « Aujourd'hui » en haut de l'accueil : ce qu'il reste à réviser, la
-// série de jours et la progression, avec un seul gros bouton.
+// Bloc « Aujourd'hui » en haut de la page Decks : ce qu'il reste à réviser,
+// la série de jours et la progression, avec un seul gros bouton. (Retiré de
+// la page d'analyse pour la garder dégagée sur téléphone.)
 export function TodayPanel() {
   const [summary, setSummary] = useState<TodaySummary | null>(null);
 
@@ -46,8 +47,7 @@ export function TodayPanel() {
     return null;
   }
 
-  // Nouveau compte : rien à réviser, les étapes de la page d'analyse guident
-  // déjà vers la première fiche (un bloc de plus repoussait la zone de texte).
+  // Nouveau compte : rien à réviser, la page Decks guide déjà vers l'analyse.
   if (summary.totalCards === 0) {
     return null;
   }

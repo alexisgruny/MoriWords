@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
-import { TodayPanel } from "@/components/today-panel";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
@@ -52,6 +51,24 @@ export default function Home() {
   // Mot dont la traduction est attendue : une réponse arrivée après un autre
   // clic ne doit pas s'afficher sous le mauvais mot.
   const translatingPositionRef = useRef<number | null>(null);
+  const wordsSectionRef = useRef<HTMLElement>(null);
+  // Après une analyse : amener les mots à l'écran (sur téléphone ils arrivent
+  // sous la zone de texte, hors de vue).
+  const [shouldRevealWords, setShouldRevealWords] = useState(false);
+
+  useEffect(() => {
+    if (!shouldRevealWords || tokens.length === 0) {
+      return;
+    }
+    const section = wordsSectionRef.current;
+    const timer = window.setTimeout(() => {
+      if (section && section.getBoundingClientRect().top > window.innerHeight * 0.5) {
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      setShouldRevealWords(false);
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [shouldRevealWords, tokens]);
   const [recentSourceTexts, setRecentSourceTexts] = useState<SourceTextSummary[]>([]);
   const [selectedSourceTextId, setSelectedSourceTextId] = useState<string | null>(null);
   const [translation, setTranslation] = useState<TranslationResult | null>(null);
@@ -299,6 +316,7 @@ export default function Home() {
 
     const analyzedTokens = tokenizeData.tokens as TokenResult[];
     setTokens(analyzedTokens);
+    setShouldRevealWords(true);
     // Les mots sont déjà affichés : le reste n'est que de l'enregistrement
     // (historique, vocabulaire), le bouton ne doit plus dire "Analyse en cours".
     setIsSavingAnalysis(true);
@@ -979,15 +997,14 @@ export default function Home() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <TodayPanel />
 
-        <header className="mb-8 fade-in-up">
-          <h1 className="text-[var(--ink)]">Colle une réplique, comprends chaque mot</h1>
-          <p className="mt-2 max-w-2xl text-[var(--muted)]">
+        <header className="mb-4 fade-in-up sm:mb-8">
+          <h1 className="text-2xl! text-[var(--ink)] sm:text-[2.1rem]!">Colle une réplique, comprends chaque mot</h1>
+          <p className="mt-2 hidden max-w-2xl text-[var(--muted)] sm:block">
             Une réplique d&apos;anime, une bulle de manga, une chanson : touche un mot pour le comprendre en
             français.
           </p>
-          <ol className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Étapes">
+          <ol className="mt-5 hidden flex-wrap items-center gap-x-5 gap-y-2 sm:flex" aria-label="Étapes">
             {STEPS.map((label, index) => {
               const step = index + 1;
               const state = step === currentStep ? "step-active" : step < currentStep ? "step-done" : "";
@@ -1023,7 +1040,7 @@ export default function Home() {
               onChange={(event) => setText(event.target.value)}
               placeholder="Colle ici ta réplique en japonais…"
               maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-              className="min-h-56 flex-1 resize-y border border-[var(--ink)] bg-[var(--paper)] p-4 text-xl leading-relaxed text-[var(--ink)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
+              className="min-h-32 flex-1 resize-y sm:min-h-56 border border-[var(--ink)] bg-[var(--paper)] p-4 text-xl leading-relaxed text-[var(--ink)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent)]"
               lang="ja"
             />
 
@@ -1067,7 +1084,12 @@ export default function Home() {
           </form>
 
           {tokens.length > 0 || isLoading ? (
-          <section className="panel fade-in-up" style={{ animationDelay: "80ms" }} aria-live="polite">
+          <section
+            ref={wordsSectionRef}
+            className="panel fade-in-up scroll-mt-4"
+            style={{ animationDelay: "80ms" }}
+            aria-live="polite"
+          >
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-[var(--ink)]">Mots détectés</h2>
               <div className="flex items-center gap-4">

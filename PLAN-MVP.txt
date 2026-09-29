@@ -280,3 +280,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       (premier deck cree automatiquement) ; Decks vide renvoie vers l'analyse ;
       descriptions des exercices a jour (QCM, ecriture) ; credits du pied de
       page replies.
+61    Analyse sur telephone : zone de texte et bouton visibles des l'arrivee
+      (titre court, sans sous-titre ni etapes, zone plus basse), defilement
+      automatique vers les mots apres l'analyse ; bloc « Aujourd'hui »
+      (serie, revisions) deplace sur la page Decks (remplace StreakBanner).

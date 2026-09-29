@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProgressBar } from "@/components/progress-bar";
-import { StreakBanner } from "@/components/streak-banner";
+import { TodayPanel } from "@/components/today-panel";
 import { useToast } from "@/components/toast-provider";
 import { readApiError } from "@/lib/api-error";
 import type { DeckSummary } from "@/types/shared";
@@ -141,7 +141,7 @@ export default function DecksPage() {
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
-        <StreakBanner />
+        <TodayPanel />
 
         <header className="mb-8">
           <h1 className="text-[var(--ink)]">Decks</h1>
