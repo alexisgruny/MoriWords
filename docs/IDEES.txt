@@ -1,0 +1,225 @@
+BOÎTE À IDÉES MORIWORDS
+=======================
+
+Rédigé le 2026-09-29. Pour chaque idée : ce que c'est, si c'est faisable,
+comment, combien ça coûte et les pièges. Les coûts Claude sont des
+estimations (Haiku 4.5 : 1 $ / million de tokens en entrée, 5 $ en sortie ;
+1 $ ≈ 0,90 €) : à vérifier avec la page /admin une fois en ligne.
+
+Légende difficulté : ★ facile · ★★ moyen · ★★★ gros chantier
+
+
+==================================================================
+1. MINI-JEUX (MOTS CROISÉS JLPT ET AUTRES)
+==================================================================
+
+Faisable : OUI   Difficulté : ★★   Coût Claude : 0 €
+
+Mots croisés
+  - Au Japon, les mots croisés (クロスワード) mettent UN KANA PAR CASE.
+    C'est parfait ici : la réponse s'écrit en hiragana, case par case.
+  - Indice possible : le mot en kanji (« 学校 » → écrire がっこう), ou le sens
+    français (« école » → écrire がっこう).
+  - Les mots viennent de la liste JLPT déjà présente dans le projet
+    (18 459 mots avec niveau) : aucun appel à Claude, donc gratuit.
+  - Comment : un générateur qui place les mots dans une grille en les
+    croisant sur un kana commun (algorithme classique « par essais et
+    retours en arrière »), filtré par niveau N5 → N1.
+  - Piège : taper des hiragana demande un clavier japonais sur l'appareil.
+    Solution : convertir automatiquement le romaji tapé en kana
+    (« ga » → が), avec une petite bibliothèque comme wanakana.
+
+Autres mini-jeux possibles (tous sans Claude, donc gratuits)
+  - Shiritori (しりとり) : le jeu de mots japonais le plus connu. Chaque mot
+    commence par le dernier kana du précédent, contre l'ordinateur qui
+    pioche dans la liste JLPT. Très culturel, parfait pour les vidéos.
+  - Memory : retourner des paires kanji ↔ sens ou kanji ↔ lecture.
+  - Course contre la montre : un maximum de kanji ou de mots en 60 secondes.
+  - Mots mêlés : retrouver des mots cachés dans une grille de kana.
+  - Trouve l'intrus : 4 mots, lequel n'est pas de la même famille ?
+  - Particules à trous : は, が, を, に, で... glisser la bonne particule.
+  - Construis le kanji : assembler les morceaux (clés) pour former un kanji.
+
+Conseil : commencer par UN jeu simple (memory ou course contre la montre,
+★), puis les mots croisés.
+
+
+==================================================================
+2. EXERCICES RELIÉS À CHAQUE LEÇON (20 QUESTIONS + FURIGANA)
+==================================================================
+
+Faisable : OUI   Difficulté : ★★   Coût Claude : moins de 1 $ au total
+
+L'idée
+  - Sur chaque point de grammaire et chaque forme de conjugaison, un bouton
+    « S'entraîner sur cette leçon » : 20 questions, uniquement sur ce point.
+  - Chaque kanji des phrases est affiché avec sa lecture au-dessus
+    (furigana) et son sens en français au toucher / survol.
+
+Comment
+  - Le projet génère déjà 10 phrases par point de grammaire, gardées en
+    base et réutilisées, et a des QCM. Il suffit de passer à 20 et de
+    mélanger les types (QCM, phrase à trous, traduction).
+  - Furigana : kuromoji (déjà utilisé pour analyser les textes) donne la
+    lecture de chaque mot. On l'affiche avec la balise HTML <ruby>, faite
+    exprès pour ça. Aucun appel à Claude.
+  - Sens français des mots : la liste JLPT et le cache de traductions
+    existants, Claude seulement en dernier recours.
+  - Coût : 62 points de grammaire × environ 0,01 $ pour générer les
+    phrases une fois pour toutes. Avec l'API Batch (-50 %), encore moins.
+
+Piège : vérifier les phrases générées (demander aux amis N3-N2 de relire
+les points N5-N4 en priorité).
+
+
+==================================================================
+3. PARCOURS DÉBUTANT : ~10 LEÇONS GRATUITES
+==================================================================
+
+Faisable : OUI   Difficulté : ★★ (surtout du contenu à écrire)
+Coût Claude : 0 € (contenu écrit une fois, fixe)
+
+Pourquoi c'est une très bonne idée
+  - C'est la porte d'entrée gratuite qui donne envie de s'abonner (freemium).
+  - Ça répond à la question « par où je commence ? » que se posent tous
+    les débutants.
+  - Excellent pour le référencement Google (« apprendre les hiragana »...).
+
+Proposition de parcours
+  1. Les hiragana (1/2) : les 46 de base
+  2. Les hiragana (2/2) : ten-ten, maru, petits ゃゅょっ
+  3. Les katakana et les mots étrangers
+  4. Se présenter : はじめまして、～です
+  5. La phrase de base : AはBです, les questions avec か
+  6. Les particules essentielles : を, に, で, へ
+  7. Les verbes en ます : présent, négatif, passé
+  8. Les adjectifs en い et en な
+  9. Les 20 premiers kanji (chiffres, jours, personnes)
+  10. Bilan : un petit texte à lire, avec furigana
+
+Comment
+  - Réutiliser ce qui existe : page Kana, exercice de lecture des kana,
+    ordre des traits, points de grammaire N5, conjugaison.
+  - Chaque leçon = une courte explication + 5 à 10 exercices + « leçon
+    validée ». Contenu écrit dans le code (comme points.ts), relu une fois.
+  - Suivre la progression par compte (déjà possible, les comptes existent).
+
+Piège : garder les leçons courtes (5-10 min). Léa décroche si c'est long.
+
+
+==================================================================
+4. PALIERS D'APPRENTISSAGE (EXAMEN PAR NIVEAU)
+==================================================================
+
+Faisable : OUI   Difficulté : ★★   Coût Claude : 0 €
+
+L'idée
+  - Un « examen de palier » par niveau (N5, N4, N3...) : 40 à 50 questions
+    tirées au hasard, à valider avec un certain score (par exemple 75 %).
+  - Réussi : badge du niveau débloqué, visible sur le profil. Raté : on
+    voit ses points faibles et on peut repasser plus tard.
+
+Comment
+  - Toutes les questions peuvent être construites sans Claude : vocabulaire
+    JLPT, kanji (sens, lecture), QCM de grammaire et de conjugaison.
+  - Tirage aléatoire à chaque tentative, donc pas deux examens identiques.
+  - Délai avant de repasser (24 h par exemple), pour éviter le « par cœur ».
+  - Enregistrer les tentatives par compte (nouvelle table en base).
+
+Pièges
+  - NE PAS l'appeler « JLPT » ni « certificat » : le JLPT est un examen
+    officiel (Japan Foundation / JEES). Parler de « palier N5 MoriWords »
+    ou d'« examen blanc », pas de certification.
+  - Un examen blanc est un super argument pour Thomas (persona secondaire).
+
+
+==================================================================
+5. CHAT EN JAPONAIS AVEC UN PERSONNAGE (OFFRE PREMIUM)
+==================================================================
+
+Faisable : OUI   Difficulté : ★★★
+Coût Claude : quelques euros par abonné intensif et par mois (détail ci-dessous)
+
+L'idée
+  - Discuter en japonais avec un personnage joué par Claude, adapté au
+    niveau de l'utilisateur, avec correction douce de ses fautes, furigana
+    et traduction à la demande.
+  - Réservé à une offre plus chère (« MoriWords+ »).
+
+Estimation du coût (Haiku 4.5)
+  - Un message ≈ 2 500 tokens en entrée (consignes du personnage + 10
+    derniers messages) et 250 en sortie (réponse + petite correction).
+  - Soit environ 0,004 $ par message (≈ 0,35 centime).
+  - Avec un plafond de 30 messages par jour : 900 messages max par mois,
+    soit environ 3,50 $ (~3,20 €) par mois au pire.
+  - Utilisateur moyen (10 messages par jour) : environ 1,20 $ par mois.
+  - Avec un modèle plus fin (Sonnet 5 : 2 $ / 10 $ par million) : coût
+    environ doublé, mais conversation plus naturelle. À tester.
+
+Prix possible
+  - MoriWords+ à 9,99 €/mois : après Stripe et URSSAF il reste environ
+    7,30 €. Même un utilisateur qui atteint le plafond tous les jours
+    laisse environ 3,50 € de marge.
+
+Comment sécuriser le prix (le quota par compte existe déjà dans le projet)
+  - Plafond de messages par jour et par compte (ex. 30), en plus du
+    plafond global.
+  - Longueur maximale d'un message (ex. 500 caractères).
+  - Historique limité aux 10 derniers messages envoyés à Claude (sinon le
+    coût grimpe à chaque message).
+  - max_tokens serré sur les réponses.
+  - Réservé aux comptes premium, vérifié côté serveur.
+  - Suivi dans la page /admin (déjà en place) : coût par compte et par jour.
+
+Pièges importants
+  - PAS de vraies personnes (célébrités, doubleurs...) : risque juridique
+    (droit à l'image, usurpation d'identité) et contraire aux règles
+    d'utilisation de Claude.
+  - PAS de personnages d'anime existants (Naruto, Luffy...) : ils sont
+    protégés par le droit d'auteur, surtout dans une offre payante.
+  - LA BONNE SOLUTION : créer ses propres personnages, inspirés de types
+    connus. Par exemple :
+      · Yuki, lycéenne de Tokyo fan de manga (langage familier, niveau N5)
+      · Kenji, vieux libraire de Kyoto (japonais poli, niveau N3)
+      · Mei, employée de konbini (situations du quotidien)
+    Aucun risque, et ils deviennent des mascottes MoriWords (vidéos, logo).
+  - Garder des consignes solides : le personnage reste bienveillant, ne
+    sort pas de son rôle, ne donne pas d'informations dangereuses.
+  - RGPD : dire clairement si les conversations sont gardées, et combien
+    de temps.
+
+Conseil : à faire APRÈS les idées 2, 3 et 4. C'est la plus coûteuse et la
+plus délicate, mais aussi la plus différenciante pour une offre premium.
+
+
+==================================================================
+6. AUTRES IDÉES
+==================================================================
+
+  - Écouter la prononciation ★ : le navigateur sait lire du japonais
+    tout seul (synthèse vocale intégrée), donc gratuit. Un bouton 🔊 sur
+    chaque mot et chaque phrase. La qualité de la voix dépend de l'appareil.
+  - Importer des sous-titres d'anime (.srt) ★★ : l'utilisateur dépose le
+    fichier de sous-titres japonais de son épisode, MoriWords en fait la
+    liste des mots à apprendre avant de le regarder. Parfait pour Léa.
+    (Le fichier vient de l'utilisateur : on ne l'héberge pas.)
+  - Carte de progression JLPT ★ : « tu connais 62 % du vocabulaire N5 ».
+    Très motivant, et calculable avec les données existantes.
+  - Phrase du jour ★ : une phrase courte par niveau, identique pour tout
+    le monde (donc une seule génération par jour), idéale pour les rappels.
+  - Dictionnaire au toucher ★★ : toucher n'importe quel mot japonais du
+    site pour voir sa lecture et son sens.
+  - Défis entre amis ★★★ : classement hebdomadaire des séries et des
+    points. Motivant, mais à faire quand il y aura une communauté.
+
+
+==================================================================
+ORDRE CONSEILLÉ
+==================================================================
+
+  1. Idée 3, parcours débutant gratuit : attire et convertit
+  2. Idée 2, exercices par leçon + furigana : cœur du produit
+  3. Prononciation et carte de progression : petits efforts, gros effet
+  4. Idée 4, paliers : fidélise et motive (Thomas)
+  5. Idée 1, mini-jeux : fun et partageable en vidéo
+  6. Idée 5, chat avec personnage : offre premium, une fois le reste solide
