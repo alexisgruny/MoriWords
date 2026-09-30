@@ -37,3 +37,30 @@ describe("examens de palier", () => {
     expect(gradeExam(exam, justEnough).passed).toBe(true);
   });
 });
+
+describe("questions sans indice visible", () => {
+  it("never shows the conjugated ending in the conjugation prompt", () => {
+    for (const level of EXAM_LEVELS) {
+      for (const seed of [1, 2, 3, 4, 5]) {
+        buildExam(level, seed).questions
+          .filter((question) => question.category === "conjugaison")
+          .forEach((question) => {
+            // Seuls le mot de base et sa lecture sont en japonais.
+            const japanese = question.prompt.match(/[\u3040-\u30ff\u4e00-\u9faf]+/g) ?? [];
+            expect(japanese.length).toBeLessThanOrEqual(2);
+          });
+      }
+    }
+  });
+
+  it("asks kun'yomi readings whose choices all share the word's okurigana", () => {
+    const questions = [1, 2, 3].flatMap((seed) => buildExam("N5", seed).questions).filter((question) => question.category === "kanji-lecture");
+    expect(questions.length).toBeGreaterThan(0);
+    for (const question of questions) {
+      const okurigana = (question.subject ?? "").slice(1);
+      question.choices.forEach((choice) => expect(choice.endsWith(okurigana)).toBe(true));
+      // Pas de katakana : on demande la lecture japonaise, pas l'on'yomi.
+      question.choices.forEach((choice) => expect(choice).toMatch(/^[\u3041-\u3096]+$/));
+    }
+  });
+});

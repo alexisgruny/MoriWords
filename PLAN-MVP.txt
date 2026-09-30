@@ -367,3 +367,8 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       liens pour retravailler et liste des erreurs. Table ExamAttempt ;
       export RGPD complete (examens et lecons du parcours). Jamais appele
       « JLPT » ni « certificat ».
+71    Paliers, retours de l'utilisateur : conjugaison decrite en francais
+      seulement (le nom « Forme en ません » donnait la terminaison), formes
+      ambigues sans terminaison retirees (~たら) ou pieges filtres (~ば) ;
+      lecture des kanji en kun'yomi sous forme de mot (食べる → たべる), pieges
+      avec les memes okurigana.

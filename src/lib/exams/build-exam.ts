@@ -57,10 +57,20 @@ function withChoices(
   return { question: { ...base, choices }, answer: choices.indexOf(answer) };
 }
 
-// Partie du kun lue par le kanji (た.べる → た), sans les tirets des suffixes.
-const cleanReading = (reading: string) => toHiragana(reading.split(".")[0].replace(/-/g, ""));
-const readingsOf = (entry: KanjiEntry) =>
-  [...entry.kunReadings, ...entry.onReadings].map(cleanReading).filter((reading) => reading.length > 0);
+// Lectures kun'yomi d'un kanji sous forme de mot : た.べる → 食べる / たべる.
+// Les lectures à tiret (préfixes, suffixes) sont ignorées.
+type KunWord = { written: string; stem: string; okurigana: string };
+function kunWords(entry: KanjiEntry): KunWord[] {
+  return entry.kunReadings
+    .filter((reading) => !reading.includes("-"))
+    .map((reading) => {
+      const [stem, okurigana = ""] = reading.split(".");
+      return { written: entry.kanji + okurigana, stem: toHiragana(stem), okurigana };
+    })
+    .filter((word) => word.stem.length > 0);
+}
+const allReadingsOf = (entry: KanjiEntry) =>
+  new Set([...kunWords(entry).map((word) => word.stem + word.okurigana), ...entry.onReadings.map((reading) => toHiragana(reading.replace(/[-.]/g, "")))]);
 
 type Built = { question: ExamQuestion; answer: number } | null;
 
@@ -77,23 +87,34 @@ function kanjiMeaningQuestions(kanji: KanjiEntry[], count: number, random: () =>
     );
 }
 
+// Lecture japonaise (kun'yomi) d'un mot écrit avec le kanji. Les pièges
+// gardent les mêmes okurigana (…べる) : sinon la bonne réponse serait la
+// seule à finir comme le mot affiché.
 function kanjiReadingQuestions(kanji: KanjiEntry[], count: number, random: () => number): Built[] {
-  return shuffled(kanji, random)
+  const otherStems = (entry: KanjiEntry) =>
+    kanji.filter((other) => other.kanji !== entry.kanji).flatMap((other) => kunWords(other).map((word) => word.stem));
+  return shuffled(
+    kanji.filter((entry) => kunWords(entry).length > 0),
+    random,
+  )
     .slice(0, count)
     .map((entry) => {
-      const own = new Set(readingsOf(entry));
-      const readings = [...own];
-      if (readings.length === 0) {
-        return null;
-      }
-      const answer = readings[Math.floor(random() * readings.length)];
-      // Pièges : lectures d'autres kanji du niveau qui ne sont pas aussi
-      // des lectures de celui-ci (sinon deux réponses justes).
-      const others = kanji.flatMap(readingsOf).filter((reading) => !own.has(reading));
+      const words = kunWords(entry);
+      const word = words[Math.floor(random() * words.length)];
+      const own = allReadingsOf(entry);
+      const answer = word.stem + word.okurigana;
+      const wrong = otherStems(entry)
+        .map((stem) => stem + word.okurigana)
+        .filter((reading) => !own.has(reading));
       return withChoices(
-        { category: "kanji-lecture", prompt: "Laquelle est une lecture de ce kanji ?", subject: entry.kanji, choicesLang: "ja" },
+        {
+          category: "kanji-lecture",
+          prompt: "Comment se lit ce mot (lecture japonaise, kun'yomi) ?",
+          subject: word.written,
+          choicesLang: "ja",
+        },
         answer,
-        others,
+        wrong,
         random,
       );
     });
@@ -132,11 +153,45 @@ function grammarQuestions(level: GrammarLevel, count: number, random: () => numb
     );
 }
 
-// Forme demandée + sens voulu (le sens lève l'ambiguïté des formes doubles,
-// comme ました / ませんでした) ; pièges : autres formes du même mot.
+// Formes proposées à l'examen, décrites en français seulement : le nom de
+// la forme (« Forme en ません ») donnerait la terminaison à repérer.
+// avoid : pièges écartés car aussi justes (書けば et 書いたら = « si on écrit »).
+// Les formes absentes (~たら, trop proche de ~ば sans sa terminaison) ne sont
+// pas demandées.
+const EXAM_FORMS: Record<string, { label: string; avoid?: RegExp }> = {
+  "n5-masu": { label: "au présent poli" },
+  "n5-masen": { label: "au présent poli négatif" },
+  "n5-mashita": { label: "au passé poli" },
+  "n5-te-form": { label: "à la forme de liaison (« … et … »)" },
+  "n5-teiru": { label: "pour une action en cours ou un état" },
+  "n5-nai-form": { label: "au présent négatif familier" },
+  "n5-ta-form": { label: "au passé familier" },
+  "n5-nakatta": { label: "au passé négatif familier" },
+  "n5-i-adjective": { label: "(adjectif), en style familier" },
+  "n5-na-adjective": { label: "(adjectif), en style familier" },
+  "n5-tai": { label: "pour exprimer une envie" },
+  "n5-mashou": { label: "pour proposer poliment (« faisons… »)" },
+  "n4-volitional-plain": { label: "pour proposer entre amis (« faisons… »)" },
+  "n4-conditional-ba": { label: "au conditionnel (« si… »)", avoid: /[ただ]ら$/ },
+  "n4-potential": { label: "à la forme de capacité (« pouvoir… »)" },
+  "n4-passive": { label: "à la voix passive" },
+  "n4-nakereba": { label: "pour exprimer une obligation" },
+  "n3-causative": { label: "pour faire faire ou laisser faire" },
+  "n3-causative-passive": { label: "pour « être forcé de… »" },
+  "n3-sou-looks-like": { label: "pour « avoir l'air de… »" },
+  "n2-sonkeigo-regular": { label: "en langage honorifique" },
+  "n2-kenjougo-regular": { label: "en langage humble" },
+  "n2-sonkeigo-irregular": { label: "en langage honorifique" },
+  "n2-kenjougo-irregular": { label: "en langage humble" },
+  "n1-literary-negative": { label: "à la négation littéraire" },
+  "n1-tsutsu-aru": { label: "pour une évolution en cours (style écrit)" },
+};
+
+// Mot à conjuguer + description française + sens voulu (le sens tranche
+// entre affirmatif et négatif) ; pièges : autres formes du même mot.
 function conjugationQuestions(level: GrammarLevel, count: number, random: () => number): Built[] {
   const levelIndex = GRAMMAR_LEVELS.indexOf(level);
-  const forms = conjugationForms.filter((form) => GRAMMAR_LEVELS.indexOf(form.level) <= levelIndex);
+  const forms = conjugationForms.filter((form) => form.id in EXAM_FORMS && GRAMMAR_LEVELS.indexOf(form.level) <= levelIndex);
   // Formes du niveau d'abord, puis des niveaux inférieurs si besoin.
   const pool = [
     ...shuffled(forms.filter((form) => form.level === level), random),
@@ -148,15 +203,17 @@ function conjugationQuestions(level: GrammarLevel, count: number, random: () => 
   for (const { form, example } of pool) {
     if (built.length >= count) break;
     const key = `${form.id}:${example.base}`;
-    if (usedBases.has(key)) continue;
+    // « 書かせられる / 書かされる » : deux réponses possibles, pas pour un QCM.
+    if (usedBases.has(key) || example.conjugated.includes("/")) continue;
+    const { label, avoid } = EXAM_FORMS[form.id];
     const question = withChoices(
       {
         category: "conjugaison",
-        prompt: `${form.name} de ${example.base}${example.reading ? ` (${example.reading})` : ""}, au sens de « ${example.meaning} » :`,
+        prompt: `Conjugue ${example.base}${example.reading ? ` (${example.reading})` : ""} ${label}, pour dire « ${example.meaning} » :`,
         choicesLang: "ja",
       },
       example.conjugated,
-      conjugationsOf(example.base, example.reading),
+      conjugationsOf(example.base, example.reading).filter((candidate) => !avoid?.test(candidate)),
       random,
     );
     if (question) {
