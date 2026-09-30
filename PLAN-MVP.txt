@@ -418,3 +418,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       bilan (lecon 10) valide par 5 questions de comprehension en francais
       (4 bonnes reponses), traduction du texte visible seulement une fois le
       bilan reussi. LessonQuiz accepte une consigne et des choix en francais.
+82    Mini-jeux « Mes mots » : Memory et Contre la montre peuvent utiliser les
+      mots des decks du compte (un par mot, avec un sens, sens raccourci,
+      doublons de sens ecartes ; des 8 mots). Paires du memory reperees par
+      l'ecriture (deux mots peuvent avoir la meme lecture : 橋 / 箸).

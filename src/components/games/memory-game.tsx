@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { GameWordLabel, RecordLine } from "@/components/games/game-word";
+import { useWordSource } from "@/components/games/word-source";
 import { pickWords, useRecord } from "@/lib/games/records";
 import type { GameWord } from "@/lib/games/words";
 import { shuffle } from "@/lib/shuffle";
@@ -12,11 +13,11 @@ type Card = { id: string; word: GameWord; side: "ja" | "fr" };
 
 const PAIRS = 6;
 
-function newDeck(): Card[] {
+function newDeck(pool: GameWord[]): Card[] {
   return shuffle(
-    pickWords(PAIRS).flatMap((word) => [
-      { id: `${word.kana}-ja`, word, side: "ja" as const },
-      { id: `${word.kana}-fr`, word, side: "fr" as const },
+    pickWords(PAIRS, [], pool).flatMap((word) => [
+      { id: `${word.written}-ja`, word, side: "ja" as const },
+      { id: `${word.written}-fr`, word, side: "fr" as const },
     ]),
   );
 }
@@ -31,6 +32,7 @@ export function MemoryGame() {
   const [moves, setMoves] = useState(0);
   const [isRecord, setIsRecord] = useState(false);
   const { record, submit } = useRecord("memory", true);
+  const { words, picker } = useWordSource();
 
   const isDone = cards !== null && found.size === PAIRS;
 
@@ -44,7 +46,7 @@ export function MemoryGame() {
   }, [open]);
 
   function start() {
-    setCards(newDeck());
+    setCards(newDeck(words));
     setOpen([]);
     setFound(new Set());
     setMoves(0);
@@ -52,7 +54,7 @@ export function MemoryGame() {
   }
 
   function flip(card: Card) {
-    if (!cards || open.length === 2 || open.includes(card.id) || found.has(card.word.kana)) {
+    if (!cards || open.length === 2 || open.includes(card.id) || found.has(card.word.written)) {
       return;
     }
     if (card.side === "ja") {
@@ -65,8 +67,8 @@ export function MemoryGame() {
     const first = cards.find((candidate) => candidate.id === open[0]);
     const nextMoves = moves + 1;
     setMoves(nextMoves);
-    if (first && first.word.kana === card.word.kana) {
-      const nextFound = new Set(found).add(card.word.kana);
+    if (first && first.word.written === card.word.written) {
+      const nextFound = new Set(found).add(card.word.written);
       setFound(nextFound);
       setOpen([]);
       if (nextFound.size === PAIRS) {
@@ -84,6 +86,7 @@ export function MemoryGame() {
           {PAIRS} mots japonais et leurs {PAIRS} sens sont cachés. Retourne deux cartes à la fois pour former les paires, en
           un minimum de coups.
         </p>
+        {picker}
         <RecordLine record={record} unit="coups" />
         <button type="button" onClick={start} className="primary-button">
           Commencer
@@ -102,7 +105,7 @@ export function MemoryGame() {
       </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {cards.map((card) => {
-          const isFound = found.has(card.word.kana);
+          const isFound = found.has(card.word.written);
           const isVisible = isFound || open.includes(card.id);
           return (
             <button

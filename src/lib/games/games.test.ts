@@ -75,3 +75,9 @@ describe("particules", () => {
     expect(PARTICLE_SENTENCES.flatMap((sentence) => findUnknownWords(sentence.fr))).toEqual([]);
   });
 });
+
+describe("mots N5 du jeu", () => {
+  it("have unique written forms (the memory game matches pairs on them)", () => {
+    expect(new Set(GAME_WORDS.map((word) => word.written)).size).toBe(GAME_WORDS.length);
+  });
+});

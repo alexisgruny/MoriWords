@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { GameWordLabel, RecordLine } from "@/components/games/game-word";
+import { useWordSource } from "@/components/games/word-source";
 import { meaningChoices, pickWords, useRecord } from "@/lib/games/records";
 import type { GameWord } from "@/lib/games/words";
 
@@ -10,9 +11,9 @@ const DURATION = 60;
 
 type Round = { word: GameWord; choices: string[] };
 
-function newRound(previous?: GameWord): Round {
-  const [word] = pickWords(1, previous ? [previous] : []);
-  return { word, choices: meaningChoices(word) };
+function newRound(pool: GameWord[], previous?: GameWord): Round {
+  const [word] = pickWords(1, previous ? [previous] : [], pool);
+  return { word, choices: meaningChoices(word, pool) };
 }
 
 // Contre la montre : un maximum de bons sens en 60 secondes.
@@ -28,6 +29,7 @@ export function ChronoGame() {
   const [flash, setFlash] = useState<{ wrong: string; right: string } | null>(null);
   const [isRecord, setIsRecord] = useState(false);
   const { record, submit } = useRecord("chrono");
+  const { words, picker } = useWordSource();
 
   const isRunning = round !== null && secondsLeft > 0;
   const isOver = round !== null && secondsLeft === 0;
@@ -47,7 +49,7 @@ export function ChronoGame() {
   }, [isRunning, endAt, score, submit]);
 
   function start() {
-    setRound(newRound());
+    setRound(newRound(words));
     setEndAt(Date.now() + DURATION * 1000);
     setSecondsLeft(DURATION);
     setScore(0);
@@ -67,7 +69,7 @@ export function ChronoGame() {
       setMistakes((previous) => (previous.includes(round.word) ? previous : [...previous, round.word]));
       setFlash({ wrong: choice, right: `${round.word.written} = ${round.word.fr}` });
     }
-    setRound(newRound(round.word));
+    setRound(newRound(words, round.word));
   }
 
   if (!round) {
@@ -77,6 +79,7 @@ export function ChronoGame() {
           Un mot japonais s&apos;affiche : touche son sens en français. Tu as {DURATION} secondes pour en trouver le plus
           possible.
         </p>
+        {picker}
         <RecordLine record={record} unit="bonnes réponses" />
         <button type="button" onClick={start} className="primary-button">
           Commencer

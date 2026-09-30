@@ -68,12 +68,16 @@ export function useRecord(game: GameId, lowerIsBetter = false) {
   return { record, submit };
 }
 
-export function pickWords(count: number, exclude: GameWord[] = []): GameWord[] {
-  return shuffle(GAME_WORDS.filter((word) => !exclude.includes(word))).slice(0, count);
+// pool : les mots N5 du jeu, ou ceux des decks de l'utilisateur (« Mes mots »).
+export function pickWords(count: number, exclude: GameWord[] = [], pool: GameWord[] = GAME_WORDS): GameWord[] {
+  return shuffle(pool.filter((word) => !exclude.includes(word))).slice(0, count);
 }
 
-// Sens proposés pour un mot : le bon et trois autres au hasard.
-export function meaningChoices(word: GameWord): string[] {
-  const others = shuffle(GAME_WORDS.filter((other) => other.fr !== word.fr)).slice(0, 3);
-  return shuffle([word.fr, ...others.map((other) => other.fr)]);
+// Sens proposés pour un mot : le bon et trois autres au hasard (pris dans la
+// même liste, complétée par les mots N5 si elle est trop courte).
+export function meaningChoices(word: GameWord, pool: GameWord[] = GAME_WORDS): string[] {
+  const candidates = pool.filter((other) => other.fr !== word.fr);
+  const source = candidates.length >= 3 ? candidates : [...candidates, ...GAME_WORDS.filter((other) => other.fr !== word.fr)];
+  const others = [...new Set(shuffle(source).map((other) => other.fr))].slice(0, 3);
+  return shuffle([word.fr, ...others]);
 }
