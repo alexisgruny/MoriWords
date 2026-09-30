@@ -19,6 +19,7 @@ const allGroups: Array<{ title: string; links: Array<{ href: string; label: stri
       { href: "/", label: "Analyser" },
       { href: "/decks", label: "Decks" },
       { href: "/exercices", label: "Exercices" },
+      { href: "/jeux", label: "Jeux", isPublic: true },
     ],
   },
   {

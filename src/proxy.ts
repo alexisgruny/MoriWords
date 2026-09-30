@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   "/grammaire",
   "/conjugaison",
   "/exercices/kana",
+  "/jeux",
   "/confidentialite",
   "/mentions-legales",
 ];

@@ -347,3 +347,10 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       vocabulaire N5 (sauf アニメ, すし, noms de pays), reponses construites
       sur le vocabulaire. Premiere serie dans l'ordre (pas d'erreur
       d'hydratation), suivantes melangees.
+68    Mini-jeux (/jeux, publics, sans compte ni Claude) : Memory (mot ↔ sens),
+      Contre la montre (60 s, sens en QCM, mots rates a revoir), Particules a
+      trous (22 phrases ecrites a la main, pieges sans autre reponse juste),
+      Shiritori contre l'ordinateur (ー ignore, petits kana agrandis, ん perd,
+      indice), Mots croises en hiragana (grille generee, indice = sens).
+      Liste de ~120 mots N5 avec sens (verifies N5 par test), saisie romaji →
+      kana (wanakana, MIT), records dans le navigateur (localStorage).
