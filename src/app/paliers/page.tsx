@@ -150,6 +150,11 @@ export default function LevelsPage() {
           <div className="panel">
             <p className="eyebrow">{CATEGORY_LABELS[question.category]}</p>
             <p className="mt-1 text-lg font-semibold text-[var(--ink)]">{question.prompt}</p>
+            {question.sentence ? (
+              <p className="mt-3 text-center text-2xl leading-relaxed text-[var(--ink)]" lang="ja">
+                {question.sentence}
+              </p>
+            ) : null}
             {question.subject ? (
               <p className="mt-3 text-center text-5xl font-semibold text-[var(--ink)]" lang="ja">
                 {question.subject}
@@ -323,6 +328,11 @@ function ExamResult({ result, onClose }: { result: Result; onClose: () => void }
                 <p className="text-[var(--muted)]">
                   {question.prompt} {question.subject ? <span lang="ja">{question.subject}</span> : null}
                 </p>
+                {question.sentence ? (
+                  <p className="text-[var(--ink)]" lang="ja">
+                    {question.sentence}
+                  </p>
+                ) : null}
                 <p className="text-[var(--ink)]" lang={question.choicesLang}>
                   ✓ {question.choices[answer]}
                 </p>

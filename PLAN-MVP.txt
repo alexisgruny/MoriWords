@@ -393,3 +393,8 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       /api/course), modifiable sur /compte (section « Mon niveau »), inclus
       dans l'export RGPD. finished = hideCourse, lecons toutes validees ou
       palier N5 reussi.
+77    Paliers, grammaire : phrases a trous au lieu de 4 phrases differentes
+      (un mot connu suffisait). La partie grammaticale de chaque exemple est
+      marquee a la main (src/lib/exams/grammar-blanks.ts, ~120 exemples N5-N1),
+      les pieges sont les trous des autres points du meme niveau. Tests :
+      chaque exemple a son trou, choix sans phrase entiere.

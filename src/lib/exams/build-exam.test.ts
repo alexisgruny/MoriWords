@@ -64,3 +64,25 @@ describe("questions sans indice visible", () => {
     }
   });
 });
+
+describe("grammaire à trous", () => {
+  it("has a blank, found in the sentence, for every grammar example", async () => {
+    const { grammarPoints } = await import("@/lib/grammar/points");
+    const { GRAMMAR_BLANKS } = await import("./grammar-blanks");
+    const missing = grammarPoints
+      .flatMap((point) => point.examples)
+      .filter((example) => !GRAMMAR_BLANKS[example.ja] || !example.ja.includes(GRAMMAR_BLANKS[example.ja]));
+    expect(missing.map((example) => example.ja)).toEqual([]);
+  });
+
+  it("asks to fill the blank among grammar forms, not whole sentences", () => {
+    for (const level of EXAM_LEVELS) {
+      const questions = buildExam(level, 11).questions.filter((question) => question.category === "grammaire");
+      expect(questions.length).toBeGreaterThanOrEqual(10);
+      for (const question of questions) {
+        expect(question.sentence).toContain("＿＿＿");
+        question.choices.forEach((choice) => expect(choice).not.toMatch(/。/));
+      }
+    }
+  });
+});

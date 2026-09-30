@@ -5,6 +5,7 @@ import { conjugationsOf } from "@/lib/conjugation/conjugate";
 import { GAME_WORDS } from "@/lib/games/words";
 import { GRAMMAR_LEVELS, grammarPoints, type GrammarLevel } from "@/lib/grammar/points";
 import { JLPT_KANJI, type KanjiEntry } from "@/lib/kanji/kanji";
+import { BLANK, GRAMMAR_BLANKS } from "@/lib/exams/grammar-blanks";
 import type { CategoryResult, ExamCategory, ExamQuestion } from "@/lib/exams/types";
 
 export type Exam = { questions: ExamQuestion[]; answers: number[] };
@@ -138,16 +139,29 @@ function vocabularyQuestions(count: number, random: () => number): Built[] {
     );
 }
 
-// Phrase française → la bonne phrase japonaise parmi d'autres exemples du niveau.
+// Phrase à trous : la partie grammaticale est cachée, les choix sont les
+// trous d'autres points du même niveau. Quatre phrases différentes se
+// départageaient avec un seul mot connu ; ici, il faut connaître la forme.
 function grammarQuestions(level: GrammarLevel, count: number, random: () => number): Built[] {
-  const examples = grammarPoints.filter((point) => point.level === level).flatMap((point) => point.examples);
-  return shuffled(examples, random)
+  const items = grammarPoints
+    .filter((point) => point.level === level)
+    .flatMap((point) =>
+      point.examples
+        .filter((example) => GRAMMAR_BLANKS[example.ja] !== undefined)
+        .map((example) => ({ pointId: point.id, example, blank: GRAMMAR_BLANKS[example.ja] })),
+    );
+  return shuffled(items, random)
     .slice(0, count)
-    .map((example) =>
+    .map(({ pointId, example, blank }) =>
       withChoices(
-        { category: "grammaire", prompt: `Comment dit-on : « ${example.fr} » ?`, choicesLang: "ja" },
-        example.ja,
-        examples.filter((other) => other.ja !== example.ja).map((other) => other.ja),
+        {
+          category: "grammaire",
+          prompt: `Complète pour dire : « ${example.fr} »`,
+          sentence: example.ja.replace(blank, BLANK),
+          choicesLang: "ja",
+        },
+        blank,
+        items.filter((other) => other.pointId !== pointId).map((other) => other.blank),
         random,
       ),
     );

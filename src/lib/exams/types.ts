@@ -16,6 +16,8 @@ export type ExamQuestion = {
   prompt: string;
   // Texte japonais mis en avant (kanji, mot…), s'il y en a un.
   subject?: string;
+  // Phrase japonaise à trous (grammaire), affichée sous la consigne.
+  sentence?: string;
   choices: string[];
   choicesLang: "ja" | "fr";
 };
