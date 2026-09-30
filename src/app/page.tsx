@@ -9,6 +9,7 @@ import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
+import { decodeSubtitleFile, parseSubtitles } from "@/lib/subtitles/parse-subtitles";
 import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import type { TokenResult } from "@/lib/tokenizer/types";
@@ -35,6 +36,7 @@ const FEATURED_SOURCE_COUNT = 2;
 // Mots-outils cachés par défaut : particules (は, を) et auxiliaires (ます,
 // ない, う), qui déroutent une débutante et ne s'apprennent pas en fiche.
 const GRAMMAR_WORD_CATEGORIES = new Set(["助詞", "助動詞"]);
+const BULK_ADD_BATCH = 6;
 
 const STEPS = ["Colle une réplique ou un texte", "Touche les mots", "Garde-les en fiches de révision"];
 
@@ -49,6 +51,8 @@ export default function Home() {
   const [isSavingAnalysis, setIsSavingAnalysis] = useState(false);
   const [loadingSourceKey, setLoadingSourceKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Message après l'import d'un fichier de sous-titres.
+  const [importNotice, setImportNotice] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
   const [showMoreSources, setShowMoreSources] = useState(false);
   // Lectures (furigana) au-dessus des kanji ; décochées pour s'entraîner à lire.
@@ -103,8 +107,18 @@ export default function Home() {
   // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
   // aussi toujours le romaji et les chiffres arabes purs (pas du vocabulaire
   // japonais à proprement parler), sans case à cocher pour les réafficher.
+  // Un mot n'apparaît qu'une fois (sa première occurrence) : sur un long texte
+  // ou un épisode entier, les répétitions noyaient la liste et « Tout
+  // ajouter » envoyait plusieurs fois le même mot.
+  const seenLemmas = new Set<string>();
   const visibleTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
-    .filter((token) => !isNoiseToken(token));
+    .filter((token) => !isNoiseToken(token))
+    .filter((token) => {
+      const lemma = token.baseForm || token.surface;
+      if (seenLemmas.has(lemma)) return false;
+      seenLemmas.add(lemma);
+      return true;
+    });
 
   // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
   const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
@@ -363,6 +377,32 @@ export default function Home() {
 
   // Gère le clic sur "Analyser le texte" : sauvegarde le texte collé puis
   // l'analyse mot par mot.
+  // Fichier .srt / .vtt / .ass : répliques japonaises dans la zone de texte,
+  // prêtes à analyser (lu dans le navigateur, rien n'est envoyé avant l'analyse).
+  async function handleSubtitleFile(file: File) {
+    setError(null);
+    setImportNotice(null);
+    if (file.size > 2_000_000) {
+      setError("Ce fichier est trop gros (2 Mo maximum).");
+      return;
+    }
+    try {
+      const parsed = parseSubtitles(decodeSubtitleFile(await file.arrayBuffer()), MAX_ANALYSIS_TEXT_LENGTH);
+      if (parsed.lineCount === 0) {
+        setError("Aucune réplique en japonais dans ce fichier.");
+        return;
+      }
+      setText(parsed.text);
+      setImportNotice(
+        `${parsed.lineCount} répliques importées de « ${file.name} »${
+          parsed.truncated ? " (le début seulement : 10 000 caractères au plus)" : ""
+        }. Lance l'analyse pour voir les mots.`,
+      );
+    } catch {
+      setError("Impossible de lire ce fichier.");
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
@@ -667,33 +707,39 @@ export default function Home() {
       const currentDeckId = await ensureDeckId();
       let done = 0;
 
-      const results = await Promise.allSettled(
-        visibleTokens.map(async (token) => {
-          try {
-            const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                lemma: token.baseForm || token.surface,
-                surface: token.surface,
-                reading: token.reading,
-                sourceTextId: selectedSourceTextId,
-                position: token.position,
-              }),
-            });
-            const data: unknown = await response.json();
+      const addOne = async (token: TokenResult) => {
+        try {
+          const response = await fetch(`/api/decks/${currentDeckId}/cards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lemma: token.baseForm || token.surface,
+              surface: token.surface,
+              reading: token.reading,
+              sourceTextId: selectedSourceTextId,
+              position: token.position,
+            }),
+          });
+          const data: unknown = await response.json();
 
-            if (!response.ok || typeof data !== "object" || data === null) {
-              throw new Error("add failed");
-            }
-
-            return data as { alreadyExisted: boolean };
-          } finally {
-            done += 1;
-            setBulkProgress({ done, total: visibleTokens.length });
+          if (!response.ok || typeof data !== "object" || data === null) {
+            throw new Error("add failed");
           }
-        }),
-      );
+
+          return data as { alreadyExisted: boolean };
+        } finally {
+          done += 1;
+          setBulkProgress({ done, total: visibleTokens.length });
+        }
+      };
+
+      // Par paquets de 6 : sur un épisode entier, des centaines de requêtes
+      // simultanées saturaient le serveur (et la limite d'écritures).
+      const results: PromiseSettledResult<{ alreadyExisted: boolean }>[] = [];
+      for (let start = 0; start < visibleTokens.length; start += BULK_ADD_BATCH) {
+        const batch = visibleTokens.slice(start, start + BULK_ADD_BATCH);
+        results.push(...(await Promise.allSettled(batch.map(addOne))));
+      }
 
       const succeeded = results.filter(
         (result): result is PromiseFulfilledResult<{ alreadyExisted: boolean }> =>
@@ -1066,7 +1112,7 @@ export default function Home() {
               lang="ja"
             />
 
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 type="submit"
                 disabled={isLoading || text.trim().length === 0}
@@ -1074,7 +1120,26 @@ export default function Home() {
               >
                 {isSavingAnalysis ? "Enregistrement..." : isLoading ? "Analyse en cours..." : "Analyser le texte →"}
               </button>
+              {/* Sous-titres d'un épisode : on garde les répliques japonaises. */}
+              <label className="secondary-button w-full cursor-pointer text-sm! sm:w-auto">
+                📄 Importer des sous-titres
+                <input
+                  type="file"
+                  accept=".srt,.vtt,.ass,.ssa,text/plain"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void handleSubtitleFile(file);
+                  }}
+                />
+              </label>
             </div>
+            {importNotice ? (
+              <p className="mt-3 text-sm text-[var(--muted)]" role="status">
+                {importNotice}
+              </p>
+            ) : null}
 
             <div className="mt-5 border-t border-dashed border-[var(--line-strong)] pt-4">
               <p className="mb-2.5 text-sm text-[var(--muted)]">Pas de texte sous la main ? Essaie :</p>

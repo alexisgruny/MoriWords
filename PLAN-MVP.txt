@@ -398,3 +398,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       marquee a la main (src/lib/exams/grammar-blanks.ts, ~120 exemples N5-N1),
       les pieges sont les trous des autres points du meme niveau. Tests :
       chaque exemple a son trou, choix sans phrase entiere.
+78    Tests stables : delai global de 30 s (vitest.config.ts) ; bug reel
+      corrige dans le QCM de conjugaison (召し上がる / 参る proposes en leurre
+      d'un autre verbe, test repete 20 fois).
+79    Import de sous-titres (.srt, .vtt, .ass) sur la page d'analyse (idee
+      « sous-titres d'anime ») : repliques japonaises seules (minutages,
+      balises, traductions, doublons retires), Shift-JIS reconnu, coupe a
+      10 000 caracteres sans couper une replique ; lu dans le navigateur.
+      Liste des mots detectes sans doublons (1re occurrence) ; « Tout ajouter »
+      par paquets de 6 au lieu de centaines de requetes simultanees.
