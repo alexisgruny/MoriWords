@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { InstallAppSection } from "@/components/install-app";
 import { readApiError } from "@/lib/api-error";
+import { forgetCourseStatus } from "@/lib/course/course-status";
 import { DELETE_ACCOUNT_CONFIRMATION } from "@/lib/auth/account";
 import { authClient } from "@/lib/auth/auth-client";
 
@@ -67,6 +68,8 @@ export default function AccountPage() {
           ) : null}
         </section>
 
+        <CoursePreference />
+
         <InstallAppSection />
 
         <section className="panel">
@@ -123,5 +126,81 @@ export default function AccountPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+// « J'ai déjà les bases » : masque le parcours débutant dans le menu (même
+// choix qu'à l'inscription, modifiable ici).
+function CoursePreference() {
+  const [hideCourse, setHideCourse] = useState<boolean | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    void fetch("/api/course")
+      .then((response) => (response.ok ? (response.json() as Promise<{ hideCourse?: boolean }>) : null))
+      .then((data) => {
+        if (!isCancelled && data) setHideCourse(data.hideCourse === true);
+      })
+      .catch(() => undefined);
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  async function toggle(next: boolean) {
+    // Coché tout de suite ; remis comme avant si l'enregistrement échoue.
+    setHideCourse(next);
+    setIsSaving(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/course", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hideCourse: next }),
+      });
+      if (!response.ok) {
+        setHideCourse(!next);
+        setError(await readApiError(response, "Impossible d'enregistrer ta préférence."));
+        return;
+      }
+      forgetCourseStatus();
+    } catch {
+      setHideCourse(!next);
+      setError("Impossible d'enregistrer ta préférence pour le moment.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <section className="panel">
+      <h2 className="text-[var(--ink)]">Mon niveau</h2>
+      <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-[var(--ink)]">
+        <input
+          type="checkbox"
+          checked={hideCourse === true}
+          disabled={hideCourse === null || isSaving}
+          onChange={(event) => void toggle(event.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+        />
+        <span>
+          <span className="font-semibold">J&apos;ai déjà les bases</span>
+          <span className="block text-[var(--muted)]">
+            Le parcours débutant n&apos;apparaît plus dans le menu (il reste accessible sur{" "}
+            <Link href="/parcours" className="underline hover:text-[var(--ink)]">
+              /parcours
+            </Link>
+            ). Il disparaît aussi tout seul une fois terminé ou le palier N5 réussi.
+          </span>
+        </span>
+      </label>
+      {error ? (
+        <p className="error-banner mt-3" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 }

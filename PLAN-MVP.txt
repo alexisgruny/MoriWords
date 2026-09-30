@@ -388,3 +388,8 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       finished (toutes les lecons validees ou palier N5 reussi), lu une fois
       par session par le menu (cache sessionStorage, oublie apres une lecon
       validee ou un palier N5 reussi). La page /parcours reste accessible.
+76    Niveau demande a l'inscription (« Je debute » / « J'ai deja les bases ») :
+      « bases » masque le parcours du menu (colonne user.hideCourse, PATCH
+      /api/course), modifiable sur /compte (section « Mon niveau »), inclus
+      dans l'export RGPD. finished = hideCourse, lecons toutes validees ou
+      palier N5 reussi.

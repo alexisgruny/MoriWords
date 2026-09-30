@@ -5,7 +5,7 @@ const { testUser } = vi.hoisted(() => ({ testUser: { id: "", email: "" } }));
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: async () => testUser }));
 
-import { GET } from "@/app/api/course/route";
+import { GET, PATCH } from "@/app/api/course/route";
 import { createTestUser, deleteTestUser } from "@/lib/auth/test-user";
 import { LESSON_IDS } from "@/lib/course/lessons";
 import { prisma } from "@/lib/db/prisma";
@@ -41,5 +41,25 @@ describe("GET /api/course", () => {
       data: { userId: testUser.id, level: "N5", seed: 1, total: 40, finishedAt: new Date(), score: 35, passed: true },
     });
     expect(await status()).toMatchObject({ finished: true });
+  });
+});
+
+describe("PATCH /api/course", () => {
+  const patch = (body: unknown) =>
+    PATCH(new Request("http://localhost/api/course", { method: "PATCH", body: JSON.stringify(body) }));
+
+  it("hides the course for someone who already has the basics, and can show it again", async () => {
+    await prisma.examAttempt.deleteMany({ where: { userId: testUser.id } });
+    expect(await status()).toMatchObject({ finished: false, hideCourse: false });
+
+    expect((await patch({ hideCourse: true })).status).toBe(200);
+    expect(await status()).toMatchObject({ finished: true, hideCourse: true });
+
+    await patch({ hideCourse: false });
+    expect(await status()).toMatchObject({ finished: false, hideCourse: false });
+  });
+
+  it("rejects anything but a boolean", async () => {
+    expect((await patch({ hideCourse: "oui" })).status).toBe(400);
   });
 });

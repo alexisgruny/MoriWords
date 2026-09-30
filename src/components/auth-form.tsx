@@ -44,6 +44,8 @@ export function AuthForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Inscription : « j'ai déjà les bases » retire le parcours débutant du menu.
+  const [hasBasics, setHasBasics] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,6 +62,15 @@ export function AuthForm({
       if (result.error) {
         setError(errorMessage(result.error, isSignup ? "L'inscription a échoué." : "La connexion a échoué."));
         return;
+      }
+
+      if (isSignup && hasBasics) {
+        // Sans gravité si ça échoue : réglable ensuite sur la page Compte.
+        await fetch("/api/course", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hideCourse: true }),
+        }).catch(() => undefined);
       }
 
       router.push(redirectTo);
@@ -148,6 +159,35 @@ export function AuthForm({
           />
           {isSignup ? <span className="text-xs font-normal text-[var(--muted)]">8 caractères minimum.</span> : null}
         </label>
+
+        {isSignup ? (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1.5 text-sm font-semibold text-[var(--ink)]">Ton niveau en japonais</legend>
+            {[
+              { value: false, label: "Je débute (ou presque)", hint: "Le parcours débutant te guide pas à pas." },
+              { value: true, label: "J'ai déjà les bases", hint: "Je lis les kana et je connais des phrases simples." },
+            ].map((option) => (
+              <label
+                key={option.label}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 ${
+                  hasBasics === option.value ? "border-[var(--ink)] bg-[var(--tint)]" : "border-[var(--line-strong)]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="level"
+                  checked={hasBasics === option.value}
+                  onChange={() => setHasBasics(option.value)}
+                  className="mt-1 accent-[var(--accent)]"
+                />
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-[var(--ink)]">{option.label}</span>
+                  <span className="text-xs text-[var(--muted)]">{option.hint}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        ) : null}
 
         {error ? (
           <p className="error-banner" role="alert">

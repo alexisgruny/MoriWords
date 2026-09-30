@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const [account, decks, sourceTexts, vocabulary, exerciseAttempts, lessonProgress, examAttempts] = await Promise.all([
       prisma.user.findUnique({
         where: { id: user.id },
-        select: { name: true, email: true, createdAt: true, accounts: { select: { providerId: true } } },
+        select: { name: true, email: true, createdAt: true, hideCourse: true, accounts: { select: { providerId: true } } },
       }),
       prisma.deck.findMany({
         where: { userId: user.id },
@@ -75,6 +75,7 @@ export async function GET(request: Request) {
         name: account.name,
         email: account.email,
         createdAt: account.createdAt,
+        hideCourse: account.hideCourse,
         signInMethods: account.accounts.map((entry) => entry.providerId),
       },
       decks,
