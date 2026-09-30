@@ -15,6 +15,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Cache disque de `next dev` coupé : sur le disque lent du poste de dev,
+    // ses écritures et sa compaction occupaient le disque plusieurs minutes
+    // et ralentissaient tout le PC. Le build (Vercel) garde son cache.
+    turbopackFileSystemCacheForDev: false,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

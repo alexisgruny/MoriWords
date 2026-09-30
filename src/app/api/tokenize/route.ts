@@ -1,11 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { MAX_ANALYSIS_TEXT_LENGTH, tooLongResponse } from "@/lib/security/input-limits";
-import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
+import { getJapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
 import type { TokenResult } from "@/lib/tokenizer/types";
-
-// Un seul tokenizer partagé par toutes les requêtes, pour ne charger le
-// dictionnaire kuromoji qu'une seule fois.
-const tokenizer = new JapaneseTokenizer();
 
 // Forme attendue du corps de la requête.
 type TokenizeRequest = {
@@ -42,7 +38,7 @@ export async function POST(request: Request) {
       return tooLongResponse("Le texte", MAX_ANALYSIS_TEXT_LENGTH);
     }
 
-    const tokens: TokenResult[] = await tokenizer.tokenize(body.text);
+    const tokens: TokenResult[] = await getJapaneseTokenizer().tokenize(body.text);
 
     return Response.json({ tokens });
   } catch {

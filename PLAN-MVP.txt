@@ -354,3 +354,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       indice), Mots croises en hiragana (grille generee, indice = sens).
       Liste de ~120 mots N5 avec sens (verifies N5 par test), saisie romaji →
       kana (wanakana, MIT), records dans le navigateur (localStorage).
+69    Vitesse en dev : cache disque de `next dev` coupe (ecritures et
+      compaction ralentissaient le poste, disque lent), dictionnaire kuromoji
+      charge une seule fois par processus et au premier usage
+      (getJapaneseTokenizer, partage via globalThis).

@@ -111,3 +111,13 @@ export class JapaneseTokenizer implements Tokenizer {
       .map(mapJapaneseToken);
   }
 }
+
+// Un seul dictionnaire en mémoire par processus, chargé au premier usage.
+// Gardé sur globalThis : en dev, chaque route et chaque rechargement à chaud
+// réimportent ce module et rechargeaient sinon le dictionnaire.
+const shared = globalThis as typeof globalThis & { japaneseTokenizer?: JapaneseTokenizer };
+
+export function getJapaneseTokenizer(): JapaneseTokenizer {
+  shared.japaneseTokenizer ??= new JapaneseTokenizer();
+  return shared.japaneseTokenizer;
+}

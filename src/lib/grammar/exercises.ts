@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/prisma";
 import { WORD_LEVELS, classifyDifficulty } from "@/lib/difficulty/classify";
-import { JapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
+import { getJapaneseTokenizer } from "@/lib/tokenizer/japanese-tokenizer";
 import { isNoiseToken } from "@/lib/tokenizer/token-filters";
 import { generateJsonFromClaude } from "@/lib/feeds/claude-json-generator";
 import { shuffle } from "@/lib/shuffle";
@@ -68,7 +68,6 @@ const KANJI_LEVELS = new Map(JLPT_KANJI.map((entry) => [entry.kanji, entry.level
 // niveau ne compte pas, c'est le point de grammaire qui les introduit.
 const FUNCTION_WORD_CATEGORIES = new Set(["助動詞", "助詞", "記号", "フィラー"]);
 
-const tokenizer = new JapaneseTokenizer();
 
 // Noms propres absents des listes JLPT mais présents dès les premières leçons.
 const BEGINNER_PROPER_NOUNS = ["日本", "日本語", "東京", "フランス", "フランス語"];
@@ -121,7 +120,7 @@ async function checkGrammarLevel(japanese: string, level: GrammarLevel): Promise
   }
 
   const levelIndex = LEVEL_ORDER.indexOf(level);
-  const tokens = await tokenizer.tokenize(japanese);
+  const tokens = await getJapaneseTokenizer().tokenize(japanese);
 
   return tokens.every((token, index) => {
     // Nombre, ou compteur juste après un nombre (七時 : 時 n'est pas ici le
