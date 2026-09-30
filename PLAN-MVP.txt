@@ -407,3 +407,10 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       10 000 caracteres sans couper une replique ; lu dans le navigateur.
       Liste des mots detectes sans doublons (1re occurrence) ; « Tout ajouter »
       par paquets de 6 au lieu de centaines de requetes simultanees.
+80    Phrase du jour (idee « Autres idees ») sur /decks : un exemple de
+      grammaire par jour et par niveau (ecrit et traduit a la main, 0 appel
+      Claude), furigana et mots touchables, ecoute, traduction a la demande,
+      niveau retenu dans le navigateur, lien « Analyser cette phrase »
+      (/?texte=... pre-remplit l'analyse). Page d'accueil : sous-titres,
+      paliers et mini-jeux mis en avant ; lien « Passer un palier » depuis la
+      progression JLPT.

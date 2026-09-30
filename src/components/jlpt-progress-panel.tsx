@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { LevelProgress } from "@/lib/progress/jlpt-progress";
@@ -92,11 +93,17 @@ export function JlptProgressPanel() {
             bien ancrés (revus à 3 semaines)
           </span>
         </span>
-        {showAll || visible.length === levels.length ? null : (
-          <button type="button" onClick={() => setShowAll(true)} className="link-button text-xs!">
-            Voir tous les niveaux
-          </button>
-        )}
+        <span className="flex items-center gap-3">
+          {showAll || visible.length === levels.length ? null : (
+            <button type="button" onClick={() => setShowAll(true)} className="link-button text-xs!">
+              Voir tous les niveaux
+            </button>
+          )}
+          {/* Le vocabulaire vu ici, l'examen blanc pour le vérifier. */}
+          <Link href="/paliers" className="link-button text-xs!">
+            Passer un palier →
+          </Link>
+        </span>
       </div>
     </section>
   );

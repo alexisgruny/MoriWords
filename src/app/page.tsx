@@ -178,9 +178,17 @@ export default function Home() {
     // Rouvre un texte choisi depuis la page /historique (lien
     // /?sourceTextId=...), puis nettoie l'URL pour éviter de le rerouvrir
     // si l'utilisateur revient sur cette page plus tard.
-    const requestedSourceTextId = new URLSearchParams(window.location.search).get("sourceTextId");
+    const params = new URLSearchParams(window.location.search);
+    const requestedSourceTextId = params.get("sourceTextId");
+    // /?texte=... (ex. « Analyser cette phrase » de la phrase du jour) :
+    // pré-remplit la zone de texte, l'analyse reste à lancer.
+    const requestedText = params.get("texte");
     if (requestedSourceTextId) {
       void loadTokensForText(requestedSourceTextId);
+      window.history.replaceState(null, "", "/");
+    } else if (requestedText) {
+      // Après le rendu initial (même texte de départ côté serveur et navigateur).
+      void Promise.resolve().then(() => setText(requestedText.slice(0, MAX_ANALYSIS_TEXT_LENGTH)));
       window.history.replaceState(null, "", "/");
     }
   }, []);

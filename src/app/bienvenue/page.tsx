@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: "Colle",
-    text: "Une réplique de ton anime, une bulle de manga, les paroles d'une chanson. Ou laisse MoriWords t'en proposer une.",
+    text: "Une réplique de ton anime, les sous-titres d'un épisode entier, une bulle de manga. Ou laisse MoriWords t'en proposer une.",
   },
   {
     title: "Comprends",
@@ -29,6 +29,7 @@ const SERIOUS_FEATURES = [
   "Tes traductions en japonais corrigées et expliquées",
   "Un entraînement ciblé sur tes points faibles",
   "Grammaire, conjugaison et plus de 2 000 kanji du JLPT",
+  "Un examen blanc par niveau, du N5 au N1, pour mesurer tes progrès",
   "Export Anki si tu veux garder tes habitudes",
 ];
 
@@ -102,6 +103,18 @@ export default function WelcomePage() {
               </Link>
             </div>
           </div>
+        </section>
+
+        <section className="panel flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-[var(--ink)]">Envie de jouer d&apos;abord ?</h2>
+            <p className="mt-1 text-[var(--muted)]">
+              Memory, shiritori, mots croisés en kana… Des mini-jeux sur le vocabulaire N5, sans compte.
+            </p>
+          </div>
+          <Link href="/jeux" className="secondary-button shrink-0">
+            🎮 Voir les mini-jeux
+          </Link>
         </section>
 
         <section className="panel text-center">
