@@ -1,11 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { allowedVocabulary, fitsGrammarLevel } from "./exercises";
 import { grammarPoints } from "./points";
-
-// La première découpe en mots charge le dictionnaire japonais (kuromoji) :
-// plusieurs secondes quand toute la suite de tests tourne en parallèle.
-vi.setConfig({ testTimeout: 30_000 });
 
 describe("fitsGrammarLevel", () => {
   it("accepts short N5 sentences made of N5 words, allowing common N4 kanji like 私", async () => {

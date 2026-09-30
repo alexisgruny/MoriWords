@@ -22,6 +22,7 @@ import { type GrammarLevel, grammarPoints } from "./points";
 const DISTRACTOR_COUNT = 3;
 
 const CONJUGATION_PREFIX = "conj:";
+const IRREGULAR_POLITE_FORMS = new Set(["n2-sonkeigo-irregular", "n2-kenjougo-irregular"]);
 const EXAMPLE_PREFIX = "ex:";
 
 // Lecture affichable : sans le point d'okurigana ni le tiret de préfixe.
@@ -85,8 +86,12 @@ export async function buildChoices(exerciseId: string, userId: string): Promise<
     // Uniquement le même mot à d'autres formes (食べます / 食べない / 食べて) :
     // avec 4 verbes différents, le sens du verbe suffirait à répondre. Formes
     // du référentiel, complétées par le conjugueur local.
-    const examples = conjugationForms.flatMap((form) => form.examples);
-    const example = examples.find((candidate) => candidate.conjugated === answer);
+    // Les verbes honorifiques ou humbles irréguliers (食べる → 召し上がる,
+    // 行く → 参る) sont d'autres mots à l'œil : jamais en leurre.
+    const examples = conjugationForms
+      .filter((form) => !IRREGULAR_POLITE_FORMS.has(form.id))
+      .flatMap((form) => form.examples);
+    const example = conjugationForms.flatMap((form) => form.examples).find((candidate) => candidate.conjugated === answer);
     const sameWord = example
       ? [
           ...examples.filter((candidate) => candidate.base === example.base).map((candidate) => candidate.conjugated),

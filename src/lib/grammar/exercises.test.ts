@@ -32,10 +32,6 @@ import {
 } from "./exercises";
 import { grammarPoints } from "./points";
 
-// La première découpe en mots charge le dictionnaire japonais (kuromoji) :
-// plusieurs secondes quand toute la suite de tests tourne en parallèle.
-vi.setConfig({ testTimeout: 30_000 });
-
 const testPoint = grammarPoints.find((point) => point.id === "n5-wa-desu")!;
 const deckIdsToCleanUp: string[] = [];
 

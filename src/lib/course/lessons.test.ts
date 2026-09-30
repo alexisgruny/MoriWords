@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { conjugationForms } from "@/lib/conjugation/forms";
 import { WORD_LEVELS } from "@/lib/difficulty/classify";
@@ -6,8 +6,6 @@ import { grammarPoints } from "@/lib/grammar/points";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import { findUnknownWords } from "@/lib/spellcheck/check-french";
 import { LESSONS, romajiOf } from "./lessons";
-
-vi.setConfig({ testTimeout: 30_000 });
 
 // Écriture du dictionnaire des mots donnés en kana (がくせい -> 学生), pour
 // trouver leur niveau dans les listes JLPT.

@@ -1,14 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   isNonLexicalToken,
   mapJapaneseToken,
   toHiragana,
 } from "./japanese-tokenizer";
-
-// Le dictionnaire japonais (kuromoji) met plusieurs secondes à charger quand
-// toute la suite de tests tourne en parallèle.
-vi.setConfig({ testTimeout: 30_000 });
 
 describe("toHiragana", () => {
   it("convertit une lecture katakana en hiragana", () => {
