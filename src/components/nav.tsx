@@ -34,7 +34,10 @@ const allGroups: Array<{ title: string; links: Array<{ href: string; label: stri
   },
   {
     title: "Suivi",
-    links: [{ href: "/historique", label: "Historique" }],
+    links: [
+      { href: "/paliers", label: "Paliers" },
+      { href: "/historique", label: "Historique" },
+    ],
   },
 ];
 

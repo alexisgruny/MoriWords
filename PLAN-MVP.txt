@@ -358,3 +358,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       compaction ralentissaient le poste, disque lent), dictionnaire kuromoji
       charge une seule fois par processus et au premier usage
       (getJapaneseTokenizer, partage via globalThis).
+70    Paliers MoriWords (/paliers, idee 4) : examen blanc par niveau N5 a N1,
+      40 QCM (sens et lecture des kanji, vocabulaire N5, grammaire,
+      conjugaison) construits sans Claude, reussi a 75 % (badge). Tirage par
+      graine, questions regenerees et corrigees cote serveur (reponses jamais
+      envoyees avant la copie), reprise du meme examen, 24 h avant de
+      repasser un palier rate, 3 h pour finir. Resultat par categorie avec
+      liens pour retravailler et liste des erreurs. Table ExamAttempt ;
+      export RGPD complete (examens et lecons du parcours). Jamais appele
+      « JLPT » ni « certificat ».

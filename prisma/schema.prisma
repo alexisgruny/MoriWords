@@ -258,6 +258,26 @@ model LessonProgress {
   @@id([userId, lessonId])
 }
 
+// Examens de palier (« examen blanc » par niveau, pas une certification).
+// Les questions sont regénérées à partir de seed : rien à stocker de plus,
+// et la correction se fait côté serveur.
+model ExamAttempt {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level      String
+  seed       Int
+  total      Int
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  score      Int?
+  passed     Boolean?
+  // Réussites par catégorie { kanji-sens: { correct, total }, ... }.
+  results    Json?
+
+  @@index([userId, level, startedAt])
+}
+
 // Historique des tentatives d'exercice (grammaire/conjugaison/kanji/mon
 // vocabulaire), pour calculer un taux de réussite par point/forme/kanji/mot
 // et repérer ce qui mérite d'être revu (page /exercices/stats). Écrit après
@@ -300,6 +320,7 @@ model User {
   vocabularyEntries VocabularyEntry[]
   claudeUsages     ClaudeUsage[]
   lessonProgress   LessonProgress[]
+  examAttempts     ExamAttempt[]
 
   @@map("user")
 }

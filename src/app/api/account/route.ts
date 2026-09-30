@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [account, decks, sourceTexts, vocabulary, exerciseAttempts] = await Promise.all([
+    const [account, decks, sourceTexts, vocabulary, exerciseAttempts, lessonProgress, examAttempts] = await Promise.all([
       prisma.user.findUnique({
         where: { id: user.id },
         select: { name: true, email: true, createdAt: true, accounts: { select: { providerId: true } } },
@@ -57,6 +57,16 @@ export async function GET(request: Request) {
         orderBy: { createdAt: "asc" },
         select: { source: true, focus: true, level: true, correct: true, createdAt: true },
       }),
+      prisma.lessonProgress.findMany({
+        where: { userId: user.id },
+        orderBy: { completedAt: "asc" },
+        select: { lessonId: true, completedAt: true },
+      }),
+      prisma.examAttempt.findMany({
+        where: { userId: user.id },
+        orderBy: { startedAt: "asc" },
+        select: { level: true, startedAt: true, finishedAt: true, score: true, total: true, passed: true, results: true },
+      }),
     ]);
 
     const payload = {
@@ -71,6 +81,8 @@ export async function GET(request: Request) {
       sourceTexts,
       vocabulary,
       exerciseAttempts,
+      lessonProgress,
+      examAttempts,
     };
 
     return new Response(JSON.stringify(payload, null, 2), {
