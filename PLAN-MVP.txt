@@ -372,3 +372,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       ambigues sans terminaison retirees (~たら) ou pieges filtres (~ば) ;
       lecture des kanji en kun'yomi sous forme de mot (食べる → たべる), pieges
       avec les memes okurigana.
+72    Exercices de kanji (sens, lecture, ecriture) : bouton « Ajouter ce kanji
+      a un deck » apres chaque reponse (compte connecte), sens et lecture du
+      referentiel (pas de traduction Claude), dernier deck retenu, « deja dans
+      le deck » detecte ; referentiel charge au clic seulement.

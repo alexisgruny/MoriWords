@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { AddKanjiToDeck } from "@/components/add-kanji-to-deck";
 import { FilterChips } from "@/components/reference-toolbar";
 import { WritingCanvas } from "@/components/writing-canvas";
 import { authClient } from "@/lib/auth/auth-client";
@@ -116,6 +117,7 @@ export function KanjiWritingExercise() {
                       ? "Réussi, avec une petite erreur"
                       : `${result.mistakes} erreurs : à retravailler`}
               </p>
+              <AddKanjiToDeck key={current.kanji} kanji={current.kanji} />
               <button type="button" onClick={() => pickNext()} className="primary-button mt-3">
                 Kanji suivant →
               </button>

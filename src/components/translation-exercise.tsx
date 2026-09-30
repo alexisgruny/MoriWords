@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { AddKanjiToDeck } from "@/components/add-kanji-to-deck";
 import { JapaneseText } from "@/components/japanese-text";
 import { FilterChips } from "@/components/reference-toolbar";
 import { SpeakButton } from "@/components/speak-button";
@@ -461,6 +462,8 @@ export function TranslationExercise({
               )}
             </div>
           ) : null}
+
+          {correction && isKanji ? <AddKanjiToDeck key={exercise.focus} kanji={exercise.focus} /> : null}
         </div>
       ) : null}
     </section>
