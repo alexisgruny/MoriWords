@@ -376,3 +376,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       a un deck » apres chaque reponse (compte connecte), sens et lecture du
       referentiel (pas de traduction Claude), dernier deck retenu, « deja dans
       le deck » detecte ; referentiel charge au clic seulement.
+73    Barre de navigation reorganisee : 3 menus deroulants (Apprendre,
+      S'entrainer, Reference) au lieu de 12 liens alignes, chaque lien avec
+      une icone et une courte description ; meme organisation dans le menu
+      mobile ; Historique renomme « Mes textes » sous Apprendre.
