@@ -384,3 +384,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       les exemples a partir de la lecon 4 (phrases ecrites a la main : espaces
       entre les mots, は → wa, を → o) ; « maison » = いえ partout (うち retire).
       Tests : romaji complet, romaji manuel pour chaque phrase.
+75    Parcours retire du menu une fois termine : GET /api/course renvoie
+      finished (toutes les lecons validees ou palier N5 reussi), lu une fois
+      par session par le menu (cache sessionStorage, oublie apres une lecon
+      validee ou un palier N5 reussi). La page /parcours reste accessible.

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { readApiError } from "@/lib/api-error";
+import { forgetCourseStatus } from "@/lib/course/course-status";
 import type { LevelStatus } from "@/lib/exams/attempts";
 import { CATEGORY_LABELS, type CategoryResult, type ExamCategory, type ExamQuestion } from "@/lib/exams/types";
 import type { GrammarLevel } from "@/lib/grammar/points";
@@ -106,6 +107,10 @@ export default function LevelsPage() {
       setRunning(null);
       window.scrollTo({ top: 0 });
       setStatusVersion((version) => version + 1);
+      // Palier N5 réussi : le parcours débutant peut quitter le menu.
+      if (data.passed && running.level === "N5") {
+        forgetCourseStatus();
+      }
     } finally {
       setIsBusy(false);
     }

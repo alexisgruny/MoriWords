@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { AccountButton } from "@/components/account-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth/auth-client";
+import { useCourseFinished } from "@/lib/course/course-status";
 
 type NavLink = { href: string; label: string; description: string; icon: string; isPublic?: boolean };
 type NavGroup = { title: string; links: NavLink[] };
@@ -94,7 +95,12 @@ export default function Nav() {
   const { data: session, isPending } = authClient.useSession();
   // Pendant le chargement de la session, la navigation complète (la plupart
   // des visites d'une page privée viennent d'un compte connecté).
-  const groups = isPending || session ? allGroups : publicGroups;
+  const isCourseFinished = useCourseFinished(session?.user.id);
+  const baseGroups = isPending || session ? allGroups : publicGroups;
+  // Parcours terminé (ou palier N5 réussi) : plus besoin de le proposer.
+  const groups = isCourseFinished
+    ? baseGroups.map((group) => ({ ...group, links: group.links.filter((link) => link.href !== "/parcours") }))
+    : baseGroups;
   const navRef = useRef<HTMLDivElement>(null);
 
   // Referme les menus après une navigation, pendant le rendu plutôt que dans

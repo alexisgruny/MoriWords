@@ -3,7 +3,9 @@ import { LESSON_IDS } from "@/lib/course/lessons";
 import { prisma } from "@/lib/db/prisma";
 import { limitUserWrites } from "@/lib/security/rate-limit";
 
-// Leçons validées du parcours débutant par le compte connecté.
+// Leçons validées du parcours débutant par le compte connecté. finished :
+// toutes les leçons validées, ou palier N5 réussi (déjà à l'aise) ; le menu
+// cache alors le parcours.
 export async function GET(request: Request) {
   const user = await requireUser(request);
   if (user instanceof Response) {
@@ -11,8 +13,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const rows = await prisma.lessonProgress.findMany({ where: { userId: user.id }, select: { lessonId: true } });
-    return Response.json({ completed: rows.map((row) => row.lessonId) });
+    const [rows, passedN5] = await Promise.all([
+      prisma.lessonProgress.findMany({ where: { userId: user.id }, select: { lessonId: true } }),
+      prisma.examAttempt.count({ where: { userId: user.id, level: "N5", passed: true } }),
+    ]);
+    const completed = rows.map((row) => row.lessonId);
+    const finished = passedN5 > 0 || [...LESSON_IDS].every((lessonId) => completed.includes(lessonId));
+    return Response.json({ completed, finished });
   } catch (error) {
     console.error("Failed to load course progress:", error);
     return Response.json({ error: "Impossible de charger ta progression." }, { status: 500 });

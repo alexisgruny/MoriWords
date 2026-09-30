@@ -9,6 +9,7 @@ import { LessonQuiz } from "@/components/lesson-quiz";
 import { SpeakButton } from "@/components/speak-button";
 import { TranslationExercise } from "@/components/translation-exercise";
 import { authClient } from "@/lib/auth/auth-client";
+import { forgetCourseStatus } from "@/lib/course/course-status";
 import type { Lesson } from "@/lib/course/lessons";
 
 // Exercice d'une leçon du parcours : compte les bonnes réponses et valide la
@@ -50,7 +51,10 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonId: lesson.id }),
-      }).catch(() => undefined);
+      })
+        // La dernière leçon validée peut retirer le parcours du menu.
+        .then(() => forgetCourseStatus())
+        .catch(() => undefined);
     }
   }
 
