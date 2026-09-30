@@ -5,7 +5,7 @@ import { WORD_LEVELS } from "@/lib/difficulty/classify";
 import { grammarPoints } from "@/lib/grammar/points";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import { findUnknownWords } from "@/lib/spellcheck/check-french";
-import { LESSONS } from "./lessons";
+import { LESSONS, romajiOf } from "./lessons";
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -14,7 +14,7 @@ vi.setConfig({ testTimeout: 30_000 });
 const DICTIONARY_FORMS: Record<string, string> = {
   わたし: "私", がくせい: "学生", せんせい: "先生", ともだち: "友達", ほん: "本", ねこ: "猫", いぬ: "犬",
   すき: "好き", たべます: "食べる", のみます: "飲む", いきます: "行く", みます: "見る", えいが: "映画",
-  おちゃ: "お茶", みず: "水", よみます: "読む", かえります: "帰る", がっこう: "学校", こうえん: "公園",
+  おちゃ: "お茶", みず: "水", よみます: "読む", かえります: "帰る", がっこう: "学校", いえ: "家", こうえん: "公園",
   としょかん: "図書館", でんしゃ: "電車", かきます: "書く", ねます: "寝る", おきます: "起きる",
   きのう: "昨日", きょう: "今日", あした: "明日", たかい: "高い", やすい: "安い",
   おおきい: "大きい", ちいさい: "小さい", しずか: "静か", げんき: "元気",
@@ -98,5 +98,24 @@ describe("parcours débutant", () => {
       .flatMap((text) => findUnknownWords(text))
       .filter((word) => !(word.includes("-") && word.split("-").every((part) => findUnknownWords(part).length === 0)));
     expect(unknown).toEqual([]);
+  });
+});
+
+describe("romaji des leçons", () => {
+  const entries = LESSONS.flatMap((lesson) => [
+    ...(lesson.vocabulary ?? []),
+    ...lesson.sections.flatMap((section) => section.examples ?? []),
+  ]);
+
+  it("gives a full romaji (no kana or kanji left) for every word and example", () => {
+    const incomplete = entries.filter((entry) => /[\u3040-\u30ff\u4e00-\u9faf]/.test(romajiOf(entry)));
+    expect(incomplete.map((entry) => entry.ja)).toEqual([]);
+  });
+
+  // Converti automatiquement, une phrase n'aurait ni espaces ni particules
+  // lues correctement (は → « ha » au lieu de « wa »).
+  it("has hand-written romaji for every sentence", () => {
+    const sentences = entries.filter((entry) => /[。、]|です/.test(entry.ja));
+    expect(sentences.filter((entry) => !entry.romaji).map((entry) => entry.ja)).toEqual([]);
   });
 });

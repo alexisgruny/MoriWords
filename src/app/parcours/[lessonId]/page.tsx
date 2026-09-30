@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { LessonExercise } from "@/components/lesson-exercise";
 import { LessonKanaTable } from "@/components/lesson-kana-table";
 import { SpeakButton } from "@/components/speak-button";
-import { LESSONS, findLesson } from "@/lib/course/lessons";
+import { LESSONS, findLesson, romajiOf } from "@/lib/course/lessons";
 
 export function generateStaticParams() {
   return LESSONS.map((lesson) => ({ lessonId: lesson.id }));
@@ -26,6 +26,7 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
     notFound();
   }
   const next = LESSONS.find((candidate) => candidate.number === lesson.number + 1);
+  const showRomaji = lesson.exercise.kind !== "kana";
 
   return (
     <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
@@ -69,6 +70,8 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
                           {example.reading}
                         </p>
                       ) : null}
+                      {/* Leçons de kana : le romaji est déjà dans la traduction. */}
+                      {showRomaji ? <p className="text-sm text-[var(--accent-dark)] italic">{romajiOf(example)}</p> : null}
                       <p className="text-sm text-[var(--muted)]">{example.fr}</p>
                     </div>
                     <SpeakButton text={example.reading ?? example.ja} label="Écouter l'exemple" size="sm" />
@@ -101,6 +104,7 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
                         <span className="ml-2 text-sm font-normal text-[var(--muted)]">{word.reading}</span>
                       ) : null}
                     </p>
+                    <p className="text-sm text-[var(--accent-dark)] italic">{romajiOf(word)}</p>
                     <p className="text-sm text-[var(--muted)]">{word.fr}</p>
                   </div>
                   <SpeakButton text={word.reading ?? word.ja} label="Écouter le mot" size="sm" />

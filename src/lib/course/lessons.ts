@@ -1,3 +1,5 @@
+import { toRomaji } from "wanakana";
+
 import type { KanaGroup } from "@/lib/kana/kana";
 
 // Parcours débutant : 10 leçons courtes (5 à 10 minutes), gratuites, pour
@@ -5,7 +7,9 @@ import type { KanaGroup } from "@/lib/kana/kana";
 // ici une fois pour toutes (aucun appel à Claude) ; les exercices réutilisent
 // ceux du site. À faire relire par une personne de niveau N3 ou plus.
 
-export type LessonExample = { ja: string; reading?: string; fr: string };
+// romaji : écrit à la main pour les phrases (espaces entre les mots,
+// particules は → wa, を → o) ; pour un mot seul, calculé par romajiOf.
+export type LessonExample = { ja: string; reading?: string; romaji?: string; fr: string };
 
 export type LessonSection = { title: string; paragraphs: string[]; examples?: LessonExample[] };
 
@@ -158,8 +162,8 @@ export const LESSONS: Lesson[] = [
           "Le japonais n'a ni article (le, un) ni pluriel à marquer : 学生 veut dire « étudiant », « un étudiant » ou « des étudiants » selon le contexte.",
         ],
         examples: [
-          { ja: "わたしは学生です。", reading: "わたしはがくせいです。", fr: "Je suis étudiant(e)." },
-          { ja: "わたしはフランス人です。", reading: "わたしはフランスじんです。", fr: "Je suis français(e)." },
+          { ja: "わたしは学生です。", reading: "わたしはがくせいです。", romaji: "watashi wa gakusei desu.", fr: "Je suis étudiant(e)." },
+          { ja: "わたしはフランス人です。", reading: "わたしはフランスじんです。", romaji: "watashi wa furansujin desu.", fr: "Je suis français(e)." },
         ],
       },
       {
@@ -169,9 +173,9 @@ export const LESSONS: Lesson[] = [
           "Pour poser une question, il suffit d'ajouter か à la fin : 学生ですか。 « Êtes-vous étudiant ? ».",
         ],
         examples: [
-          { ja: "はじめまして。レアです。", fr: "Enchantée. Je suis Léa." },
-          { ja: "よろしくおねがいします。", fr: "Ravie de faire ta connaissance." },
-          { ja: "学生ですか。", reading: "がくせいですか。", fr: "Tu es étudiant(e) ?" },
+          { ja: "はじめまして。レアです。", romaji: "hajimemashite. Rea desu.", fr: "Enchantée. Je suis Léa." },
+          { ja: "よろしくおねがいします。", romaji: "yoroshiku onegaishimasu.", fr: "Ravie de faire ta connaissance." },
+          { ja: "学生ですか。", reading: "がくせいですか。", romaji: "gakusei desu ka.", fr: "Tu es étudiant(e) ?" },
         ],
       },
     ],
@@ -222,8 +226,8 @@ export const LESSONS: Lesson[] = [
           "Pour dire que tu aimes quelque chose, on met la chose aimée devant が, puis 好きです (suki desu). Attention, c'est bien が et pas を.",
         ],
         examples: [
-          { ja: "アニメが好きです。", reading: "アニメがすきです。", fr: "J'aime les anime." },
-          { ja: "ねこが好きです。", reading: "ねこがすきです。", fr: "J'aime les chats." },
+          { ja: "アニメが好きです。", reading: "アニメがすきです。", romaji: "anime ga suki desu.", fr: "J'aime les anime." },
+          { ja: "ねこが好きです。", reading: "ねこがすきです。", romaji: "neko ga suki desu.", fr: "J'aime les chats." },
         ],
       },
       {
@@ -232,8 +236,8 @@ export const LESSONS: Lesson[] = [
           "On prend le verbe à la forme en ます, on enlève ます et on ajoute たいです : 食べます (manger) devient 食べたいです (je veux manger).",
         ],
         examples: [
-          { ja: "日本に行きたいです。", reading: "にほんにいきたいです。", fr: "Je veux aller au Japon." },
-          { ja: "すしを食べたいです。", reading: "すしをたべたいです。", fr: "Je veux manger des sushis." },
+          { ja: "日本に行きたいです。", reading: "にほんにいきたいです。", romaji: "nihon ni ikitai desu.", fr: "Je veux aller au Japon." },
+          { ja: "すしを食べたいです。", reading: "すしをたべたいです。", romaji: "sushi o tabetai desu.", fr: "Je veux manger des sushis." },
         ],
       },
     ],
@@ -288,10 +292,10 @@ export const LESSONS: Lesson[] = [
           "を (prononcé « o ») marque ce sur quoi porte l'action : l'objet. に et へ (prononcé « e ») marquent la destination. で marque le lieu où l'action se passe, ou le moyen utilisé.",
         ],
         examples: [
-          { ja: "パンを食べます。", reading: "パンをたべます。", fr: "Je mange du pain." },
-          { ja: "学校に行きます。", reading: "がっこうにいきます。", fr: "Je vais à l'école." },
-          { ja: "家で本を読みます。", reading: "いえでほんをよみます。", fr: "Je lis un livre à la maison." },
-          { ja: "バスで行きます。", reading: "バスでいきます。", fr: "J'y vais en bus." },
+          { ja: "パンを食べます。", reading: "パンをたべます。", romaji: "pan o tabemasu.", fr: "Je mange du pain." },
+          { ja: "学校に行きます。", reading: "がっこうにいきます。", romaji: "gakkou ni ikimasu.", fr: "Je vais à l'école." },
+          { ja: "家で本を読みます。", reading: "いえでほんをよみます。", romaji: "ie de hon o yomimasu.", fr: "Je lis un livre à la maison." },
+          { ja: "バスで行きます。", reading: "バスでいきます。", romaji: "basu de ikimasu.", fr: "J'y vais en bus." },
         ],
       },
     ],
@@ -305,7 +309,7 @@ export const LESSONS: Lesson[] = [
       { ja: "ほん", fr: "livre" },
       { ja: "みず", fr: "eau" },
       { ja: "がっこう", fr: "école" },
-      { ja: "うち", fr: "maison, chez moi" },
+      { ja: "いえ", fr: "maison" },
       { ja: "こうえん", fr: "parc" },
       { ja: "としょかん", fr: "bibliothèque" },
       { ja: "レストラン", fr: "restaurant" },
@@ -318,7 +322,7 @@ export const LESSONS: Lesson[] = [
       { fr: "Je mange du pain.", answer: "パンをたべます。", wrong: ["パンでたべます。","パンにたべます。"] },
       { fr: "Je lis un livre.", answer: "ほんをよみます。", wrong: ["ほんによみます。","ほんでよみます。"] },
       { fr: "Je vais à l'école.", answer: "がっこうにいきます。", wrong: ["がっこうをいきます。","がっこうでいきます。"] },
-      { fr: "Je rentre à la maison.", answer: "うちにかえります。", wrong: ["うちをかえります。","うちでかえります。"] },
+      { fr: "Je rentre à la maison.", answer: "いえにかえります。", wrong: ["いえをかえります。","いえでかえります。"] },
       { fr: "Je vais au parc.", answer: "こうえんへいきます。", wrong: ["こうえんをいきます。","こうえんでいきます。"] },
       { fr: "Je mange au restaurant.", answer: "レストランでたべます。", wrong: ["レストランをたべます。","レストランにたべます。"] },
       { fr: "J'y vais en bus.", answer: "バスでいきます。", wrong: ["バスをいきます。","バスはいきます。"] },
@@ -401,9 +405,9 @@ export const LESSONS: Lesson[] = [
           "Exception à retenir : いい (bien) devient よくない et よかった.",
         ],
         examples: [
-          { ja: "高いです", reading: "たかいです", fr: "c'est cher" },
-          { ja: "高くないです", reading: "たかくないです", fr: "ce n'est pas cher" },
-          { ja: "高かったです", reading: "たかかったです", fr: "c'était cher" },
+          { ja: "高いです", reading: "たかいです", romaji: "takai desu", fr: "c'est cher" },
+          { ja: "高くないです", reading: "たかくないです", romaji: "takakunai desu", fr: "ce n'est pas cher" },
+          { ja: "高かったです", reading: "たかかったです", romaji: "takakatta desu", fr: "c'était cher" },
         ],
       },
       {
@@ -412,9 +416,9 @@ export const LESSONS: Lesson[] = [
           "Ils prennent な devant un nom (静かな町, une ville calme) et se conjuguent comme un nom, avec です : じゃないです au négatif, でした au passé.",
         ],
         examples: [
-          { ja: "静かです", reading: "しずかです", fr: "c'est calme" },
-          { ja: "静かじゃないです", reading: "しずかじゃないです", fr: "ce n'est pas calme" },
-          { ja: "静かでした", reading: "しずかでした", fr: "c'était calme" },
+          { ja: "静かです", reading: "しずかです", romaji: "shizuka desu", fr: "c'est calme" },
+          { ja: "静かじゃないです", reading: "しずかじゃないです", romaji: "shizuka ja nai desu", fr: "ce n'est pas calme" },
+          { ja: "静かでした", reading: "しずかでした", romaji: "shizuka deshita", fr: "c'était calme" },
         ],
       },
     ],
@@ -517,3 +521,9 @@ export function findLesson(id: string): Lesson | undefined {
 }
 
 export const LESSON_IDS = new Set(LESSONS.map((lesson) => lesson.id));
+
+// Romaji d'un exemple ou d'un mot : celui écrit à la main, sinon converti
+// depuis la lecture en kana (suffisant pour un mot seul).
+export function romajiOf(example: LessonExample): string {
+  return example.romaji ?? toRomaji(example.reading ?? example.ja);
+}

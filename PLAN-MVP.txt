@@ -380,3 +380,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       S'entrainer, Reference) au lieu de 12 liens alignes, chaque lien avec
       une icone et une courte description ; meme organisation dans le menu
       mobile ; Historique renomme « Mes textes » sous Apprendre.
+74    Parcours : romaji sous le vocabulaire (converti depuis les kana) et sous
+      les exemples a partir de la lecon 4 (phrases ecrites a la main : espaces
+      entre les mots, は → wa, を → o) ; « maison » = いえ partout (うち retire).
+      Tests : romaji complet, romaji manuel pour chaque phrase.
