@@ -427,3 +427,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       lecons, kana, kanji, grammaire, conjugaison, mini-jeux), image et
       balises d'apercu de partage (opengraph-image, metadataBase, fr_FR).
       Fichiers SVG du modele Next inutilises supprimes.
+84    Pages d'erreur en francais : 404 « Page introuvable » (迷子, liens vers
+      l'accueil et le parcours) et erreur inattendue avec « Reessayer »
+      (Next 16 : prop retry). Remplacent les pages par defaut en anglais.
