@@ -28,7 +28,9 @@ export const FRENCH_ALLOWLIST: string[] = [
   "maru",
   "ka", "ki", "ku", "ko", "ga", "sa", "shi", "su", "so", "sho", "sha", "shin",
   "za", "da", "de", "t", "te", "tsu", "na", "ne", "n", "wa", "fu", "pa", "k",
-  "kō", "kya", "kyō", "kitte", "kōhī", "suki", "desu",
+  "kō", "kya", "kyō", "kitte", "kōhī", "suki", "desu", "koo",
+  // Prénoms japonais des questions de compréhension du bilan.
+  "yuki", "sakura",
   // Mot anglais cité comme origine d'un emprunt (コーヒー < coffee).
   "coffee",
   "keigo",

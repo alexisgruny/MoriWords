@@ -414,3 +414,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       (/?texte=... pre-remplit l'analyse). Page d'accueil : sous-titres,
       paliers et mini-jeux mis en avant ; lien « Passer un palier » depuis la
       progression JLPT.
+81    Parcours : encadre « A retenir » (2-3 points cles) dans les 10 lecons ;
+      bilan (lecon 10) valide par 5 questions de comprehension en francais
+      (4 bonnes reponses), traduction du texte visible seulement une fois le
+      bilan reussi. LessonQuiz accepte une consigne et des choix en francais.

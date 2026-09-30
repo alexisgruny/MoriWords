@@ -26,7 +26,19 @@ function buildSeries(questions: LessonQuestion[], random: boolean): Round[] {
 // QCM d'une leçon du parcours : phrase française, 4 phrases japonaises, avec
 // uniquement le vocabulaire de la leçon. Corrigé dans le navigateur (sans
 // compte, sans Claude). Les questions repartent mélangées une fois finies.
-export function LessonQuiz({ questions, onAnswered }: { questions: LessonQuestion[]; onAnswered: (correct: boolean) => void }) {
+// prompt / choicesLang : « Comment dit-on en japonais ? » et choix en japonais
+// par défaut ; en français pour les questions de compréhension d'un texte.
+export function LessonQuiz({
+  questions,
+  onAnswered,
+  prompt = "Comment dit-on en japonais ?",
+  choicesLang = "ja",
+}: {
+  questions: LessonQuestion[];
+  onAnswered: (correct: boolean) => void;
+  prompt?: string;
+  choicesLang?: "ja" | "fr";
+}) {
   // Première série dans l'ordre de la leçon, les suivantes mélangées.
   const [series, setSeries] = useState<Round[]>(() => buildSeries(questions, false));
   const [position, setPosition] = useState(0);
@@ -59,7 +71,7 @@ export function LessonQuiz({ questions, onAnswered }: { questions: LessonQuestio
         Question {position + 1} / {series.length}
       </p>
       <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] p-4">
-        <p className="eyebrow">Comment dit-on en japonais ?</p>
+        <p className="eyebrow">{prompt}</p>
         <p className="mt-1 text-xl font-semibold text-[var(--ink)]">{round.question.fr}</p>
       </div>
 
@@ -73,8 +85,8 @@ export function LessonQuiz({ questions, onAnswered }: { questions: LessonQuestio
               type="button"
               onClick={() => choose(choice)}
               disabled={isAnswered}
-              lang="ja"
-              className={`min-h-12 cursor-pointer rounded-xl border px-4 py-2.5 text-left text-lg text-[var(--ink)] transition disabled:cursor-default ${
+              lang={choicesLang}
+              className={`min-h-12 cursor-pointer rounded-xl border px-4 py-2.5 text-left ${choicesLang === "ja" ? "text-lg" : ""} text-[var(--ink)] transition disabled:cursor-default ${
                 isRight
                   ? "border-[var(--success)] bg-[var(--success-soft)]"
                   : isWrongPick
@@ -93,7 +105,7 @@ export function LessonQuiz({ questions, onAnswered }: { questions: LessonQuestio
           <p className="font-bold text-[var(--ink)]">
             {chosen === round.question.answer ? "Bonne réponse !" : "Pas tout à fait : la bonne réponse est en vert."}
           </p>
-          <SpeakButton text={round.question.answer} label="Écouter la bonne réponse" size="sm" />
+          {choicesLang === "ja" ? <SpeakButton text={round.question.answer} label="Écouter la bonne réponse" size="sm" /> : null}
           <button type="button" onClick={next} className="primary-button ml-auto">
             Question suivante →
           </button>

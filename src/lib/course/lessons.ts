@@ -25,7 +25,8 @@ export type LessonExercise =
   | { kind: "grammar"; patterns: string[] }
   | { kind: "conjugation"; forms: string[] }
   | { kind: "kanji"; kanji: string[] }
-  | { kind: "reading"; text: string; translation: string };
+  // questions : compréhension du texte, en français (question et réponses).
+  | { kind: "reading"; text: string; translation: string; questions?: LessonQuestion[] };
 
 export type Lesson = {
   id: string;
@@ -41,6 +42,8 @@ export type Lesson = {
   vocabulary?: LessonExample[];
   // Exercice du site sur le même sujet, pour aller plus loin.
   morePractice?: { href: string; label: string };
+  // « À retenir » : 2 ou 3 points clés, en fin de leçon.
+  keyPoints?: string[];
 };
 
 export const LESSONS: Lesson[] = [
@@ -81,6 +84,11 @@ export const LESSONS: Lesson[] = [
       },
     ],
     exercise: { kind: "kana", script: "hiragana", groups: ["base"] },
+    keyPoints: [
+      "46 hiragana de base, chacun se lit toujours de la même façon.",
+      "Pièges : し = shi, ち = chi, つ = tsu, ふ = fu, ん = n.",
+      "Apprends-les par ligne (あいうえお, かきくけこ…), pas tous d'un coup.",
+    ],
     goal: 15,
   },
   {
@@ -116,6 +124,11 @@ export const LESSONS: Lesson[] = [
       },
     ],
     exercise: { kind: "kana", script: "hiragana", groups: ["dakuten", "combo"] },
+    keyPoints: [
+      "Deux petits traits (゛) rendent le son voisé : か → が, さ → ざ.",
+      "Un petit rond (゜) donne les sons en p : は → ぱ.",
+      "Un petit ゃ, ゅ ou ょ se colle au kana d'avant (きゃ = kya), un petit っ double la consonne suivante (きって = kitte).",
+    ],
     goal: 15,
   },
   {
@@ -146,6 +159,11 @@ export const LESSONS: Lesson[] = [
       },
     ],
     exercise: { kind: "kana", script: "katakana", groups: ["base"] },
+    keyPoints: [
+      "Les katakana servent surtout aux mots étrangers : コーヒー, テレビ.",
+      "Le trait ー allonge la voyelle d'avant : コー = koo.",
+      "Mêmes sons que les hiragana, seule l'écriture change.",
+    ],
     goal: 15,
   },
   {
@@ -211,6 +229,11 @@ export const LESSONS: Lesson[] = [
       ],
     },
     morePractice: { href: "/exercices/grammaire?point=n5-wa-desu", label: "Plus de phrases sur AはBです" },
+    keyPoints: [
+      "A は B です = « A est B » (は se prononce « wa »).",
+      "か à la fin transforme la phrase en question.",
+      "はじめまして pour se présenter, よろしくおねがいします pour finir.",
+    ],
     goal: 8,
   },
   {
@@ -271,6 +294,10 @@ export const LESSONS: Lesson[] = [
       ],
     },
     morePractice: { href: "/exercices/grammaire?point=n5-ga-suki", label: "Plus de phrases sur ～が好きです" },
+    keyPoints: [
+      "Ce qu'on aime : A が好きです.",
+      "Ce qu'on veut faire : forme en ます sans ます + たいです (食べます → 食べたいです).",
+    ],
     goal: 8,
   },
   {
@@ -332,6 +359,11 @@ export const LESSONS: Lesson[] = [
       ],
     },
     morePractice: { href: "/exercices/grammaire?point=n5-wo", label: "Plus de phrases sur les particules" },
+    keyPoints: [
+      "を marque l'objet (パンを食べます), に et へ la destination (学校に行きます).",
+      "で marque le lieu de l'action ou le moyen (バスで行きます).",
+      "La particule se place juste après le mot qu'elle concerne.",
+    ],
     goal: 8,
   },
   {
@@ -389,6 +421,10 @@ export const LESSONS: Lesson[] = [
       ],
     },
     morePractice: { href: "/exercices/conjugaison?forme=n5-masu", label: "Plus d'exercices sur la forme en ます" },
+    keyPoints: [
+      "ます présent, ません négatif, ました passé, ませんでした passé négatif.",
+      "Le verbe se place toujours à la fin de la phrase.",
+    ],
     goal: 8,
   },
   {
@@ -450,6 +486,11 @@ export const LESSONS: Lesson[] = [
       ],
     },
     morePractice: { href: "/exercices/conjugaison?forme=n5-i-adjective", label: "Plus d'exercices sur les adjectifs" },
+    keyPoints: [
+      "Adjectif en い : 高い → 高くない (négatif), 高かった (passé).",
+      "Adjectif en な : 静か → 静かじゃない, 静かでした.",
+      "Piège : いい devient よくない et よかった.",
+    ],
     goal: 8,
   },
   {
@@ -490,6 +531,11 @@ export const LESSONS: Lesson[] = [
       kind: "kanji",
       kanji: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "百", "千", "日", "月", "火", "水", "木", "金", "土", "人"],
     },
+    keyPoints: [
+      "Un kanji a un sens et souvent plusieurs lectures.",
+      "Les jours de la semaine : élément + 曜日 (月曜日 = lundi).",
+      "人 après un pays donne la nationalité : フランス人.",
+    ],
     goal: 12,
   },
   {
@@ -511,8 +557,27 @@ export const LESSONS: Lesson[] = [
       text: "はじめまして。わたしはレアです。フランス人です。アニメが好きです。日曜日にともだちとえいがを見ました。とてもおもしろかったです。らいねん、日本に行きたいです。",
       translation:
         "Enchantée. Je suis Léa. Je suis française. J'aime les anime. Dimanche, j'ai vu un film avec des amis. C'était très intéressant. L'année prochaine, je veux aller au Japon.",
+      questions: [
+        { fr: "Comment s'appelle la personne qui écrit ?", answer: "Léa", wrong: ["Yuki", "Emma", "Sakura"] },
+        { fr: "Quelle est sa nationalité ?", answer: "Française", wrong: ["Japonaise", "Anglaise", "Chinoise"] },
+        {
+          fr: "Qu'a-t-elle fait dimanche ?",
+          answer: "Elle a vu un film avec des amis.",
+          wrong: ["Elle a mangé des sushis avec des amis.", "Elle a lu un livre à la maison.", "Elle est allée au Japon."],
+        },
+        { fr: "Comment était le film ?", answer: "Très intéressant", wrong: ["Un peu ennuyeux", "Trop long", "Très triste"] },
+        {
+          fr: "Que veut-elle faire l'année prochaine ?",
+          answer: "Aller au Japon",
+          wrong: ["Apprendre le chinois", "Voir un film", "Aller en France"],
+        },
+      ],
     },
-    goal: 0,
+    keyPoints: [
+      "Tu sais lire une présentation, des goûts, un souvenir et une envie.",
+      "La suite : colle de vraies répliques dans l'analyse et révise tes mots chaque jour.",
+    ],
+    goal: 4,
   },
 ];
 

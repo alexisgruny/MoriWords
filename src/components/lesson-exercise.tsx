@@ -145,15 +145,25 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
           <p className="text-xl text-[var(--ink)]">
             {isLoggedIn ? <JapaneseText text={exercise.text} interactive /> : <span lang="ja">{exercise.text}</span>}
           </p>
-          <details className="mt-4 text-sm">
-            <summary className="cursor-pointer font-semibold text-[var(--muted)] hover:text-[var(--ink)]">Voir la traduction</summary>
-            <p className="mt-2 text-[var(--ink)]">{exercise.translation}</p>
-          </details>
-          {isCompleted ? null : (
+          {/* Avec des questions de compréhension, la traduction attend la
+              fin : sinon elle donnerait les réponses. */}
+          {!exercise.questions || isCompleted ? (
+            <details className="mt-4 text-sm">
+              <summary className="cursor-pointer font-semibold text-[var(--muted)] hover:text-[var(--ink)]">Voir la traduction</summary>
+              <p className="mt-2 text-[var(--ink)]">{exercise.translation}</p>
+            </details>
+          ) : null}
+          {exercise.questions || isCompleted ? null : (
             <button type="button" onClick={complete} className="primary-button mt-4">
               J&apos;ai lu et compris le texte ✓
             </button>
           )}
+          {/* Questions de compréhension : lire ne suffit plus, il faut avoir compris. */}
+          {exercise.questions ? (
+            <div className="mt-5">
+              <LessonQuiz questions={exercise.questions} onAnswered={handleAnswered} prompt="Question sur le texte" choicesLang="fr" />
+            </div>
+          ) : null}
         </div>
       )}
     </section>

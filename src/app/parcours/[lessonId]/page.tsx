@@ -114,6 +114,24 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
           </section>
         ) : null}
 
+        {lesson.keyPoints ? (
+          <section className="panel border-[var(--accent)]!" aria-labelledby="lesson-key-points-title">
+            <h2 id="lesson-key-points-title" className="text-lg font-bold text-[var(--ink)]">
+              📌 À retenir
+            </h2>
+            <ul className="mt-2 flex flex-col gap-1.5">
+              {lesson.keyPoints.map((point) => (
+                <li key={point} className="flex gap-2 leading-7 text-[var(--ink)]">
+                  <span className="text-[var(--accent)]" aria-hidden="true">
+                    •
+                  </span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <LessonExercise lesson={lesson} nextLesson={next ? { id: next.id, title: next.title } : null} />
 
         {lesson.morePractice ? (

@@ -85,7 +85,13 @@ describe("parcours débutant", () => {
       lesson.title,
       lesson.summary,
       ...lesson.sections.flatMap((section) => [section.title, ...section.paragraphs, ...(section.examples ?? []).map((example) => example.fr)]),
-      ...(lesson.exercise.kind === "reading" ? [lesson.exercise.translation] : []),
+      ...(lesson.exercise.kind === "reading"
+        ? [
+            lesson.exercise.translation,
+            ...(lesson.exercise.questions ?? []).flatMap((question) => [question.fr, question.answer, ...question.wrong]),
+          ]
+        : []),
+      ...(lesson.keyPoints ?? []),
       ...(lesson.exercise.kind === "lesson-qcm" ? lesson.exercise.questions.map((question) => question.fr) : []),
       ...(lesson.vocabulary ?? []).map((word) => word.fr),
       ...(lesson.morePractice ? [lesson.morePractice.label] : []),
