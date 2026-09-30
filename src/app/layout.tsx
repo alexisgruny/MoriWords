@@ -3,6 +3,7 @@ import { Nunito, Noto_Sans_JP } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
 import { ToastProvider } from "@/components/toast-provider";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // Texte courant : sans-serif à terminaisons arrondies, chaleureuse et très lisible.
@@ -23,8 +24,17 @@ const notoSansJp = Noto_Sans_JP({
 
 // Titre et description affichés dans l'onglet du navigateur et les moteurs de recherche.
 export const metadata: Metadata = {
+  // Base des liens absolus (aperçus de partage, image opengraph-image.tsx).
+  metadataBase: new URL(SITE_URL),
   title: "MoriWords",
   description: "Analyse et mémorisation du japonais, mot par mot.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "MoriWords",
+    title: "MoriWords · Tes animes deviennent tes cours de japonais",
+    description: "Colle une réplique d'anime : chaque mot expliqué en français, et des fiches de révision créées toutes seules.",
+  },
   // Installée sur l'écran d'accueil d'un iPhone : plein écran, avec ce nom
   // sous l'icône (src/app/apple-icon.png).
   appleWebApp: { capable: true, title: "MoriWords", statusBarStyle: "default" },

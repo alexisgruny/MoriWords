@@ -422,3 +422,8 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       mots des decks du compte (un par mot, avec un sens, sens raccourci,
       doublons de sens ecartes ; des 8 mots). Paires du memory reperees par
       l'ecriture (deux mots peuvent avoir la meme lecture : 橋 / 箸).
+83    Referencement pour le lancement : robots.txt (API et pages de compte
+      exclues), sitemap.xml (26 pages publiques : accueil, parcours et
+      lecons, kana, kanji, grammaire, conjugaison, mini-jeux), image et
+      balises d'apercu de partage (opengraph-image, metadataBase, fr_FR).
+      Fichiers SVG du modele Next inutilises supprimes.

@@ -16,6 +16,9 @@ const PUBLIC_PATHS = [
   "/jeux",
   "/confidentialite",
   "/mentions-legales",
+  // Image d'aperçu de partage (src/app/opengraph-image.tsx) : lue par les
+  // robots des réseaux sociaux, sans session.
+  "/opengraph-image",
 ];
 
 function matches(pathname: string, paths: string[]) {
