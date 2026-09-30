@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { JapaneseText } from "@/components/japanese-text";
 import { KanaQuiz } from "@/components/kana-quiz";
+import { LessonQuiz } from "@/components/lesson-quiz";
 import { SpeakButton } from "@/components/speak-button";
 import { TranslationExercise } from "@/components/translation-exercise";
 import { authClient } from "@/lib/auth/auth-client";
@@ -64,7 +65,8 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
     }
   }
 
-  const needsAccount = exercise.kind !== "kana" && exercise.kind !== "reading";
+  // Kana, QCM de leçon et lecture se corrigent dans le navigateur : sans compte.
+  const needsAccount = exercise.kind !== "kana" && exercise.kind !== "reading" && exercise.kind !== "lesson-qcm";
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="lesson-exercise-title">
@@ -122,6 +124,8 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
         </div>
       ) : exercise.kind === "kana" ? (
         <KanaQuiz format="choice" preset={{ script: exercise.script, groups: exercise.groups }} onAnswered={handleAnswered} />
+      ) : exercise.kind === "lesson-qcm" ? (
+        <LessonQuiz questions={exercise.questions} onAnswered={handleAnswered} />
       ) : exercise.kind === "grammar" ? (
         <TranslationExercise source="grammar" focusIn={exercise.patterns} defaultFormat="choice" onAnswered={handleAnswered} />
       ) : exercise.kind === "conjugation" ? (

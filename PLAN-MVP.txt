@@ -338,3 +338,12 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
         du QCM, reference et correction, mots touchables : JapaneseText).
       - Carte de progression JLPT sur /decks : part du vocabulaire de chaque
         niveau appris (reussi au moins une fois) et bien ancre (/api/progress).
+67    Parcours, retours de l'utilisateur : lecons kana avec le tableau des kana
+      dans la lecon (lien « Voir le tableau » en haut, fenetre ordre des traits
+      au toucher) ; lecons 4 a 8 avec une liste de vocabulaire debutant (🔊) et
+      un QCM ecrit a la main n'utilisant que ce vocabulaire, pieges typiques
+      (mauvaise particule, きれかった...), corrige dans le navigateur (sans
+      compte ni Claude), exercice du site en « Pour aller plus loin ». Tests :
+      vocabulaire N5 (sauf アニメ, すし, noms de pays), reponses construites
+      sur le vocabulaire. Premiere serie dans l'ordre (pas d'erreur
+      d'hydratation), suivantes melangees.

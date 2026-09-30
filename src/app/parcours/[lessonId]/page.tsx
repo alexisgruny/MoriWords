@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { LessonExercise } from "@/components/lesson-exercise";
+import { LessonKanaTable } from "@/components/lesson-kana-table";
 import { SpeakButton } from "@/components/speak-button";
 import { LESSONS, findLesson } from "@/lib/course/lessons";
 
@@ -40,6 +41,11 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
           </p>
           <h1 className="mt-1 text-2xl! text-[var(--ink)] sm:text-[2.1rem]!">{lesson.title}</h1>
           <p className="mt-2 text-[var(--muted)]">{lesson.summary}</p>
+          {lesson.exercise.kind === "kana" ? (
+            <a href="#lesson-kana-title" className="secondary-button mt-4 inline-flex text-sm!">
+              Voir le tableau des kana ↓
+            </a>
+          ) : null}
         </header>
 
         {lesson.sections.map((section) => (
@@ -73,7 +79,47 @@ export default async function LessonPage({ params }: PageProps<"/parcours/[lesso
           </section>
         ))}
 
+        {lesson.exercise.kind === "kana" ? (
+          <LessonKanaTable script={lesson.exercise.script} groups={lesson.exercise.groups} />
+        ) : null}
+
+        {lesson.vocabulary ? (
+          <section className="panel" aria-labelledby="lesson-vocabulary-title">
+            <h2 id="lesson-vocabulary-title" className="text-lg font-bold text-[var(--ink)]">
+              Le vocabulaire de la leçon
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              L&apos;exercice n&apos;utilise que ces mots : lis-les et écoute-les d&apos;abord.
+            </p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              {lesson.vocabulary.map((word) => (
+                <li key={word.ja} className="flex items-center gap-3 rounded-xl border border-[var(--line)] px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-lg font-semibold text-[var(--ink)]" lang="ja">
+                      {word.ja}
+                      {word.reading ? (
+                        <span className="ml-2 text-sm font-normal text-[var(--muted)]">{word.reading}</span>
+                      ) : null}
+                    </p>
+                    <p className="text-sm text-[var(--muted)]">{word.fr}</p>
+                  </div>
+                  <SpeakButton text={word.reading ?? word.ja} label="Écouter le mot" size="sm" />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <LessonExercise lesson={lesson} nextLesson={next ? { id: next.id, title: next.title } : null} />
+
+        {lesson.morePractice ? (
+          <p className="text-center text-sm text-[var(--muted)]">
+            Pour aller plus loin :{" "}
+            <Link href={lesson.morePractice.href} className="link-button text-sm!">
+              {lesson.morePractice.label} →
+            </Link>
+          </p>
+        ) : null}
       </div>
     </main>
   );

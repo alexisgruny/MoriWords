@@ -9,8 +9,15 @@ export type LessonExample = { ja: string; reading?: string; fr: string };
 
 export type LessonSection = { title: string; paragraphs: string[]; examples?: LessonExample[] };
 
+// Question d'une leçon : phrase française, bonne réponse en japonais et
+// pièges (erreurs typiques d'un débutant : mauvaise particule, mauvaise forme).
+export type LessonQuestion = { fr: string; answer: string; wrong: string[] };
+
 export type LessonExercise =
   | { kind: "kana"; script: "hiragana" | "katakana"; groups: KanaGroup[] }
+  // QCM écrit pour la leçon, avec seulement le vocabulaire de la leçon (les
+  // phrases générées pour les exercices du site étaient parfois trop dures).
+  | { kind: "lesson-qcm"; questions: LessonQuestion[] }
   | { kind: "grammar"; patterns: string[] }
   | { kind: "conjugation"; forms: string[] }
   | { kind: "kanji"; kanji: string[] }
@@ -26,6 +33,10 @@ export type Lesson = {
   exercise: LessonExercise;
   // Bonnes réponses pour valider la leçon (0 : un bouton « J'ai lu »).
   goal: number;
+  // Vocabulaire de débutant de la leçon, présenté avant l'exercice.
+  vocabulary?: LessonExample[];
+  // Exercice du site sur le même sujet, pour aller plus loin.
+  morePractice?: { href: string; label: string };
 };
 
 export const LESSONS: Lesson[] = [
@@ -164,7 +175,38 @@ export const LESSONS: Lesson[] = [
         ],
       },
     ],
-    exercise: { kind: "grammar", patterns: ["AはBです"] },
+    vocabulary: [
+      { ja: "わたし", fr: "je, moi" },
+      { ja: "あなた", fr: "tu, toi (à éviter avec un inconnu)" },
+      { ja: "がくせい", fr: "étudiant(e)" },
+      { ja: "せんせい", fr: "professeur" },
+      { ja: "ともだち", fr: "ami(e)" },
+      { ja: "日本人", reading: "にほんじん", fr: "Japonais(e)" },
+      { ja: "フランス人", reading: "フランスじん", fr: "Français(e)" },
+      { ja: "これ", fr: "ceci, ça (près de moi)" },
+      { ja: "それ", fr: "cela, ça (près de toi)" },
+      { ja: "ほん", fr: "livre" },
+      { ja: "ねこ", fr: "chat" },
+      { ja: "いぬ", fr: "chien" },
+      { ja: "はい", fr: "oui" },
+      { ja: "いいえ", fr: "non" },
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+      { fr: "Je suis étudiant(e).", answer: "わたしはがくせいです。", wrong: ["わたしはせんせいです。","わたしをがくせいです。"] },
+      { fr: "Je suis professeur.", answer: "わたしはせんせいです。", wrong: ["わたしはがくせいです。","あなたはせんせいです。"] },
+      { fr: "Je suis français(e).", answer: "わたしはフランス人です。", wrong: ["わたしは日本人です。","わたしがフランス人ですか。"] },
+      { fr: "Tu es japonais(e) ?", answer: "あなたは日本人ですか。", wrong: ["あなたは日本人です。","わたしは日本人ですか。"] },
+      { fr: "C'est un livre.", answer: "これはほんです。", wrong: ["これはねこです。","それはほんですか。"] },
+      { fr: "Ça, c'est un chat.", answer: "それはねこです。", wrong: ["それはいぬです。","これはねこですか。"] },
+      { fr: "C'est un chien ?", answer: "これはいぬですか。", wrong: ["これはいぬです。","これはねこですか。"] },
+      { fr: "Le professeur est japonais.", answer: "せんせいは日本人です。", wrong: ["せんせいはフランス人です。","がくせいは日本人です。"] },
+      { fr: "Mon ami est étudiant.", answer: "ともだちはがくせいです。", wrong: ["ともだちはせんせいです。","わたしはがくせいです。"] },
+      { fr: "Oui, je suis étudiant(e).", answer: "はい、がくせいです。", wrong: ["いいえ、がくせいです。","はい、せんせいです。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/grammaire?point=n5-wa-desu", label: "Plus de phrases sur AはBです" },
     goal: 8,
   },
   {
@@ -195,7 +237,36 @@ export const LESSONS: Lesson[] = [
         ],
       },
     ],
-    exercise: { kind: "grammar", patterns: ["～が好きです", "～たいです"] },
+    vocabulary: [
+      { ja: "すき", fr: "aimer (すきです : j'aime)" },
+      { ja: "たべます", fr: "manger" },
+      { ja: "のみます", fr: "boire" },
+      { ja: "いきます", fr: "aller" },
+      { ja: "みます", fr: "regarder, voir" },
+      { ja: "アニメ", fr: "anime" },
+      { ja: "えいが", fr: "film" },
+      { ja: "すし", fr: "sushi" },
+      { ja: "コーヒー", fr: "café" },
+      { ja: "おちゃ", fr: "thé" },
+      { ja: "みず", fr: "eau" },
+      { ja: "日本", reading: "にほん", fr: "le Japon" },
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+      { fr: "J'aime les chats.", answer: "ねこがすきです。", wrong: ["ねこをすきです。","いぬがすきです。"] },
+      { fr: "J'aime les anime.", answer: "アニメがすきです。", wrong: ["アニメをすきです。","アニメがみたいです。"] },
+      { fr: "J'aime le café.", answer: "コーヒーがすきです。", wrong: ["コーヒーをのみたいです。","おちゃがすきです。"] },
+      { fr: "Tu aimes les chiens ?", answer: "いぬがすきですか。", wrong: ["いぬがすきです。","いぬをみたいですか。"] },
+      { fr: "Je veux manger des sushis.", answer: "すしをたべたいです。", wrong: ["すしがすきです。","すしをのみたいです。"] },
+      { fr: "Je veux boire un café.", answer: "コーヒーをのみたいです。", wrong: ["コーヒーをたべたいです。","コーヒーがすきです。"] },
+      { fr: "Je veux boire de l'eau.", answer: "みずをのみたいです。", wrong: ["みずをのみます。","みずがすきです。"] },
+      { fr: "Je veux voir un film.", answer: "えいがをみたいです。", wrong: ["えいがをたべたいです。","えいがをみます。"] },
+      { fr: "Je veux aller au Japon.", answer: "日本にいきたいです。", wrong: ["日本をいきたいです。","日本がすきです。"] },
+      { fr: "J'aime le thé.", answer: "おちゃがすきです。", wrong: ["おちゃをすきです。","おちゃをのみたいです。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/grammaire?point=n5-ga-suki", label: "Plus de phrases sur ～が好きです" },
     goal: 8,
   },
   {
@@ -224,7 +295,39 @@ export const LESSONS: Lesson[] = [
         ],
       },
     ],
-    exercise: { kind: "grammar", patterns: ["～を", "～に／へ", "～で"] },
+    vocabulary: [
+      { ja: "たべます", fr: "manger" },
+      { ja: "のみます", fr: "boire" },
+      { ja: "よみます", fr: "lire" },
+      { ja: "いきます", fr: "aller" },
+      { ja: "かえります", fr: "rentrer (chez soi)" },
+      { ja: "パン", fr: "pain" },
+      { ja: "ほん", fr: "livre" },
+      { ja: "みず", fr: "eau" },
+      { ja: "がっこう", fr: "école" },
+      { ja: "うち", fr: "maison, chez moi" },
+      { ja: "こうえん", fr: "parc" },
+      { ja: "としょかん", fr: "bibliothèque" },
+      { ja: "レストラン", fr: "restaurant" },
+      { ja: "バス", fr: "bus" },
+      { ja: "でんしゃ", fr: "train" },
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+      { fr: "Je mange du pain.", answer: "パンをたべます。", wrong: ["パンでたべます。","パンにたべます。"] },
+      { fr: "Je lis un livre.", answer: "ほんをよみます。", wrong: ["ほんによみます。","ほんでよみます。"] },
+      { fr: "Je vais à l'école.", answer: "がっこうにいきます。", wrong: ["がっこうをいきます。","がっこうでいきます。"] },
+      { fr: "Je rentre à la maison.", answer: "うちにかえります。", wrong: ["うちをかえります。","うちでかえります。"] },
+      { fr: "Je vais au parc.", answer: "こうえんへいきます。", wrong: ["こうえんをいきます。","こうえんでいきます。"] },
+      { fr: "Je mange au restaurant.", answer: "レストランでたべます。", wrong: ["レストランをたべます。","レストランにたべます。"] },
+      { fr: "J'y vais en bus.", answer: "バスでいきます。", wrong: ["バスをいきます。","バスはいきます。"] },
+      { fr: "Je lis un livre à la bibliothèque.", answer: "としょかんでほんをよみます。", wrong: ["としょかんにほんをよみます。","としょかんでほんによみます。"] },
+      { fr: "Je bois de l'eau à l'école.", answer: "がっこうでみずをのみます。", wrong: ["がっこうにみずをのみます。","がっこうでみずにのみます。"] },
+      { fr: "Je vais à l'école en train.", answer: "でんしゃでがっこうにいきます。", wrong: ["でんしゃをがっこうにいきます。","でんしゃでがっこうをいきます。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/grammaire?point=n5-wo", label: "Plus de phrases sur les particules" },
     goal: 8,
   },
   {
@@ -253,7 +356,35 @@ export const LESSONS: Lesson[] = [
         ],
       },
     ],
-    exercise: { kind: "conjugation", forms: ["Forme en ます (présent poli)", "Forme en ません (présent poli négatif)", "Forme en ました / ませんでした (passé poli)"] },
+    vocabulary: [
+      { ja: "たべます", fr: "manger" },
+      { ja: "のみます", fr: "boire" },
+      { ja: "いきます", fr: "aller" },
+      { ja: "みます", fr: "regarder" },
+      { ja: "よみます", fr: "lire" },
+      { ja: "かきます", fr: "écrire" },
+      { ja: "ねます", fr: "dormir, se coucher" },
+      { ja: "おきます", fr: "se lever" },
+      { ja: "きのう", fr: "hier" },
+      { ja: "きょう", fr: "aujourd'hui" },
+      { ja: "あした", fr: "demain" },
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+      { fr: "Je mange.", answer: "たべます。", wrong: ["たべません。","たべました。"] },
+      { fr: "Je ne bois pas.", answer: "のみません。", wrong: ["のみます。","のみませんでした。"] },
+      { fr: "Je suis allé(e).", answer: "いきました。", wrong: ["いきます。","いきませんでした。"] },
+      { fr: "Je n'ai pas regardé.", answer: "みませんでした。", wrong: ["みません。","みました。"] },
+      { fr: "J'écris.", answer: "かきます。", wrong: ["かきません。","かきました。"] },
+      { fr: "Je n'ai pas lu.", answer: "よみませんでした。", wrong: ["よみました。","よみません。"] },
+      { fr: "Je me couche.", answer: "ねます。", wrong: ["おきます。","ねません。"] },
+      { fr: "Hier, j'ai mangé du pain.", answer: "きのうパンをたべました。", wrong: ["きのうパンをたべます。","きのうパンをたべませんでした。"] },
+      { fr: "Demain, je vais à l'école.", answer: "あしたがっこうにいきます。", wrong: ["あしたがっこうにいきました。","あしたがっこうにいきません。"] },
+      { fr: "Aujourd'hui, je ne bois pas de café.", answer: "きょうはコーヒーをのみません。", wrong: ["きょうはコーヒーをのみます。","きょうはコーヒーをのみませんでした。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/conjugaison?forme=n5-masu", label: "Plus d'exercices sur la forme en ます" },
     goal: 8,
   },
   {
@@ -287,7 +418,34 @@ export const LESSONS: Lesson[] = [
         ],
       },
     ],
-    exercise: { kind: "conjugation", forms: ["Conjugaison des adjectifs en い", "Conjugaison des adjectifs en な"] },
+    vocabulary: [
+      { ja: "たかい", fr: "cher, haut" },
+      { ja: "やすい", fr: "bon marché" },
+      { ja: "おいしい", fr: "bon (au goût)" },
+      { ja: "おおきい", fr: "grand" },
+      { ja: "ちいさい", fr: "petit" },
+      { ja: "いい", fr: "bien, bon (よくない, よかった)" },
+      { ja: "しずか", fr: "calme (adjectif en な)" },
+      { ja: "きれい", fr: "joli, propre (adjectif en な, malgré son い)" },
+      { ja: "げんき", fr: "en forme (adjectif en な)" },
+      { ja: "この", fr: "ce, cette (+ nom)" },
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+      { fr: "C'est cher.", answer: "たかいです。", wrong: ["たかくないです。","たかかったです。"] },
+      { fr: "Ce n'est pas cher.", answer: "たかくないです。", wrong: ["たかいじゃないです。","たかかったです。"] },
+      { fr: "C'était bon (délicieux).", answer: "おいしかったです。", wrong: ["おいしいでした。","おいしくないです。"] },
+      { fr: "Ce n'était pas grand.", answer: "おおきくなかったです。", wrong: ["おおきくないです。","おおきいじゃなかったです。"] },
+      { fr: "C'était bien.", answer: "よかったです。", wrong: ["いかったです。","いいでした。"] },
+      { fr: "C'est calme.", answer: "しずかです。", wrong: ["しずかいです。","しずかでした。"] },
+      { fr: "Ce n'est pas calme.", answer: "しずかじゃないです。", wrong: ["しずかくないです。","しずかです。"] },
+      { fr: "C'était joli.", answer: "きれいでした。", wrong: ["きれかったです。","きれいです。"] },
+      { fr: "Je suis en forme.", answer: "げんきです。", wrong: ["げんきいです。","げんきでした。"] },
+      { fr: "Ce chat est petit.", answer: "このねこはちいさいです。", wrong: ["このねこはおおきいです。","このねこはちいさかったです。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/conjugaison?forme=n5-i-adjective", label: "Plus d'exercices sur les adjectifs" },
     goal: 8,
   },
   {
