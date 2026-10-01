@@ -452,3 +452,5 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 90    Bouton « Supprimer definitivement » (compte) en rouge fonce plein
       (.danger-button, blanc a 6,5:1) ; meme rouge pour les confirmations de
       suppression (decks, cartes).
+91    Shiritori avec les mots N5 et N4 (~300 mots : plus d'enchainements
+      possibles) ; mots croises avec choix « Mots N5 / Mots N4 ».

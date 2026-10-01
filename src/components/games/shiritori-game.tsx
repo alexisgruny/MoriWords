@@ -6,15 +6,15 @@ import { toHiragana } from "wanakana";
 import { KanaInput } from "@/components/games/kana-input";
 import { RecordLine } from "@/components/games/game-word";
 import { useRecord } from "@/lib/games/records";
-import { checkPlayerMove, computerMove, endsWithN, lastKana, playableWords } from "@/lib/games/shiritori";
-import { GAME_WORDS, type GameWord } from "@/lib/games/words";
+import { SHIRITORI_WORDS, checkPlayerMove, computerMove, endsWithN, lastKana, playableWords } from "@/lib/games/shiritori";
+import type { GameWord } from "@/lib/games/words";
 import { speakJapanese } from "@/lib/speech";
 
 type Turn = { word: GameWord; by: "moi" | "ordi" };
 type Ending = { winner: "moi" | "ordi"; reason: string };
 
 const REASONS = {
-  inconnu: "Ce mot n'est pas dans la liste du jeu (mots N5). Essaie un autre mot ou demande un indice.",
+  inconnu: "Ce mot n'est pas dans la liste du jeu (mots N5 et N4). Essaie un autre mot ou demande un indice.",
   lettre: "Ton mot doit commencer par le bon kana.",
   deja: "Ce mot a déjà été joué.",
 };
@@ -43,7 +43,7 @@ export function ShiritoriGame() {
 
   function start() {
     // L'ordinateur ouvre avec un mot qui a des suites possibles.
-    const openers = GAME_WORDS.filter((word) => !endsWithN(word.kana) && playableWords(word.kana, new Set()).length >= 2);
+    const openers = SHIRITORI_WORDS.filter((word) => !endsWithN(word.kana) && playableWords(word.kana, new Set()).length >= 2);
     const first = randomPick(openers);
     speakJapanese(first.kana);
     setTurns([{ word: first, by: "ordi" }]);
@@ -110,7 +110,7 @@ export function ShiritoriGame() {
       <div className="panel flex flex-col items-start gap-3">
         <p className="text-[var(--ink)]">
           L&apos;ordinateur dit un mot. Réponds par un mot qui commence par son dernier kana : ねこ → こども → もも… Un mot
-          qui finit par ん fait perdre. Seuls les mots N5 du jeu comptent ; si tu bloques, demande un indice.
+          qui finit par ん fait perdre. Seuls les mots N5 et N4 du jeu comptent ; si tu bloques, demande un indice.
         </p>
         <RecordLine record={record} unit="mots enchaînés" />
         <button type="button" onClick={start} className="primary-button">

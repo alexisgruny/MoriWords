@@ -4,8 +4,10 @@ import { type FormEvent, useRef, useState } from "react";
 
 import { KanaInput } from "@/components/games/kana-input";
 import { RecordLine } from "@/components/games/game-word";
+import { FilterChips } from "@/components/reference-toolbar";
 import { type Crossword, buildCrossword, cellKey, solutionCells, wordCells } from "@/lib/games/crossword";
 import { useRecord } from "@/lib/games/records";
+import { GAME_WORDS, GAME_WORDS_N4 } from "@/lib/games/words";
 
 // Mots croisés en hiragana : l'indice est le sens français. On choisit un mot
 // (indice ou case), on le tape en entier, puis on vérifie la grille.
@@ -20,9 +22,10 @@ export function CrosswordGame() {
   const [isSolved, setIsSolved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { record, submit } = useRecord("mots-croises");
+  const [level, setLevel] = useState<"N5" | "N4">("N5");
 
   function start() {
-    setCrossword(buildCrossword());
+    setCrossword(buildCrossword(Math.random, 6, level === "N4" ? GAME_WORDS_N4 : GAME_WORDS));
     setEntries({});
     setSelected(0);
     setInput("");
@@ -35,9 +38,18 @@ export function CrosswordGame() {
     return (
       <div className="panel flex flex-col items-start gap-3">
         <p className="text-[var(--ink)]">
-          Une petite grille de mots N5 en hiragana. Choisis un indice (le sens en français), tape le mot en romaji ou en
+          Une petite grille de mots N5 ou N4 en hiragana. Choisis un indice (le sens en français), tape le mot en romaji ou en
           kana, puis vérifie ta grille.
         </p>
+        <FilterChips
+          options={[
+            { value: "N5" as const, label: "Mots N5" },
+            { value: "N4" as const, label: "Mots N4" },
+          ]}
+          value={level}
+          onChange={setLevel}
+          label="Mots de la grille"
+        />
         <RecordLine record={record} unit="grilles terminées" />
         <button type="button" onClick={start} className="primary-button">
           Commencer

@@ -1,6 +1,10 @@
 import { toHiragana } from "wanakana";
 
-import { GAME_WORDS, type GameWord } from "@/lib/games/words";
+import { GAME_WORDS, GAME_WORDS_N4, type GameWord } from "@/lib/games/words";
+
+// Mots N5 et N4 : plus de mots, donc plus d'enchaînements possibles (avec
+// les seuls mots N5, beaucoup de kana n'avaient aucune suite).
+export const SHIRITORI_WORDS: GameWord[] = [...GAME_WORDS, ...GAME_WORDS_N4];
 
 const SMALL_TO_BIG: Record<string, string> = {
   ぁ: "あ", ぃ: "い", ぅ: "う", ぇ: "え", ぉ: "お", っ: "つ", ゃ: "や", ゅ: "ゆ", ょ: "よ", ゎ: "わ",
@@ -26,13 +30,13 @@ export function endsWithN(kana: string): boolean {
 
 export function findWord(kana: string): GameWord | undefined {
   const wanted = toHiragana(kana.trim());
-  return GAME_WORDS.find((word) => toHiragana(word.kana) === wanted);
+  return SHIRITORI_WORDS.find((word) => toHiragana(word.kana) === wanted);
 }
 
 // Mots encore jouables après `previous` (non utilisés, bonne première lettre).
 export function playableWords(previous: string, used: Set<string>): GameWord[] {
   const start = lastKana(previous);
-  return GAME_WORDS.filter((word) => !used.has(toHiragana(word.kana)) && firstKana(word.kana) === start);
+  return SHIRITORI_WORDS.filter((word) => !used.has(toHiragana(word.kana)) && firstKana(word.kana) === start);
 }
 
 // Coup de l'ordinateur : évite les mots en ん (qui font perdre) tant qu'il peut.

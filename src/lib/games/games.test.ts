@@ -92,3 +92,19 @@ describe("mots N4 du jeu", () => {
     expect(GAME_WORDS_N4.flatMap((word) => findUnknownWords(word.fr))).toEqual([]);
   });
 });
+
+describe("jeux avec les mots N4", () => {
+  it("builds a crossword from N4 words", async () => {
+    const { GAME_WORDS_N4 } = await import("./words");
+    let seed = 11;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const crossword = buildCrossword(random, 6, GAME_WORDS_N4);
+    expect(crossword.words.length).toBeGreaterThanOrEqual(4);
+    crossword.words.forEach((placed) => expect(GAME_WORDS_N4).toContain(placed.word));
+  });
+
+  it("lets shiritori use N4 words too", () => {
+    // こころ (心) est un mot N4 : refusé avant, accepté maintenant.
+    expect(checkPlayerMove("こころ", "ねこ", new Set())).toMatchObject({ ok: true });
+  });
+});

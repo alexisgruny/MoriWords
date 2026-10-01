@@ -90,8 +90,8 @@ function tryBuild(candidates: GameWord[], target: number): Placement[] {
 
 // Petite grille de mots croisés en hiragana (sens français comme indice).
 // Plusieurs essais au hasard, on garde celui qui place le plus de mots.
-export function buildCrossword(random: () => number = Math.random, target = 6): Crossword {
-  const pool = GAME_WORDS.filter((word) => HIRAGANA_ONLY.test(word.kana) && word.kana.length >= 2 && word.kana.length <= 5);
+export function buildCrossword(random: () => number = Math.random, target = 6, source: GameWord[] = GAME_WORDS): Crossword {
+  const pool = source.filter((word) => HIRAGANA_ONLY.test(word.kana) && word.kana.length >= 2 && word.kana.length <= 5);
   let best: Placement[] = [];
   for (let attempt = 0; attempt < 40 && best.length < target; attempt += 1) {
     const candidates = [...pool].sort(() => random() - 0.5);
