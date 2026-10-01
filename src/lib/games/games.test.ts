@@ -81,3 +81,14 @@ describe("mots N5 du jeu", () => {
     expect(new Set(GAME_WORDS.map((word) => word.written)).size).toBe(GAME_WORDS.length);
   });
 });
+
+describe("mots N4 du jeu", () => {
+  it("are all N4 words, unique, with French meanings spelled correctly", async () => {
+    const { GAME_WORDS_N4 } = await import("./words");
+    const notN4 = GAME_WORDS_N4.filter((word) => (WORD_LEVELS[word.written] ?? WORD_LEVELS[word.kana]) !== "N4");
+    expect(notN4.map((word) => word.written)).toEqual([]);
+    expect(new Set(GAME_WORDS_N4.map((word) => word.written)).size).toBe(GAME_WORDS_N4.length);
+    expect(new Set(GAME_WORDS_N4.map((word) => word.fr)).size).toBe(GAME_WORDS_N4.length);
+    expect(GAME_WORDS_N4.flatMap((word) => findUnknownWords(word.fr))).toEqual([]);
+  });
+});

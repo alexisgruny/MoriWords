@@ -16,8 +16,8 @@ export default function GamesPage() {
           <p className="eyebrow mb-1">Pour s&apos;amuser</p>
           <h1 className="text-[var(--ink)]">Mini-jeux</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-            Des parties courtes avec le vocabulaire et la grammaire du niveau N5. Pas besoin de compte : tes records restent
-            sur cet appareil. Avec un compte, Memory et Contre la montre peuvent aussi reprendre les mots de tes decks.
+            Des parties courtes pour réviser le vocabulaire et les particules du N5. Pas besoin de compte : tes records restent
+            sur cet appareil. Memory et Contre la montre proposent aussi les mots N4 et, avec un compte, ceux de tes decks.
           </p>
         </header>
         <ul className="grid gap-3 sm:grid-cols-2">

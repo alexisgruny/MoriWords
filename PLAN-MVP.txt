@@ -444,3 +444,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       lecon 1 (hiragana) au lieu de l'analyse de texte ; « J'ai deja les
       bases » garde l'analyse. Progression JLPT : « < 0,1 % » au lieu d'un
       « 0,0 % » trompeur pour 1 mot sur des milliers.
+88    Mini-jeux niveau N4 : 173 mots N4 ecrits a la main avec leur sens
+      (verifies N4 par test, sens uniques, orthographe), choix « Mots N5 /
+      Mots N4 / Mes mots » dans Memory et Contre la montre.

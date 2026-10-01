@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { FilterChips } from "@/components/reference-toolbar";
 import { authClient } from "@/lib/auth/auth-client";
 import { MIN_MY_WORDS, cardsToGameWords } from "@/lib/games/my-words";
-import { GAME_WORDS, type GameWord } from "@/lib/games/words";
+import { GAME_WORDS, GAME_WORDS_N4, type GameWord } from "@/lib/games/words";
 import type { DeckSummary } from "@/types/shared";
 
-export type WordSource = "n5" | "mine";
+export type WordSource = "n5" | "n4" | "mine";
 
 // Mots des decks du compte connecté (null tant qu'ils ne sont pas chargés,
 // ou sans compte).
@@ -36,25 +36,26 @@ function useMyWords(): GameWord[] | null {
   return userId ? words : null;
 }
 
-// Choix des mots d'une partie : les mots N5 du jeu, ou « Mes mots » (ceux de
-// ses decks) dès qu'il y en a assez. Réviser en jouant, sans Claude.
+// Choix des mots d'une partie : mots N5 ou N4 du jeu, ou « Mes mots » (ceux
+// de ses decks) dès qu'il y en a assez. Réviser en jouant, sans Claude.
 export function useWordSource() {
   const myWords = useMyWords();
   const [source, setSource] = useState<WordSource>("n5");
   const canUseMine = myWords !== null && myWords.length >= MIN_MY_WORDS;
-  const words = source === "mine" && canUseMine ? myWords : GAME_WORDS;
+  const words = source === "mine" && canUseMine ? myWords : source === "n4" ? GAME_WORDS_N4 : GAME_WORDS;
 
-  const picker = canUseMine ? (
+  const picker = (
     <FilterChips
       options={[
         { value: "n5" as const, label: "Mots N5" },
-        { value: "mine" as const, label: "Mes mots", count: myWords.length },
+        { value: "n4" as const, label: "Mots N4" },
+        ...(canUseMine ? [{ value: "mine" as const, label: "Mes mots", count: myWords.length }] : []),
       ]}
       value={source}
       onChange={setSource}
       label="Mots de la partie"
     />
-  ) : null;
+  );
 
   return { words, picker };
 }
