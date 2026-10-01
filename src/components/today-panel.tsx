@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { DailyReminder } from "@/components/daily-reminder";
 import type { TodaySummary } from "@/lib/srs/today";
 
 // ~10 secondes par carte en moyenne : de quoi dire « 3 minutes » plutôt
@@ -96,6 +97,8 @@ export function TodayPanel() {
           <dd className="text-xl font-bold text-[var(--ink)]">{summary.reviewsToday}</dd>
         </div>
       </dl>
+
+      <DailyReminder />
     </section>
   );
 }

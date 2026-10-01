@@ -436,3 +436,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       titre principal ajoute sur l'ecran d'examen. Plus aucune violation.
       GET /api/decks : cartes reduites aux champs de DeckCard (id, lemma,
       reading, meaning, dueAt) au lieu de toutes les colonnes, avec test.
+86    Rappel quotidien de revision : dans le panneau « Aujourd'hui » (/decks),
+      choix de l'heure puis telechargement d'un evenement d'agenda .ics
+      quotidien (15 min, alerte, lien vers /decks/reviser), lu par Google
+      Agenda, Calendrier et Outlook. Sans serveur de notifications.
