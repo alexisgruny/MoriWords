@@ -21,6 +21,10 @@ export async function GET(request: Request) {
           orderBy: {
             createdAt: "desc",
           },
+          // Seulement les champs de DeckCard (src/types/shared.ts) : les pages
+          // qui listent les decks n'utilisent rien d'autre, et la réponse
+          // grossit vite avec des milliers de cartes.
+          select: { id: true, lemma: true, reading: true, meaning: true, dueAt: true },
         },
       },
     });

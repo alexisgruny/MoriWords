@@ -86,7 +86,7 @@ export function FilterChips<T extends string>({
           >
             {option.label}
             {option.count !== undefined ? (
-              <span className={`mono text-xs ${isActive ? "opacity-80" : "text-[var(--muted)]"}`}>{option.count}</span>
+              <span className={`mono text-xs ${isActive ? "" : "text-[var(--muted)]"}`}>{option.count}</span>
             ) : null}
           </button>
         );

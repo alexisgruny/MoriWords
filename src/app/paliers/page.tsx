@@ -138,7 +138,7 @@ export default function LevelsPage() {
       <main className="flex-1 px-5 py-8 sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
-            <span className="font-semibold text-[var(--ink)]">Palier {running.level}</span>
+            <h1 className="text-base! font-semibold text-[var(--ink)]">Palier {running.level}</h1>
             <span>
               Question {position + 1} / {running.questions.length} · {answeredCount} répondue{answeredCount > 1 ? "s" : ""}
             </span>

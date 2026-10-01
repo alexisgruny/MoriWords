@@ -430,3 +430,9 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 84    Pages d'erreur en francais : 404 « Page introuvable » (迷子, liens vers
       l'accueil et le parcours) et erreur inattendue avec « Reessayer »
       (Next 16 : prop retry). Remplacent les pages par defaut en anglais.
+85    Accessibilite (audit axe-core, WCAG 2 A/AA + bonnes pratiques, mobile,
+      clair et sombre, 20 pages + etats interactifs : menu, fenetre kana, QCM
+      repondus, examen) : contraste du compteur des filtres actifs corrige,
+      titre principal ajoute sur l'ecran d'examen. Plus aucune violation.
+      GET /api/decks : cartes reduites aux champs de DeckCard (id, lemma,
+      reading, meaning, dueAt) au lieu de toutes les colonnes, avec test.
