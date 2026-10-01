@@ -19,6 +19,8 @@ const PUBLIC_PATHS = [
   // Image d'aperçu de partage (src/app/opengraph-image.tsx) : lue par les
   // robots des réseaux sociaux, sans session.
   "/opengraph-image",
+  // Page hors ligne mise en cache par le service worker (public/sw.js).
+  "/hors-ligne",
 ];
 
 function matches(pathname: string, paths: string[]) {

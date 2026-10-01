@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
+import { ServiceWorker } from "@/components/service-worker";
 import { ToastProvider } from "@/components/toast-provider";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full flex flex-col">
+        <ServiceWorker />
         <ToastProvider>
           <Nav />
           {children}

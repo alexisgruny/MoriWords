@@ -22,7 +22,19 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: false,
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Service worker : jamais mis en cache par le navigateur (sinon une
+      // nouvelle version mettrait des heures à arriver).
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
   },
   images: {
     remotePatterns: [

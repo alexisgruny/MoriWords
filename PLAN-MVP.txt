@@ -460,3 +460,10 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       systeme (Noto Sans CJK sur Android, Hiragino sur Apple, Yu Gothic /
       Meiryo sur Windows). CSS : 336 Ko -> 52 Ko. Scores avant : perf 90-95,
       accessibilite / bonnes pratiques / SEO 100.
+93    Hors ligne (Lea revise dans les transports) : service worker
+      public/sw.js, en production seulement. Pages : reseau d'abord, copie en
+      cache utilisee seulement sans reseau (40 pages max, jamais les
+      redirections) ; /_next/static, /strokes, /icons : cache d'abord (noms
+      uniques) ; API jamais en cache. Page /hors-ligne pour une page jamais
+      visitee. Verifie : memory et kana jouables sans reseau. En-tetes sw.js
+      sans cache (next.config.ts).
