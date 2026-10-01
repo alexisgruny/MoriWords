@@ -447,3 +447,5 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 88    Mini-jeux niveau N4 : 173 mots N4 ecrits a la main avec leur sens
       (verifies N4 par test, sens uniques, orthographe), choix « Mots N5 /
       Mots N4 / Mes mots » dans Memory et Contre la montre.
+89    Palier N4 : 8 questions de vocabulaire (mots N4 des mini-jeux) comme en
+      N5, au lieu de kanji supplementaires.

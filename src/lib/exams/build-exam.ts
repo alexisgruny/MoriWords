@@ -2,7 +2,7 @@ import { toHiragana } from "wanakana";
 
 import { conjugationForms } from "@/lib/conjugation/forms";
 import { conjugationsOf } from "@/lib/conjugation/conjugate";
-import { GAME_WORDS } from "@/lib/games/words";
+import { GAME_WORDS, GAME_WORDS_N4, type GameWord } from "@/lib/games/words";
 import { GRAMMAR_LEVELS, grammarPoints, type GrammarLevel } from "@/lib/grammar/points";
 import { JLPT_KANJI, type KanjiEntry } from "@/lib/kanji/kanji";
 import { BLANK, GRAMMAR_BLANKS } from "@/lib/exams/grammar-blanks";
@@ -14,9 +14,9 @@ export const PASS_RATE = 0.75;
 export const EXAM_LEVELS = GRAMMAR_LEVELS;
 
 // Nombre de questions par catégorie. Le vocabulaire (mots avec leur sens en
-// français) n'existe qu'en N5 : ailleurs, plus de kanji.
-const PLAN: Record<"N5" | "other", Record<ExamCategory, number>> = {
-  N5: { "kanji-sens": 10, "kanji-lecture": 6, vocabulaire: 8, grammaire: 10, conjugaison: 6 },
+// français, ceux des mini-jeux) existe en N5 et N4 : ailleurs, plus de kanji.
+const PLAN: Record<"withWords" | "other", Record<ExamCategory, number>> = {
+  withWords: { "kanji-sens": 10, "kanji-lecture": 6, vocabulaire: 8, grammaire: 10, conjugaison: 6 },
   other: { "kanji-sens": 14, "kanji-lecture": 8, vocabulaire: 0, grammaire: 12, conjugaison: 6 },
 };
 
@@ -121,8 +121,11 @@ function kanjiReadingQuestions(kanji: KanjiEntry[], count: number, random: () =>
     });
 }
 
-function vocabularyQuestions(count: number, random: () => number): Built[] {
-  return shuffled(GAME_WORDS, random)
+// Mots avec leur sens en français, écrits à la main (ceux des mini-jeux).
+const VOCABULARY: Partial<Record<GrammarLevel, GameWord[]>> = { N5: GAME_WORDS, N4: GAME_WORDS_N4 };
+
+function vocabularyQuestions(words: GameWord[], count: number, random: () => number): Built[] {
+  return shuffled(words, random)
     .slice(0, count)
     .map((word) =>
       withChoices(
@@ -133,7 +136,7 @@ function vocabularyQuestions(count: number, random: () => number): Built[] {
           choicesLang: "fr",
         },
         word.fr,
-        GAME_WORDS.filter((other) => other.fr !== word.fr).map((other) => other.fr),
+        words.filter((other) => other.fr !== word.fr).map((other) => other.fr),
         random,
       ),
     );
@@ -240,13 +243,14 @@ function conjugationQuestions(level: GrammarLevel, count: number, random: () => 
 
 export function buildExam(level: GrammarLevel, seed: number): Exam {
   const random = seededRandom(seed);
-  const plan = PLAN[level === "N5" ? "N5" : "other"];
+  const words = VOCABULARY[level];
+  const plan = PLAN[words ? "withWords" : "other"];
   const kanji = JLPT_KANJI.filter((entry) => entry.level === level);
 
   const built = [
     ...kanjiMeaningQuestions(kanji, plan["kanji-sens"], random),
     ...kanjiReadingQuestions(kanji, plan["kanji-lecture"], random),
-    ...vocabularyQuestions(plan.vocabulaire, random),
+    ...vocabularyQuestions(words ?? [], plan.vocabulaire, random),
     ...grammarQuestions(level, plan.grammaire, random),
     ...conjugationQuestions(level, plan.conjugaison, random),
   ].filter((item): item is NonNullable<Built> => item !== null);
