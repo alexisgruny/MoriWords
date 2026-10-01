@@ -118,7 +118,7 @@ export default function AccountPage() {
             <button
               type="submit"
               disabled={confirmation !== DELETE_ACCOUNT_CONFIRMATION || isDeleting}
-              className="secondary-button self-start border-[var(--danger)] text-[var(--accent-dark)]"
+              className="danger-button self-start"
             >
               {isDeleting ? "Suppression..." : "Supprimer définitivement"}
             </button>

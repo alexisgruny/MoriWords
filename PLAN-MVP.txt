@@ -449,3 +449,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       Mots N4 / Mes mots » dans Memory et Contre la montre.
 89    Palier N4 : 8 questions de vocabulaire (mots N4 des mini-jeux) comme en
       N5, au lieu de kanji supplementaires.
+90    Bouton « Supprimer definitivement » (compte) en rouge fonce plein
+      (.danger-button, blanc a 6,5:1) ; meme rouge pour les confirmations de
+      suppression (decks, cartes).
