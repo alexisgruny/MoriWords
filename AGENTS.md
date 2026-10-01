@@ -22,7 +22,12 @@ Application d'apprentissage du japonais pour francophones : texte japonais → t
 
 ## Carte du code
 
-- `src/app/` : pages (`/`, `/decks`, `/vocabulaire`, `/exercices`, `/grammaire`, `/kanji`, `/conjugaison`, `/historique`) et routes API (`src/app/api/`)
+- `src/app/` : pages (`/`, `/decks`, `/vocabulaire`, `/exercices`, `/grammaire`, `/kanji`, `/conjugaison`, `/historique`, `/parcours`, `/jeux`, `/paliers`, `/bienvenue`, `/compte`) et routes API (`src/app/api/`)
+- `src/proxy.ts` : redirections sans session (liste `PUBLIC_PATHS`) · `src/lib/auth/session.ts` : `requireUser` dans chaque route
+- `src/lib/course/lessons.ts` : parcours débutant (10 leçons, QCM écrits à la main, romaji) · `src/lib/exams/` : paliers (examen blanc, `grammar-blanks.ts`)
+- `src/lib/games/` : mini-jeux (mots N5/N4 écrits à la main dans `words.ts`, shiritori, mots croisés, records)
+- `src/lib/subtitles/` : import .srt/.vtt/.ass · `src/lib/daily/` : phrase du jour · `src/lib/reminders/` : rappel .ics
+- `src/components/nav.tsx` : menus (Apprendre, S'entraîner, Référence) · `src/lib/site.ts` : URL du site, pages du sitemap
 - `src/lib/feeds/claude-json-generator.ts` : point d'entrée commun des appels Claude qui renvoient du JSON
 - `src/lib/translation/translate.ts` : traduction avec cache (`TranslationCache`)
 - `src/lib/decks/card-examples.ts` : phrases d'exemple avec cache par mot (`LemmaExampleCache`)
