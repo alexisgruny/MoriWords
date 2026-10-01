@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import type { LevelProgress } from "@/lib/progress/jlpt-progress";
 
 const percent = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
-const formatPercent = (value: number) => `${value < 10 && value > 0 ? value.toFixed(1).replace(".", ",") : Math.round(value)} %`;
+// Sous 0,1 % (1 mot sur des milliers) : « < 0,1 % » plutôt qu'un « 0,0 % » trompeur.
+const formatPercent = (value: number) =>
+  value > 0 && value < 0.1 ? "< 0,1 %" : `${value < 10 && value > 0 ? value.toFixed(1).replace(".", ",") : Math.round(value)} %`;
 
 // « Ma progression JLPT » : part du vocabulaire de chaque niveau déjà appris
 // (réussi au moins une fois en révision) et bien ancré. Barre toujours verte :

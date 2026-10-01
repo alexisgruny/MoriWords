@@ -440,3 +440,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       choix de l'heure puis telechargement d'un evenement d'agenda .ics
       quotidien (15 min, alerte, lien vers /decks/reviser), lu par Google
       Agenda, Calendrier et Outlook. Sans serveur de notifications.
+87    Premiers pas : un nouveau compte « Je debute » arrive directement sur la
+      lecon 1 (hiragana) au lieu de l'analyse de texte ; « J'ai deja les
+      bases » garde l'analyse. Progression JLPT : « < 0,1 % » au lieu d'un
+      « 0,0 % » trompeur pour 1 mot sur des milliers.

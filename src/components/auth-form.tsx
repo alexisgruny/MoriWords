@@ -73,7 +73,10 @@ export function AuthForm({
         }).catch(() => undefined);
       }
 
-      router.push(redirectTo);
+      // Nouveau compte débutant sans page demandée : directement la première
+      // leçon plutôt que l'analyse de texte, qui suppose de savoir lire.
+      const destination = isSignup && !hasBasics && redirectTo === "/" ? "/parcours/hiragana-base" : redirectTo;
+      router.push(destination);
       router.refresh();
     } catch {
       setError("Le service de connexion est injoignable pour le moment.");
