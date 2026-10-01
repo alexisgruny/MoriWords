@@ -454,3 +454,9 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       suppression (decks, cartes).
 91    Shiritori avec les mots N5 et N4 (~300 mots : plus d'enchainements
       possibles) ; mots croises avec choix « Mots N5 / Mots N4 ».
+92    Vitesse (Lighthouse mobile en production) : Noto Sans JP en police web
+      generait 373 @font-face (284 Ko de CSS bloquant le rendu, 1,8 s de
+      calcul de style sur telephone) ; remplace par la gothique japonaise du
+      systeme (Noto Sans CJK sur Android, Hiragino sur Apple, Yu Gothic /
+      Meiryo sur Windows). CSS : 336 Ko -> 52 Ko. Scores avant : perf 90-95,
+      accessibilite / bonnes pratiques / SEO 100.

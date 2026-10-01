@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Noto_Sans_JP } from "next/font/google";
+import { Nunito } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
 import { ToastProvider } from "@/components/toast-provider";
@@ -13,14 +13,10 @@ const nunito = Nunito({
   weight: ["400", "600", "700", "800"],
 });
 
-// Japonais : gothique (sans empattement), plus lisible qu'une mincho pour un
-// débutant qui doit distinguer chaque trait. Les kanji sont chargés par tranches
-// à la demande, d'où preload désactivé.
-const notoSansJp = Noto_Sans_JP({
-  variable: "--font-noto-jp",
-  weight: ["400", "500", "700"],
-  preload: false,
-});
+// Japonais : police gothique déjà installée sur l'appareil (--font-jp dans
+// globals.css). Noto Sans JP en police web ajoutait 373 déclarations
+// @font-face (284 Ko de CSS bloquant) et jusqu'à 1,8 s de calcul de style
+// sur téléphone, pour un rendu quasi identique.
 
 // Titre et description affichés dans l'onglet du navigateur et les moteurs de recherche.
 export const metadata: Metadata = {
@@ -60,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${nunito.variable} ${notoSansJp.variable} h-full antialiased`}
+      className={`${nunito.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
