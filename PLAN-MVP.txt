@@ -469,3 +469,5 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       sans cache (next.config.ts).
 94    /compte, « J'ai deja les bases » : confirmation apres enregistrement
       (ligne verte sous la case et notification), dans les deux sens.
+95    Bandeau « Hors ligne » sous le menu quand le reseau tombe (evenements
+      online/offline) : ce qui marche encore, ce qui reprendra.

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
+import { OfflineBanner } from "@/components/offline-banner";
 import { ServiceWorker } from "@/components/service-worker";
 import { ToastProvider } from "@/components/toast-provider";
 import { SITE_URL } from "@/lib/site";
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ServiceWorker />
         <ToastProvider>
           <Nav />
+          <OfflineBanner />
           {children}
           <Footer />
         </ToastProvider>
