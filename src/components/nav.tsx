@@ -20,7 +20,7 @@ const allGroups: NavGroup[] = [
     title: "Apprendre",
     links: [
       { href: "/parcours", label: "Parcours débutant", description: "10 leçons pour bien commencer", icon: "🧭", isPublic: true },
-      { href: "/lecons", label: "Leçons par niveau", description: "Grammaire et vocabulaire N4, de plus en plus loin", icon: "📖", isPublic: true },
+      { href: "/lecons", label: "Leçons par niveau", description: "Cours N5 et N4 : grammaire, écrit, kanji", icon: "📖", isPublic: true },
       { href: "/", label: "Analyser un texte", description: "Colle du japonais, découvre ses mots", icon: "🔍" },
       { href: "/historique", label: "Mes textes", description: "Les textes déjà analysés", icon: "📄" },
       { href: "/decks", label: "Mes decks", description: "Tes cartes à réviser chaque jour", icon: "🗂️" },

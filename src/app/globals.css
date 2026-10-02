@@ -761,6 +761,31 @@ details[open] > summary ~ * {
   background: #8f1c13;
 }
 
+/* Leçons : partie grammaticale mise en avant ([…] dans les textes), encadré
+   de règle (formule) et piège à éviter. */
+.lesson-mark {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-dark);
+  font-weight: 700;
+  padding: 0 0.15em;
+}
+
+.lesson-formula {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: var(--tint);
+  padding: 0.7rem 1rem;
+}
+
+.lesson-tip {
+  border-left: 4px solid #d99a00;
+  border-radius: 12px;
+  background: color-mix(in srgb, #d99a00 12%, var(--paper));
+  padding: 0.7rem 1rem;
+}
+
 /* Sceau (hanko) de la marque. */
 .seal {
   display: inline-grid;

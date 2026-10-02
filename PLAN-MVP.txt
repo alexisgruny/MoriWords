@@ -494,3 +494,15 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       lecons + une entree. Composant LessonView partage avec le parcours
       debutant (qui renvoie vers le cours N4 a la fin). Tests : vocabulaire
       N4/N5, QCM, romaji, orthographe, sitemap. Prochain : cours N3.
+101   Cours N5 (/lecons/n5, entre le debutant et le N4) au format enrichi :
+      7 lecons (あります/います et position, forme en て et ～てください,
+      ～ている, ～てもいい / ～ないでください, より / のほうが / いちばん,
+      から / ～ましょう / ～ませんか, bilan). Nouveau format de lecon,
+      utilisable par tous les cours : sommaire, parties numerotees, encadre
+      « Regle » (formula), « Piege » (tip), partie grammaticale en couleur
+      ([…] dans le japonais, la lecture et le romaji), mots cles en gras
+      (**…**), 5 kanji par lecon (fenetre : sens, lectures, traits, trace),
+      exercice en deux etapes : QCM puis phrases a ecrire en japonais (romaji
+      converti en kana, kanji ou kana acceptes, ponctuation ignoree). Tests :
+      vocabulaire et kanji N5, marques equilibrees, romaji, ecrit
+      tapable, orthographe.

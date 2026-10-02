@@ -11,7 +11,14 @@ import type { KanaGroup } from "@/lib/kana/kana";
 // particules は → wa, を → o) ; pour un mot seul, calculé par romajiOf.
 export type LessonExample = { ja: string; reading?: string; romaji?: string; fr: string };
 
-export type LessonSection = { title: string; paragraphs: string[]; examples?: LessonExample[] };
+// Mise en forme légère dans les textes des leçons (cours N5…) :
+// [は] = partie grammaticale en couleur, **mot** = mot clé en gras.
+// formula : la règle en une ligne (encadré), tip : piège à éviter.
+export type LessonSection = { title: string; paragraphs: string[]; examples?: LessonExample[]; formula?: string; tip?: string };
+
+// Exercice écrit : la phrase française, à taper en japonais (kana ou kanji).
+// answers : formes acceptées (au moins une en kana, tapable au clavier).
+export type LessonWriteQuestion = { fr: string; answers: string[] };
 
 // Question d'une leçon : phrase française, bonne réponse en japonais et
 // pièges (erreurs typiques d'un débutant : mauvaise particule, mauvaise forme).
@@ -44,7 +51,16 @@ export type Lesson = {
   morePractice?: { href: string; label: string };
   // « À retenir » : 2 ou 3 points clés, en fin de leçon.
   keyPoints?: string[];
+  // Kanji à apprendre dans la leçon (fenêtre : sens, lectures, tracé).
+  kanji?: string[];
+  // Deuxième étape après le QCM : la leçon est validée quand les deux le sont.
+  writing?: { questions: LessonWriteQuestion[]; goal: number };
 };
+
+// Retire la mise en forme ([…], **…**) : pour l'écoute, les tests, la comparaison.
+export function stripMarks(text: string): string {
+  return text.replace(/\[([^\]]*)\]/g, "$1").replace(/\*\*([^*]*)\*\*/g, "$1");
+}
 
 export const LESSONS: Lesson[] = [
   {

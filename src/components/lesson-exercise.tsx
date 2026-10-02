@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { JapaneseText } from "@/components/japanese-text";
 import { KanaQuiz } from "@/components/kana-quiz";
 import { LessonQuiz } from "@/components/lesson-quiz";
+import { LessonWriting } from "@/components/lesson-writing";
 import { SpeakButton } from "@/components/speak-button";
 import { TranslationExercise } from "@/components/translation-exercise";
 import { authClient } from "@/lib/auth/auth-client";
@@ -39,6 +40,10 @@ export function LessonExercise({
   const [isCompleted, setIsCompleted] = useState(false);
   const savedRef = useRef(false);
   const countRef = useRef(0);
+  // Leçons avec exercice écrit : QCM d'abord, puis l'écrit (étape 2).
+  const [step, setStep] = useState<"main" | "writing">("main");
+  const [writingCount, setWritingCount] = useState(0);
+  const writingCountRef = useRef(0);
   const exercise = lesson.exercise;
   const isLoggedIn = Boolean(session);
 
@@ -82,10 +87,30 @@ export function LessonExercise({
     }
     countRef.current += 1;
     setCorrectCount(countRef.current);
-    if (countRef.current >= lesson.goal) {
+    if (countRef.current === lesson.goal) {
+      if (lesson.writing) {
+        setStep("writing");
+      } else {
+        complete();
+      }
+    }
+  }
+
+  function handleWritten(correct: boolean) {
+    if (!correct || !lesson.writing) {
+      return;
+    }
+    writingCountRef.current += 1;
+    setWritingCount(writingCountRef.current);
+    if (writingCountRef.current === lesson.writing.goal) {
       complete();
     }
   }
+
+  // Objectif et score de l'étape en cours.
+  const isWritingStep = step === "writing" && lesson.writing !== undefined;
+  const stepGoal = isWritingStep && lesson.writing ? lesson.writing.goal : lesson.goal;
+  const stepCount = isWritingStep ? writingCount : correctCount;
 
   // Kana, QCM de leçon et lecture se corrigent dans le navigateur : sans compte.
   const needsAccount = exercise.kind !== "kana" && exercise.kind !== "reading" && exercise.kind !== "lesson-qcm";
@@ -96,16 +121,21 @@ export function LessonExercise({
         <h2 id="lesson-exercise-title" className="text-[var(--ink)]">
           À toi de jouer
         </h2>
-        {lesson.goal > 0 ? (
+        {stepGoal > 0 ? (
           <p className="text-sm text-[var(--muted)]">
-            <strong className="text-[var(--ink)]">{Math.min(correctCount, lesson.goal)}</strong> / {lesson.goal} bonnes
-            réponses pour valider
+            {lesson.writing ? (
+              <span className="mr-2 font-semibold text-[var(--accent-dark)]">
+                Étape {isWritingStep ? 2 : 1} / 2 · {isWritingStep ? "écrire" : "QCM"}
+              </span>
+            ) : null}
+            <strong className="text-[var(--ink)]">{Math.min(stepCount, stepGoal)}</strong> / {stepGoal} bonnes réponses
+            {lesson.writing && !isWritingStep ? " pour passer à l'écrit" : " pour valider"}
           </p>
         ) : null}
       </div>
-      {lesson.goal > 0 ? (
+      {stepGoal > 0 ? (
         <div className="h-2 overflow-hidden rounded-full bg-[var(--tint)]" aria-hidden="true">
-          <div className="h-full rounded-full bg-[var(--success)] transition-all" style={{ width: `${Math.min(100, (correctCount / lesson.goal) * 100)}%` }} />
+          <div className="h-full rounded-full bg-[var(--success)] transition-all" style={{ width: `${Math.min(100, (stepCount / stepGoal) * 100)}%` }} />
         </div>
       ) : null}
 
@@ -149,7 +179,9 @@ export function LessonExercise({
         </div>
       ) : null}
 
-      {needsAccount && !isPending && !isLoggedIn ? (
+      {isWritingStep && lesson.writing ? (
+        <LessonWriting questions={lesson.writing.questions} onAnswered={handleWritten} />
+      ) : needsAccount && !isPending && !isLoggedIn ? (
         <div className="panel text-center">
           <p className="text-[var(--ink)]">Les exercices de cette leçon demandent un compte (gratuit).</p>
           <div className="mt-3 flex flex-wrap justify-center gap-3">

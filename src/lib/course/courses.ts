@@ -1,5 +1,6 @@
 import { LESSONS, type Lesson } from "@/lib/course/lessons";
 import { N4_LESSONS } from "@/lib/course/n4-lessons";
+import { N5_LESSONS } from "@/lib/course/n5-lessons";
 import type { GrammarLevel } from "@/lib/grammar/points";
 
 // Cours de l'onglet « Leçons », du plus facile au plus avancé. Le parcours
@@ -25,6 +26,15 @@ export const COURSES: Course[] = [
     summary: "Des kana à ton premier texte : les bases, en 10 leçons courtes.",
     basePath: "/parcours",
     lessons: LESSONS,
+    examLevel: "N5",
+  },
+  {
+    id: "n5",
+    title: "Cours N5",
+    level: "N5",
+    summary: "Situer, la forme en て, ～ている, permission, comparaisons et invitations : la grammaire N5 en profondeur, avec exercices écrits et kanji.",
+    basePath: "/lecons/n5",
+    lessons: N5_LESSONS,
     examLevel: "N5",
   },
   {
