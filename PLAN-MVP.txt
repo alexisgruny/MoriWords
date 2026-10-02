@@ -471,3 +471,7 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       (ligne verte sous la case et notification), dans les deux sens.
 95    Bandeau « Hors ligne » sous le menu quand le reseau tombe (evenements
       online/offline) : ce qui marche encore, ce qui reprendra.
+96    Analyse : option « Cacher les mots deja dans mes decks » (affichee des
+      qu'on a des cartes) : apres un import de sous-titres, il ne reste que
+      les nouveaux mots, et « Tout ajouter » n'ajoute qu'eux. Options de la
+      liste sur leur propre ligne (place sur mobile).

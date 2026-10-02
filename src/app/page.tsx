@@ -54,6 +54,9 @@ export default function Home() {
   // Message après l'import d'un fichier de sous-titres.
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [showParticles, setShowParticles] = useState(false);
+  // Cacher les mots déjà dans un deck : sur un épisode entier, il ne reste
+  // que les nouveaux mots (et « Tout ajouter » n'ajoute qu'eux).
+  const [hideKnown, setHideKnown] = useState(false);
   const [showMoreSources, setShowMoreSources] = useState(false);
   // Lectures (furigana) au-dessus des kanji ; décochées pour s'entraîner à lire.
   const [showFurigana, setShowFurigana] = useState(true);
@@ -103,25 +106,27 @@ export default function Home() {
   // proposer un accès direct à sa révision sans repasser par la liste des decks.
   const [lastAddedDeckId, setLastAddedDeckId] = useState<string | null>(null);
 
+  // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
+  const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
+
   // Cache les particules grammaticales par défaut (moins intéressantes à
   // apprendre), sauf si l'utilisateur coche la case pour les voir. Cache
   // aussi toujours le romaji et les chiffres arabes purs (pas du vocabulaire
   // japonais à proprement parler), sans case à cocher pour les réafficher.
   // Un mot n'apparaît qu'une fois (sa première occurrence) : sur un long texte
   // ou un épisode entier, les répétitions noyaient la liste et « Tout
-  // ajouter » envoyait plusieurs fois le même mot.
+  // ajouter » envoyait plusieurs fois le même mot. « Cacher les mots déjà
+  // dans mes decks » retire aussi ceux qu'on a déjà.
   const seenLemmas = new Set<string>();
   const visibleTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
     .filter((token) => !isNoiseToken(token))
     .filter((token) => {
       const lemma = token.baseForm || token.surface;
-      if (seenLemmas.has(lemma)) return false;
+      if (seenLemmas.has(lemma) || (hideKnown && addedLemmas.has(lemma))) return false;
       seenLemmas.add(lemma);
       return true;
     });
 
-  // La liste des mots déjà présents dans au moins un deck, pour le badge "Déjà ajouté".
-  const addedLemmas = new Set(decks.flatMap((deck) => deck.cards.map((card) => card.lemma)));
 
   // Étape du parcours mise en avant dans le guide sous le titre (1 : pas
   // encore de texte analysé, 2 : des mots à choisir, 3 : un mot choisi).
@@ -1185,9 +1190,12 @@ export default function Home() {
             style={{ animationDelay: "80ms" }}
             aria-live="polite"
           >
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <h2 className="text-[var(--ink)]">Mots détectés</h2>
-              <div className="flex items-center gap-4">
+            <div className="mb-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-[var(--ink)]">Mots détectés</h2>
+                <span className="count-badge">{visibleTokens.length}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)]">
                   <input
                     type="checkbox"
@@ -1197,7 +1205,17 @@ export default function Home() {
                   />
                   Voir は, を, ます…
                 </label>
-                <span className="count-badge">{visibleTokens.length}</span>
+                {addedLemmas.size > 0 ? (
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)]">
+                    <input
+                      type="checkbox"
+                      checked={hideKnown}
+                      onChange={(event) => setHideKnown(event.target.checked)}
+                      className="accent-[var(--accent)]"
+                    />
+                    Cacher les mots déjà dans mes decks
+                  </label>
+                ) : null}
               </div>
             </div>
 
