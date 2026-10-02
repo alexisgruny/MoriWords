@@ -93,24 +93,35 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
 
       {isCompleted ? (
         <div className="fade-in-up rounded-2xl border border-[var(--success)] bg-[var(--success-soft)] p-4" role="status">
-          <p className="font-bold text-[var(--ink)]">Leçon validée ✓</p>
+          <p className="font-bold text-[var(--ink)]">{nextLesson ? "Leçon validée ✓" : "🎉 Parcours débutant terminé !"}</p>
           <p className="mt-1 text-sm text-[var(--muted)]">
             {isLoggedIn ? "Elle est cochée dans ton parcours." : "Crée un compte pour garder ta progression d'une fois sur l'autre."}
           </p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {nextLesson ? (
+          {nextLesson ? (
+            <div className="mt-3 flex flex-wrap gap-3">
               <Link href={`/parcours/${nextLesson.id}`} className="primary-button">
                 Leçon suivante →
               </Link>
-            ) : (
-              <Link href="/" className="primary-button">
-                Analyser ma première réplique →
+              <Link href="/parcours" className="secondary-button">
+                Retour au parcours
               </Link>
-            )}
-            <Link href="/parcours" className="secondary-button">
-              Retour au parcours
-            </Link>
-          </div>
+            </div>
+          ) : (
+            // Fin du parcours : les trois suites naturelles, de la plus utile à
+            // la plus ludique.
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-sm text-[var(--ink)]">Et maintenant ?</p>
+              <Link href="/" className="primary-button text-center">
+                Analyser une vraie réplique d&apos;anime →
+              </Link>
+              <Link href="/paliers" className="secondary-button text-center">
+                🏅 Passer le palier N5 (examen blanc)
+              </Link>
+              <Link href="/jeux" className="secondary-button text-center">
+                🎮 Réviser en jouant
+              </Link>
+            </div>
+          )}
         </div>
       ) : null}
 
