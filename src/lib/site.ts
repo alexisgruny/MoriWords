@@ -1,4 +1,4 @@
-import { LESSONS } from "@/lib/course/lessons";
+import { COURSES } from "@/lib/course/courses";
 import { GAMES } from "@/lib/games/catalog";
 
 // Adresse publique du site (liens absolus du sitemap et des aperçus de
@@ -9,8 +9,8 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://moriwords.v
 // (les pages privées redirigent vers la connexion, voir src/proxy.ts).
 export const INDEXABLE_PATHS: string[] = [
   "/bienvenue",
-  "/parcours",
-  ...LESSONS.map((lesson) => `/parcours/${lesson.id}`),
+  "/lecons",
+  ...COURSES.flatMap((course) => [course.basePath, ...course.lessons.map((lesson) => `${course.basePath}/${lesson.id}`)]),
   "/kana",
   "/exercices/kana",
   "/kanji",

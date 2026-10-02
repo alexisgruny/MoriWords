@@ -15,7 +15,25 @@ import type { Lesson } from "@/lib/course/lessons";
 // Exercice d'une leçon du parcours : compte les bonnes réponses et valide la
 // leçon à l'objectif (enregistrée pour un compte connecté). Les kana se font
 // sans compte ; les autres exercices passent par le serveur, donc la connexion.
-export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLesson: { id: string; title: string } | null }) {
+// Ce que l'exercice doit savoir du cours : son adresse, et la suite une fois
+// la dernière leçon validée (palier, cours suivant).
+export type LessonCourseInfo = {
+  basePath: string;
+  title: string;
+  isBeginner: boolean;
+  examLevel: string;
+  next: { title: string; href: string } | null;
+};
+
+export function LessonExercise({
+  lesson,
+  nextLesson,
+  course,
+}: {
+  lesson: Lesson;
+  nextLesson: { id: string; title: string } | null;
+  course: LessonCourseInfo;
+}) {
   const { data: session, isPending } = authClient.useSession();
   const [correctCount, setCorrectCount] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -93,17 +111,17 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
 
       {isCompleted ? (
         <div className="fade-in-up rounded-2xl border border-[var(--success)] bg-[var(--success-soft)] p-4" role="status">
-          <p className="font-bold text-[var(--ink)]">{nextLesson ? "Leçon validée ✓" : "🎉 Parcours débutant terminé !"}</p>
+          <p className="font-bold text-[var(--ink)]">{nextLesson ? "Leçon validée ✓" : `🎉 ${course.title} terminé !`}</p>
           <p className="mt-1 text-sm text-[var(--muted)]">
             {isLoggedIn ? "Elle est cochée dans ton parcours." : "Crée un compte pour garder ta progression d'une fois sur l'autre."}
           </p>
           {nextLesson ? (
             <div className="mt-3 flex flex-wrap gap-3">
-              <Link href={`/parcours/${nextLesson.id}`} className="primary-button">
+              <Link href={`${course.basePath}/${nextLesson.id}`} className="primary-button">
                 Leçon suivante →
               </Link>
-              <Link href="/parcours" className="secondary-button">
-                Retour au parcours
+              <Link href={course.basePath} className="secondary-button">
+                Retour au cours
               </Link>
             </div>
           ) : (
@@ -111,11 +129,17 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
             // la plus ludique.
             <div className="mt-3 flex flex-col gap-2">
               <p className="text-sm text-[var(--ink)]">Et maintenant ?</p>
-              <Link href="/" className="primary-button text-center">
-                Analyser une vraie réplique d&apos;anime →
-              </Link>
+              {course.next ? (
+                <Link href={course.next.href} className="primary-button text-center">
+                  Continuer : {course.next.title} →
+                </Link>
+              ) : (
+                <Link href="/" className="primary-button text-center">
+                  Analyser une vraie réplique d&apos;anime →
+                </Link>
+              )}
               <Link href="/paliers" className="secondary-button text-center">
-                🏅 Passer le palier N5 (examen blanc)
+                🏅 Passer le palier {course.examLevel} (examen blanc)
               </Link>
               <Link href="/jeux" className="secondary-button text-center">
                 🎮 Réviser en jouant
@@ -129,10 +153,10 @@ export function LessonExercise({ lesson, nextLesson }: { lesson: Lesson; nextLes
         <div className="panel text-center">
           <p className="text-[var(--ink)]">Les exercices de cette leçon demandent un compte (gratuit).</p>
           <div className="mt-3 flex flex-wrap justify-center gap-3">
-            <Link href={`/inscription?suivant=${encodeURIComponent(`/parcours/${lesson.id}`)}`} className="primary-button">
+            <Link href={`/inscription?suivant=${encodeURIComponent(`${course.basePath}/${lesson.id}`)}`} className="primary-button">
               Créer mon compte
             </Link>
-            <Link href={`/connexion?suivant=${encodeURIComponent(`/parcours/${lesson.id}`)}`} className="secondary-button">
+            <Link href={`/connexion?suivant=${encodeURIComponent(`${course.basePath}/${lesson.id}`)}`} className="secondary-button">
               J&apos;ai déjà un compte
             </Link>
           </div>

@@ -6,6 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/bienvenue",
   "/parcours",
+  "/lecons",
   "/connexion",
   "/inscription",
   "/kana",

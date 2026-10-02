@@ -9,7 +9,8 @@ type LessonSummary = { id: string; number: number; title: string; minutes: numbe
 
 // Liste des leçons avec leur état (validée ✓, prochaine à faire) pour un
 // compte connecté ; sans compte, la liste simple.
-export function CourseOverview({ lessons }: { lessons: LessonSummary[] }) {
+// basePath : adresse du cours (/parcours pour le débutant, /lecons/n4…).
+export function CourseOverview({ lessons, basePath = "/parcours" }: { lessons: LessonSummary[]; basePath?: string }) {
   const { data: session } = authClient.useSession();
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const isLoggedIn = Boolean(session);
@@ -58,7 +59,7 @@ export function CourseOverview({ lessons }: { lessons: LessonSummary[] }) {
           return (
             <li key={lesson.id}>
               <Link
-                href={`/parcours/${lesson.id}`}
+                href={`${basePath}/${lesson.id}`}
                 className={`token-card mb-0! flex items-center gap-4 transition hover:border-[var(--accent)] ${
                   isNext ? "border-[var(--accent)]! shadow-[0_0_0_1px_var(--accent)]" : ""
                 }`}

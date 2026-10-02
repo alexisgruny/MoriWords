@@ -30,6 +30,7 @@ const SERIOUS_FEATURES = [
   "Un entraînement ciblé sur tes points faibles",
   "Grammaire, conjugaison et plus de 2 000 kanji du JLPT",
   "Un examen blanc par niveau, du N5 au N1, pour mesurer tes progrès",
+  "Des cours par niveau : la grammaire N4 expliquée en français",
   "Export Anki si tu veux garder tes habitudes",
 ];
 

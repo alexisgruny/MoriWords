@@ -484,3 +484,13 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 99    Fin du parcours (bilan reussi) : « Parcours debutant termine ! » et trois
       suites : analyser une vraie replique, passer le palier N5, reviser en
       jouant.
+100   Onglet « Lecons » (/lecons) : cours de plus en plus avances. Cours N4
+      (6 lecons, /lecons/n4) : たことがある / ながら, と思う / そう,
+      なければならない / ことができる, たら / ば / ても, ておく / ようにする /
+      すぎる, bilan (recit + 5 questions). Explications, exemples (lecture,
+      romaji, ecoute), vocabulaire N4, « A retenir », QCM ecrit a la main
+      (pieges = formes voisines), lien vers l'exercice de grammaire. Registre
+      COURSES (src/lib/course/courses.ts) : ajouter un niveau = un fichier de
+      lecons + une entree. Composant LessonView partage avec le parcours
+      debutant (qui renvoie vers le cours N4 a la fin). Tests : vocabulaire
+      N4/N5, QCM, romaji, orthographe, sitemap. Prochain : cours N3.

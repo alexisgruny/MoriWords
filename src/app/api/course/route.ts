@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { ALL_LESSON_IDS } from "@/lib/course/courses";
 import { LESSON_IDS } from "@/lib/course/lessons";
 import { prisma } from "@/lib/db/prisma";
 import { limitUserWrites } from "@/lib/security/rate-limit";
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
     const body: unknown = await request.json().catch(() => null);
     const lessonId = typeof body === "object" && body !== null ? (body as Record<string, unknown>).lessonId : null;
 
-    if (typeof lessonId !== "string" || !LESSON_IDS.has(lessonId)) {
+    // Leçon de n'importe quel cours (débutant, N4…).
+    if (typeof lessonId !== "string" || !ALL_LESSON_IDS.has(lessonId)) {
       return Response.json({ error: "Leçon inconnue." }, { status: 400 });
     }
 
