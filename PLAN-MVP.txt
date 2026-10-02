@@ -478,3 +478,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
 97    Analyse : filtre par niveau JLPT des mots detectes (puces Tous / N5…N1 /
       Autres avec le nombre de mots, des 15 mots) ; « Tout ajouter » suit le
       filtre ; retour automatique a « Tous » si le niveau choisi disparait.
+98    Analyse : nombre d'apparitions de chaque mot (« ×3 » sur la carte) et
+      option « Plus frequents d'abord » (des 15 mots, tri stable) pour
+      apprendre en premier les mots qui reviennent le plus dans un episode.

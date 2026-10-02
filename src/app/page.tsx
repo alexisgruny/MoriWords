@@ -62,6 +62,9 @@ export default function Home() {
   const [hideKnown, setHideKnown] = useState(false);
   // Filtre par niveau JLPT (long texte ou épisode : d'abord les mots à sa portée).
   const [levelFilter, setLevelFilter] = useState<JLPTLevel | "all">("all");
+  // Les mots les plus répétés d'abord : sur un épisode, un mot entendu
+  // douze fois vaut d'être appris avant un mot entendu une fois.
+  const [sortByFrequency, setSortByFrequency] = useState(false);
   const [showMoreSources, setShowMoreSources] = useState(false);
   // Lectures (furigana) au-dessus des kanji ; décochées pour s'entraîner à lire.
   const [showFurigana, setShowFurigana] = useState(true);
@@ -122,6 +125,13 @@ export default function Home() {
   // ou un épisode entier, les répétitions noyaient la liste et « Tout
   // ajouter » envoyait plusieurs fois le même mot. « Cacher les mots déjà
   // dans mes decks » retire aussi ceux qu'on a déjà.
+  // Nombre d'apparitions de chaque mot dans le texte (avant dédoublonnage).
+  const frequency = new Map<string, number>();
+  for (const token of tokens) {
+    const lemma = token.baseForm || token.surface;
+    frequency.set(lemma, (frequency.get(lemma) ?? 0) + 1);
+  }
+  const frequencyOf = (token: TokenResult) => frequency.get(token.baseForm || token.surface) ?? 1;
   const seenLemmas = new Set<string>();
   const listedTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
     .filter((token) => !isNoiseToken(token))
@@ -137,7 +147,9 @@ export default function Home() {
   }, {});
   // Niveau choisi absent du texte affiché (nouveau texte…) : retour à « Tous ».
   const activeLevel = levelFilter !== "all" && levelCounts[levelFilter] ? levelFilter : "all";
-  const visibleTokens = activeLevel === "all" ? listedTokens : listedTokens.filter((token) => token.difficulty === activeLevel);
+  const filteredTokens = activeLevel === "all" ? listedTokens : listedTokens.filter((token) => token.difficulty === activeLevel);
+  // Tri stable : à fréquence égale, l'ordre du texte.
+  const visibleTokens = sortByFrequency ? [...filteredTokens].sort((a, b) => frequencyOf(b) - frequencyOf(a)) : filteredTokens;
 
 
   // Étape du parcours mise en avant dans le guide sous le titre (1 : pas
@@ -1228,6 +1240,17 @@ export default function Home() {
                     Cacher les mots déjà dans mes decks
                   </label>
                 ) : null}
+                {listedTokens.length >= 15 ? (
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)]">
+                    <input
+                      type="checkbox"
+                      checked={sortByFrequency}
+                      onChange={(event) => setSortByFrequency(event.target.checked)}
+                      className="accent-[var(--accent)]"
+                    />
+                    Plus fréquents d&apos;abord
+                  </label>
+                ) : null}
               </div>
               {listedTokens.length >= 15 ? (
                 <FilterChips
@@ -1353,7 +1376,12 @@ export default function Home() {
                           >
                             ✓
                           </span>
-                          <span className={`ml-auto shrink-0 ${jlptBadgeClass(token.difficulty)}`}>
+                          {frequencyOf(token) > 1 ? (
+                            <span className="ml-auto shrink-0 text-xs font-semibold text-[var(--muted)]" title="Nombre d'apparitions dans le texte">
+                              ×{frequencyOf(token)}
+                            </span>
+                          ) : null}
+                          <span className={`${frequencyOf(token) > 1 ? "" : "ml-auto "}shrink-0 ${jlptBadgeClass(token.difficulty)}`}>
                             {token.difficulty === "unknown" ? "—" : token.difficulty}
                           </span>
                         </span>
