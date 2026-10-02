@@ -5,9 +5,11 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { FuriganaSentence } from "@/components/furigana-sentence";
 import { KanaHint } from "@/components/kana-hint";
+import { FilterChips } from "@/components/reference-toolbar";
 import { SpeakButton } from "@/components/speak-button";
 import { useToast } from "@/components/toast-provider";
 import { jlptBadgeClass } from "@/lib/jlpt-badge";
+import type { JLPTLevel } from "@/lib/difficulty/classify";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@/lib/security/input-limits";
 import { decodeSubtitleFile, parseSubtitles } from "@/lib/subtitles/parse-subtitles";
 import { translatePartOfSpeech } from "@/lib/tokenizer/part-of-speech-labels";
@@ -37,6 +39,7 @@ const FEATURED_SOURCE_COUNT = 2;
 // ない, う), qui déroutent une débutante et ne s'apprennent pas en fiche.
 const GRAMMAR_WORD_CATEGORIES = new Set(["助詞", "助動詞"]);
 const BULK_ADD_BATCH = 6;
+const JLPT_FILTER_LEVELS: JLPTLevel[] = ["N5", "N4", "N3", "N2", "N1", "unknown"];
 
 const STEPS = ["Colle une réplique ou un texte", "Touche les mots", "Garde-les en fiches de révision"];
 
@@ -57,6 +60,8 @@ export default function Home() {
   // Cacher les mots déjà dans un deck : sur un épisode entier, il ne reste
   // que les nouveaux mots (et « Tout ajouter » n'ajoute qu'eux).
   const [hideKnown, setHideKnown] = useState(false);
+  // Filtre par niveau JLPT (long texte ou épisode : d'abord les mots à sa portée).
+  const [levelFilter, setLevelFilter] = useState<JLPTLevel | "all">("all");
   const [showMoreSources, setShowMoreSources] = useState(false);
   // Lectures (furigana) au-dessus des kanji ; décochées pour s'entraîner à lire.
   const [showFurigana, setShowFurigana] = useState(true);
@@ -118,7 +123,7 @@ export default function Home() {
   // ajouter » envoyait plusieurs fois le même mot. « Cacher les mots déjà
   // dans mes decks » retire aussi ceux qu'on a déjà.
   const seenLemmas = new Set<string>();
-  const visibleTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
+  const listedTokens = (showParticles ? tokens : tokens.filter((token) => !GRAMMAR_WORD_CATEGORIES.has(token.partOfSpeech)))
     .filter((token) => !isNoiseToken(token))
     .filter((token) => {
       const lemma = token.baseForm || token.surface;
@@ -126,6 +131,13 @@ export default function Home() {
       seenLemmas.add(lemma);
       return true;
     });
+  const levelCounts = listedTokens.reduce<Partial<Record<JLPTLevel, number>>>((counts, token) => {
+    counts[token.difficulty] = (counts[token.difficulty] ?? 0) + 1;
+    return counts;
+  }, {});
+  // Niveau choisi absent du texte affiché (nouveau texte…) : retour à « Tous ».
+  const activeLevel = levelFilter !== "all" && levelCounts[levelFilter] ? levelFilter : "all";
+  const visibleTokens = activeLevel === "all" ? listedTokens : listedTokens.filter((token) => token.difficulty === activeLevel);
 
 
   // Étape du parcours mise en avant dans le guide sous le titre (1 : pas
@@ -1217,6 +1229,21 @@ export default function Home() {
                   </label>
                 ) : null}
               </div>
+              {listedTokens.length >= 15 ? (
+                <FilterChips
+                  options={[
+                    { value: "all" as const, label: "Tous", count: listedTokens.length },
+                    ...JLPT_FILTER_LEVELS.filter((level) => levelCounts[level]).map((level) => ({
+                      value: level,
+                      label: level === "unknown" ? "Autres" : level,
+                      count: levelCounts[level],
+                    })),
+                  ]}
+                  value={activeLevel}
+                  onChange={setLevelFilter}
+                  label="Niveau des mots"
+                />
+              ) : null}
             </div>
 
             {lastAddedDeckId ? (

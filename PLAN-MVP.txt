@@ -475,3 +475,6 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       qu'on a des cartes) : apres un import de sous-titres, il ne reste que
       les nouveaux mots, et « Tout ajouter » n'ajoute qu'eux. Options de la
       liste sur leur propre ligne (place sur mobile).
+97    Analyse : filtre par niveau JLPT des mots detectes (puces Tous / N5…N1 /
+      Autres avec le nombre de mots, des 15 mots) ; « Tout ajouter » suit le
+      filtre ; retour automatique a « Tous » si le niveau choisi disparait.
