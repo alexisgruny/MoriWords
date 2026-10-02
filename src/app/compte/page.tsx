@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
 import { InstallAppSection } from "@/components/install-app";
+import { useToast } from "@/components/toast-provider";
 import { readApiError } from "@/lib/api-error";
 import { forgetCourseStatus } from "@/lib/course/course-status";
 import { DELETE_ACCOUNT_CONFIRMATION } from "@/lib/auth/account";
@@ -135,6 +136,9 @@ function CoursePreference() {
   const [hideCourse, setHideCourse] = useState<boolean | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Confirmation affichée sous la case après un enregistrement réussi.
+  const [saved, setSaved] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     let isCancelled = false;
@@ -154,6 +158,7 @@ function CoursePreference() {
     setHideCourse(next);
     setIsSaving(true);
     setError(null);
+    setSaved(null);
     try {
       const response = await fetch("/api/course", {
         method: "PATCH",
@@ -166,6 +171,11 @@ function CoursePreference() {
         return;
       }
       forgetCourseStatus();
+      const message = next
+        ? "C'est noté : le parcours débutant n'apparaît plus dans le menu."
+        : "C'est noté : le parcours débutant est de retour dans le menu.";
+      setSaved(message);
+      showToast(message);
     } catch {
       setHideCourse(!next);
       setError("Impossible d'enregistrer ta préférence pour le moment.");
@@ -196,6 +206,11 @@ function CoursePreference() {
           </span>
         </span>
       </label>
+      {saved ? (
+        <p className="fade-in-up mt-3 text-sm font-semibold text-[var(--success-dark)]" role="status">
+          ✓ {saved}
+        </p>
+      ) : null}
       {error ? (
         <p className="error-banner mt-3" role="alert">
           {error}
