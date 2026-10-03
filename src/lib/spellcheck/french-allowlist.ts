@@ -32,7 +32,7 @@ export const FRENCH_ALLOWLIST: string[] = [
   // Prénoms japonais des questions de compréhension du bilan.
   "yuki", "sakura",
   // Mots japonais passés en français (cours N4).
-  "ryokan", "ramen",
+  "ryokan", "ramen", "tanaka",
   // Mot anglais cité comme origine d'un emprunt (コーヒー < coffee).
   "coffee",
   "keigo",

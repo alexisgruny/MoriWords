@@ -1,0 +1,421 @@
+import type { Lesson } from "@/lib/course/lessons";
+
+// Cours N4, partie 4 « Nuancer et interagir » : donner et recevoir,
+// habitudes, suppositions, politesse (敬語), puis le bilan.
+export const N4_NUANCES_LESSONS: Omit<Lesson, "number">[] = [
+  {
+    id: "n4-donner-recevoir",
+    title: "Donner et recevoir : あげる, くれる, もらう",
+    minutes: 18,
+    summary: "Choisir le bon verbe selon qui donne à qui, parler des services rendus, prêter et emprunter.",
+    sections: [
+      {
+        title: "Trois verbes selon le point de vue",
+        formula: "Je donne / il donne à un autre : [あげる]　On me donne : [くれる]　Je reçois : [もらう]",
+        paragraphs: [
+          "Le japonais choisit le verbe selon **qui donne à qui**. [あげる] : je donne (ou quelqu'un donne à quelqu'un d'autre que moi). [くれる] : quelqu'un **me** donne (ou donne à un proche, de ma famille).",
+          "[もらう] : recevoir. Celui qui donne prend [に] ou [から] : 友達[に]本をもらいました.",
+        ],
+        examples: [
+          { ja: "私は妹に花を[あげました]。", reading: "わたしはいもうとにはなを[あげました]。", romaji: "Watashi wa imouto ni hana o [agemashita].", fr: "J'ai offert des fleurs à ma petite sœur." },
+          { ja: "友達が私にお土産を[くれました]。", reading: "ともだちがわたしにおみやげを[くれました]。", romaji: "Tomodachi ga watashi ni omiyage o [kuremashita].", fr: "Un ami m'a offert un souvenir." },
+          { ja: "母に手紙を[もらいました]。", reading: "ははにてがみを[もらいました]。", romaji: "Haha ni tegami o [moraimashita].", fr: "J'ai reçu une lettre de ma mère." },
+        ],
+        tip: "On ne dit jamais 友達が私にあげました : quand c'est toi qui reçois, c'est toujours [くれました].",
+      },
+      {
+        title: "Rendre service : ～てあげる, ～てくれる, ～てもらう",
+        formula: "Verbe en て + [あげる] / [くれる] / [もらう]",
+        paragraphs: [
+          "Les mêmes verbes après la forme en て parlent d'un **service rendu** : 道を教え[てあげました] (je lui ai indiqué le chemin), 友達が手伝っ[てくれました] (un ami m'a aidé·e).",
+          "[～てもらう] : « se faire faire quelque chose par quelqu'un » : 兄に駅まで送っ[てもらいました] (mon frère m'a raccompagné·e).",
+        ],
+        examples: [
+          { ja: "友達が引っ越しを手伝っ[てくれました]。", reading: "ともだちがひっこしをてつだっ[てくれました]。", romaji: "Tomodachi ga hikkoshi o tetsudat[te kuremashita].", fr: "Un ami m'a aidé·e à déménager." },
+          { ja: "兄に駅まで送っ[てもらいました]。", reading: "あににえきまでおくっ[てもらいました]。", romaji: "Ani ni eki made okut[te moraimashita].", fr: "Mon grand frère m'a raccompagné·e à la gare." },
+          { ja: "おばあさんに道を教え[てあげました]。", reading: "おばあさんにみちをおしえ[てあげました]。", romaji: "Obaasan ni michi o oshie[te agemashita].", fr: "J'ai indiqué le chemin à une vieille dame." },
+        ],
+        tip: "～てあげる envers un supérieur peut sembler condescendant : au professeur, on propose plutôt お手伝いします.",
+      },
+      {
+        title: "Prêter, emprunter, demander un service",
+        formula: "[貸す] prêter　[借りる] emprunter　／　～て[くれませんか] / ～て[もらえませんか]",
+        paragraphs: [
+          "[貸す] : prêter ; [借りる] : emprunter. 友達に傘を[貸しました] (j'ai prêté) / 友達に傘を[借りました] (j'ai emprunté).",
+          "Pour demander un service poliment : ～て[くれませんか], ou plus poli encore ～て[もらえませんか].",
+        ],
+        examples: [
+          { ja: "ペンを貸し[てくれませんか]。", reading: "ペンをかし[てくれませんか]。", romaji: "Pen o kashi[te kuremasen ka].", fr: "Tu pourrais me prêter un stylo ?" },
+          { ja: "図書館で本を[借りました]。", reading: "としょかんでほんを[かりました]。", romaji: "Toshokan de hon o [karimashita].", fr: "J'ai emprunté un livre à la bibliothèque." },
+          { ja: "写真を撮っ[てもらえませんか]。", reading: "しゃしんをとっ[てもらえませんか]。", romaji: "Shashin o tot[te moraemasen ka].", fr: "Pourriez-vous me prendre en photo ?" },
+        ],
+        tip: "Ne confonds pas [貸す] (prêter) et [借りる] (emprunter) : c'est l'erreur la plus fréquente.",
+      },
+    ],
+    vocabulary: [
+      { ja: "あげる", reading: "あげる", fr: "donner (à quelqu'un d'autre)" },
+      { ja: "くれる", reading: "くれる", fr: "donner (à moi)" },
+      { ja: "もらう", reading: "もらう", fr: "recevoir" },
+      { ja: "貸す", reading: "かす", fr: "prêter" },
+      { ja: "借りる", reading: "かりる", fr: "emprunter" },
+      { ja: "送る", reading: "おくる", fr: "envoyer, raccompagner" },
+      { ja: "手紙", reading: "てがみ", fr: "lettre" },
+      { ja: "品物", reading: "しなもの", fr: "article, marchandise" },
+    ],
+    kanji: ["借", "品", "売", "持", "物", "紙", "自", "花", "買", "貸", "送", "転"],
+    keyPoints: [
+      "Je donne : [あげる] ; on me donne : [くれる] ; je reçois : [もらう] (personne + に).",
+      "Service rendu : forme en て + [あげる / くれる / もらう].",
+      "Prêter : [貸す] ; emprunter : [借りる] ; demande polie : ～て[くれませんか].",
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+        { fr: "J'ai offert des fleurs à ma mère.", answer: "母に花をあげました。", wrong: ["母に花をくれました。", "母に花をもらいました。"] },
+        { fr: "Un ami m'a offert un livre.", answer: "友達が本をくれました。", wrong: ["友達が本をあげました。", "友達に本をくれました。"] },
+        { fr: "J'ai reçu une lettre de ma grand-mère.", answer: "祖母に手紙をもらいました。", wrong: ["祖母に手紙をくれました。", "祖母が手紙をもらいました。"] },
+        { fr: "Un ami m'a aidé·e.", answer: "友達が手伝ってくれました。", wrong: ["友達が手伝ってあげました。", "友達に手伝ってくれました。"] },
+        { fr: "Mon frère m'a raccompagné·e en voiture.", answer: "兄に車で送ってもらいました。", wrong: ["兄が車で送ってもらいました。", "兄に車で送ってあげました。"] },
+        { fr: "J'ai indiqué le chemin à un touriste.", answer: "観光客に道を教えてあげました。", wrong: ["観光客に道を教えてくれました。", "観光客が道を教えてもらいました。"] },
+        { fr: "Tu pourrais me prêter un stylo ?", answer: "ペンを貸してくれませんか。", wrong: ["ペンを借りてくれませんか。", "ペンを貸してあげませんか。"] },
+        { fr: "J'ai emprunté un parapluie à un ami.", answer: "友達に傘を借りました。", wrong: ["友達に傘を貸しました。", "友達を傘に借りました。"] },
+        { fr: "J'ai prêté mon vélo à mon petit frère.", answer: "弟に自転車を貸しました。", wrong: ["弟に自転車を借りました。", "弟が自転車を貸しました。"] },
+        { fr: "Pourriez-vous me prendre en photo ?", answer: "写真を撮ってもらえませんか。", wrong: ["写真を撮ってあげませんか。", "写真を撮ってもらいませんか。"] },
+      ],
+    },
+    goal: 7,
+    writing: {
+      goal: 4,
+      questions: [
+        { fr: "Un ami m'a offert un livre.", answers: ["友達が本をくれました。", "ともだちがほんをくれました。"] },
+        { fr: "J'ai reçu une lettre.", answers: ["手紙をもらいました。", "てがみをもらいました。"] },
+        { fr: "Tu pourrais me prêter un stylo ?", answers: ["ペンを貸してくれませんか。", "ペンをかしてくれませんか。"] },
+        { fr: "J'ai emprunté un livre.", answers: ["本を借りました。", "ほんをかりました。"] },
+        { fr: "Un ami m'a aidé·e.", answers: ["友達が手伝ってくれました。", "ともだちがてつだってくれました。"] },
+        { fr: "J'ai offert des fleurs à ma mère.", answers: ["母に花をあげました。", "ははにはなをあげました。"] },
+      ],
+    },
+  },
+  {
+    id: "n4-habitudes",
+    title: "Habitudes et petits accidents : ～ておく, ～ようにする, ～すぎる, ～てしまう",
+    minutes: 18,
+    summary: "Faire quelque chose à l'avance, prendre une bonne habitude, dire « trop », et « zut, c'est fait ».",
+    sections: [
+      {
+        title: "« À l'avance » : ～ておく",
+        formula: "Verbe en て + [おく]",
+        paragraphs: ["Forme en て + [おく] : 予約して → 予約し[ておきます]. On prépare quelque chose pour plus tard, ou on laisse une chose dans un état."],
+        examples: [
+          { ja: "ホテルを予約し[ておきます]。", reading: "ホテルをよやくし[ておきます]。", romaji: "Hoteru o yoyaku shi[te okimasu].", fr: "Je réserve l'hôtel à l'avance." },
+          { ja: "窓を開け[ておいて]ください。", reading: "まどをあけ[ておいて]ください。", romaji: "Mado o ake[te oite] kudasai.", fr: "Laisse la fenêtre ouverte, s'il te plaît." },
+        ],
+        tip: "À l'oral, ～ておく devient souvent ～とく : 予約しとく.",
+      },
+      {
+        title: "« Faire en sorte de… » : ～ようにしています",
+        formula: "Dictionnaire ou forme en ない + [ようにしています]",
+        paragraphs: [
+          "Un **effort régulier**, une habitude qu'on s'impose. Au négatif : 食べない[ようにしています], « j'évite de manger ».",
+        ],
+        examples: [
+          { ja: "毎日運動する[ようにしています]。", reading: "まいにちうんどうする[ようにしています]。", romaji: "Mainichi undou suru [you ni shite imasu].", fr: "Je m'efforce de faire du sport tous les jours." },
+          { ja: "夜は甘いものを食べない[ようにしています]。", reading: "よるはあまいものをたべない[ようにしています]。", romaji: "Yoru wa amai mono o tabenai [you ni shite imasu].", fr: "Le soir, j'évite de manger sucré." },
+        ],
+        tip: "ようにする (je fais des efforts) n'est pas ようになる (je suis devenu·e capable, ou j'ai changé).",
+      },
+      {
+        title: "« Trop » : ～すぎる",
+        formula: "Verbe sans ます, ou adjectif sans い (sans な) + [すぎる]",
+        paragraphs: [
+          "食べます → 食べ[すぎる], 難しい → 難し[すぎる], 静か → 静か[すぎる]. Le résultat se conjugue comme un verbe du groupe 2 : すぎました.",
+        ],
+        examples: [
+          { ja: "食べ[すぎました]。", reading: "たべ[すぎました]。", romaji: "Tabe[sugimashita].", fr: "J'ai trop mangé." },
+          { ja: "この問題は難し[すぎます]。", reading: "このもんだいはむずかし[すぎます]。", romaji: "Kono mondai wa muzukashi[sugimasu].", fr: "Ce problème est trop difficile." },
+        ],
+        tip: "Jamais 難しいすぎる : on retire le い. Et いい → [よすぎる].",
+      },
+      {
+        title: "« C'est fait (zut) » : ～てしまう",
+        formula: "Verbe en て + [しまう]　（familier : [ちゃう] / [じゃう]）",
+        paragraphs: [
+          "[～てしまう] a deux sens : l'action est **complètement** finie (この本はもう読ん[でしまいました]), ou elle est arrivée **par erreur**, avec un regret (財布を忘れ[てしまいました]).",
+          "À l'oral : ～てしまう → [ちゃう], ～でしまう → [じゃう] : 忘れちゃった, 飲んじゃった.",
+        ],
+        examples: [
+          { ja: "電車に傘を忘れ[てしまいました]。", reading: "でんしゃにかさをわすれ[てしまいました]。", romaji: "Densha ni kasa o wasure[te shimaimashita].", fr: "J'ai oublié mon parapluie dans le train (zut)." },
+          { ja: "ケーキを全部食べ[ちゃった]。", reading: "ケーキをぜんぶたべ[ちゃった]。", romaji: "Keeki o zenbu tabe[chatta].", fr: "J'ai mangé tout le gâteau (oups, familier)." },
+          { ja: "この本はもう読ん[でしまいました]。", reading: "このほんはもうよん[でしまいました]。", romaji: "Kono hon wa mou yon[de shimaimashita].", fr: "J'ai déjà fini ce livre." },
+        ],
+        tip: "Après un verbe en んで, la forme familière est [じゃう] : 飲んじゃった, pas 飲んちゃった.",
+      },
+    ],
+    vocabulary: [
+      { ja: "習慣", reading: "しゅうかん", fr: "habitude" },
+      { ja: "生活", reading: "せいかつ", fr: "vie quotidienne" },
+      { ja: "運動", reading: "うんどう", fr: "exercice physique" },
+      { ja: "歩く", reading: "あるく", fr: "marcher" },
+      { ja: "走る", reading: "はしる", fr: "courir" },
+      { ja: "足", reading: "あし", fr: "pied, jambe" },
+      { ja: "捨てる", reading: "すてる", fr: "jeter" },
+      { ja: "慣れる", reading: "なれる", fr: "s'habituer" },
+    ],
+    kanji: ["口", "手", "歩", "走", "足", "運"],
+    keyPoints: [
+      "À l'avance : forme en て + [おく].",
+      "Habitude voulue : dictionnaire ou ない + [ようにしています].",
+      "Trop : verbe sans ます ou adjectif sans い + [すぎる].",
+      "Fini, ou zut : forme en て + [しまう] ; à l'oral [ちゃう / じゃう].",
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+        { fr: "J'ai trop bu.", answer: "飲みすぎました。", wrong: ["飲んでおきました。", "飲むようにしました。"] },
+        { fr: "Je prépare les outils à l'avance.", answer: "道具を準備しておきます。", wrong: ["道具を準備しすぎました。", "道具を準備したことがあります。"] },
+        { fr: "Je fais en sorte de me coucher tôt.", answer: "早く寝るようにしています。", wrong: ["早く寝すぎています。", "早く寝ておきます。"] },
+        { fr: "Ce sac est trop cher.", answer: "このかばんは高すぎます。", wrong: ["このかばんは高いすぎます。", "このかばんは高くておきます。"] },
+        { fr: "J'évite de manger de la viande.", answer: "肉を食べないようにしています。", wrong: ["肉を食べすぎています。", "肉を食べるようにしています。"] },
+        { fr: "J'apprends les mots avant le cours.", answer: "授業の前に、言葉を覚えておきます。", wrong: ["授業の前に、言葉を覚えすぎます。", "授業の前に、言葉を覚えたことがあります。"] },
+        { fr: "Cette chambre est trop petite.", answer: "この部屋は小さすぎます。", wrong: ["この部屋は小さいすぎます。", "この部屋は小さくすぎます。"] },
+        { fr: "Je fais en sorte de parler japonais tous les jours.", answer: "毎日日本語を話すようにしています。", wrong: ["毎日日本語を話しすぎています。", "毎日日本語を話しておきます。"] },
+        { fr: "J'ai oublié mon portefeuille (zut).", answer: "財布を忘れてしまいました。", wrong: ["財布を忘れておきました。", "財布を忘れすぎました。"] },
+        { fr: "J'ai bu toute la bière (oups, familier).", answer: "ビールを全部飲んじゃった。", wrong: ["ビールを全部飲んちゃった。", "ビールを全部飲みちゃった。"] },
+      ],
+    },
+    goal: 7,
+    writing: {
+      goal: 4,
+      questions: [
+        { fr: "J'ai trop mangé.", answers: ["食べすぎました。", "たべすぎました。"] },
+        { fr: "Je réserve à l'avance.", answers: ["予約しておきます。", "よやくしておきます。"] },
+        { fr: "J'ai oublié mon parapluie (zut).", answers: ["傘を忘れてしまいました。", "かさをわすれてしまいました。", "傘を忘れちゃった。", "かさをわすれちゃった。"] },
+        { fr: "C'est trop cher.", answers: ["高すぎます。", "たかすぎます。"] },
+        { fr: "Je fais en sorte de marcher tous les jours.", answers: ["毎日歩くようにしています。", "まいにちあるくようにしています。"] },
+        { fr: "J'évite de manger de la viande.", answers: ["肉を食べないようにしています。", "にくをたべないようにしています。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/grammaire?point=n4-sugiru", label: "Plus de phrases avec ～すぎる" },
+  },
+  {
+    id: "n4-supposer",
+    title: "Supposer et rapporter : でしょう, かもしれない, そうだ, らしい, ようだ",
+    minutes: 18,
+    summary: "Dire « probablement », « peut-être », « il paraît que » et « on dirait que ».",
+    sections: [
+      {
+        title: "Probablement, peut-être : でしょう, かもしれない",
+        formula: "Forme familière + [でしょう] (probablement) / [かもしれません] (peut-être)　（nom ou な : sans だ）",
+        paragraphs: [
+          "[でしょう] : une supposition assez **sûre** (la météo l'emploie beaucoup) : 明日は晴れる[でしょう]. [かもしれません] : une simple **possibilité** : 遅れる[かもしれません].",
+          "Devant ces deux formes, pas de だ : 雨[でしょう], 暇[かもしれません].",
+        ],
+        examples: [
+          { ja: "明日は雨が降る[でしょう]。", reading: "あしたはあめがふる[でしょう]。", romaji: "Ashita wa ame ga furu [deshou].", fr: "Demain, il pleuvra probablement." },
+          { ja: "電車が遅れる[かもしれません]。", reading: "でんしゃがおくれる[かもしれません]。", romaji: "Densha ga okureru [kamo shiremasen].", fr: "Le train sera peut-être en retard." },
+          { ja: "彼は病気[かもしれません]。", reading: "かれはびょうき[かもしれません]。", romaji: "Kare wa byouki [kamo shiremasen].", fr: "Il est peut-être malade." },
+        ],
+        tip: "でしょう？ avec une intonation montante veut dire « n'est-ce pas ? » : おいしいでしょう？",
+      },
+      {
+        title: "Il paraît que : そうだ (ouï-dire)",
+        formula: "Forme familière complète + [そうです]　（nom ou な + [だそうです]）",
+        paragraphs: [
+          "[そうです] après une forme **complète** (avec い, avec だ) rapporte une information entendue : 明日は雨[だそうです] (il paraît qu'il pleuvra demain).",
+          "La source se donne avec [によると] : 天気予報[によると]… (d'après la météo…).",
+        ],
+        examples: [
+          { ja: "天気予報[によると]、明日は雪[だそうです]。", reading: "てんきよほう[によると]、あしたはゆき[だそうです]。", romaji: "Tenki yohou [ni yoru to], ashita wa yuki [da sou desu].", fr: "D'après la météo, il neigera demain." },
+          { ja: "あの店のラーメンはおいしい[そうです]。", reading: "あのみせのラーメンはおいしい[そうです]。", romaji: "Ano mise no raamen wa oishii [sou desu].", fr: "Il paraît que les ramen de ce restaurant sont bonnes." },
+        ],
+        tip: "おいしい[そうです] (on dit que c'est bon) n'est pas おいし[そうです] (ça a l'air bon) : tout se joue sur le い.",
+      },
+      {
+        title: "On dirait que : ようだ, みたい, らしい",
+        formula: "Forme familière + [ようです] / [みたいです] / [らしいです]　（nom : [のよう]、[みたい]、[らしい]）",
+        paragraphs: [
+          "[ようです] (familier : [みたい]) : une déduction à partir de **ce qu'on constate** soi-même : 誰もいない[ようです] (on dirait qu'il n'y a personne).",
+          "[らしい] : une déduction à partir de ce qu'on a **entendu ou lu** : 田中さんは結婚する[らしい]です (il paraît que Tanaka va se marier).",
+        ],
+        examples: [
+          { ja: "電気が消えています。誰もいない[ようです]。", reading: "でんきがきえています。だれもいない[ようです]。", romaji: "Denki ga kiete imasu. Dare mo inai [you desu].", fr: "La lumière est éteinte. On dirait qu'il n'y a personne." },
+          { ja: "あの人は先生[みたい]ですね。", reading: "あのひとはせんせい[みたい]ですね。", romaji: "Ano hito wa sensei [mitai] desu ne.", fr: "Cette personne a l'air d'être professeur." },
+          { ja: "田中さんは来月結婚する[らしい]です。", reading: "たなかさんはらいげつけっこんする[らしい]です。", romaji: "Tanaka-san wa raigetsu kekkon suru [rashii] desu.", fr: "Il paraît que Tanaka se marie le mois prochain." },
+        ],
+        tip: "Avec un nom : 先生[のよう]です, mais 先生[みたい]です (sans の).",
+      },
+    ],
+    vocabulary: [
+      { ja: "天気予報", reading: "てんきよほう", fr: "météo (prévisions)" },
+      { ja: "新聞", reading: "しんぶん", fr: "journal" },
+      { ja: "有名", reading: "ゆうめい", fr: "célèbre" },
+      { ja: "研究", reading: "けんきゅう", fr: "recherche" },
+      { ja: "本当", reading: "ほんとう", fr: "vrai, vraiment" },
+      { ja: "多分", reading: "たぶん", fr: "probablement" },
+      { ja: "知る", reading: "しる", fr: "savoir, connaître" },
+      { ja: "写真", reading: "しゃしん", fr: "photo" },
+    ],
+    kanji: ["新", "明", "有", "死", "真", "知", "研", "究"],
+    keyPoints: [
+      "Probablement : [でしょう] ; peut-être : [かもしれません] (sans だ).",
+      "Il paraît que : forme complète + [そうです] (雨[だそうです], おいしい[そうです]).",
+      "On dirait (constat) : [ようです] / [みたい] ; d'après ce qu'on entend : [らしい].",
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+        { fr: "Demain, il pleuvra probablement.", answer: "明日は雨が降るでしょう。", wrong: ["明日は雨が降りでしょう。", "明日は雨が降るだでしょう。"] },
+        { fr: "Il est peut-être malade.", answer: "彼は病気かもしれません。", wrong: ["彼は病気だかもしれません。", "彼は病気なかもしれません。"] },
+        { fr: "Le train sera peut-être en retard.", answer: "電車が遅れるかもしれません。", wrong: ["電車が遅れりかもしれません。", "電車が遅れるかもしれます。"] },
+        { fr: "D'après la météo, il neigera demain.", answer: "天気予報によると、明日は雪だそうです。", wrong: ["天気予報によると、明日は雪そうです。", "天気予報によると、明日は雪のそうです。"] },
+        { fr: "Il paraît que ce restaurant est bon.", answer: "あの店はおいしいそうです。", wrong: ["あの店はおいしそうです。", "あの店はおいしいだそうです。"] },
+        { fr: "On dirait qu'il n'y a personne.", answer: "誰もいないようです。", wrong: ["誰もいないなようです。", "誰もいないのようです。"] },
+        { fr: "Cette personne a l'air d'être professeur.", answer: "あの人は先生みたいです。", wrong: ["あの人は先生のみたいです。", "あの人は先生なみたいです。"] },
+        { fr: "C'est comme un rêve.", answer: "夢のようです。", wrong: ["夢ようです。", "夢なようです。"] },
+        { fr: "Il paraît que Tanaka va se marier.", answer: "田中さんは結婚するらしいです。", wrong: ["田中さんは結婚するだらしいです。", "田中さんは結婚しらしいです。"] },
+        { fr: "C'est délicieux, n'est-ce pas ?", answer: "おいしいでしょう？", wrong: ["おいしいだでしょう？", "おいしでしょう？"] },
+      ],
+    },
+    goal: 7,
+    writing: {
+      goal: 4,
+      questions: [
+        { fr: "Il pleuvra probablement.", answers: ["雨が降るでしょう。", "あめがふるでしょう。", "雨でしょう。", "あめでしょう。"] },
+        { fr: "C'est peut-être vrai.", answers: ["本当かもしれません。", "ほんとうかもしれません。"] },
+        { fr: "Il paraît qu'il neigera demain.", answers: ["明日は雪だそうです。", "あしたはゆきだそうです。"] },
+        { fr: "On dirait qu'il n'y a personne.", answers: ["誰もいないようです。", "だれもいないようです。", "誰もいないみたいです。", "だれもいないみたいです。"] },
+        { fr: "Il paraît que c'est bon.", answers: ["おいしいそうです。"] },
+        { fr: "Je serai peut-être en retard.", answers: ["遅れるかもしれません。", "おくれるかもしれません。"] },
+      ],
+    },
+    morePractice: { href: "/exercices/grammaire?point=n4-sou-da", label: "Plus de phrases avec ～そうだ" },
+  },
+  {
+    id: "n4-politesse",
+    title: "La politesse : respect et modestie (敬語)",
+    minutes: 18,
+    summary: "Comprendre le langage de respect et de modestie qu'on entend au travail, dans les magasins et dans les gares.",
+    sections: [
+      {
+        title: "Deux façons d'être poli",
+        formula: "[尊敬語] : élever l'autre　／　[謙譲語] : se faire modeste",
+        paragraphs: [
+          "Au-delà de です et ます, le japonais a un langage de respect, le **敬語**. Le [尊敬語] (respect) **élève** ce que fait l'autre (un client, un professeur). Le [謙譲語] (modestie) **abaisse** ce que je fais pour lui.",
+          "On l'entend partout dans les magasins, les gares et au travail : au N4, il faut surtout le **comprendre**.",
+        ],
+        examples: [
+          { ja: "先生は何時に[いらっしゃいますか]。", reading: "せんせいはなんじに[いらっしゃいますか]。", romaji: "Sensei wa nanji ni [irasshaimasu ka].", fr: "À quelle heure le professeur viendra-t-il ?" },
+          { ja: "明日、私が[参ります]。", reading: "あした、わたしが[まいります]。", romaji: "Ashita, watashi ga [mairimasu].", fr: "C'est moi qui viendrai demain." },
+        ],
+        tip: "On n'emploie jamais le 尊敬語 pour soi-même : 私がいらっしゃいます est faux.",
+      },
+      {
+        title: "Les verbes spéciaux",
+        formula: "Respect : [いらっしゃる・召し上がる・おっしゃる・ご覧になる]　Modestie : [参る・いただく・申す・拝見する]",
+        paragraphs: [
+          "Les verbes les plus courants ont une forme spéciale. Pour l'autre (respect) : [いらっしゃる] (être, aller, venir), [召し上がる] (manger, boire), [おっしゃる] (dire), [ご覧になる] (voir).",
+          "Pour soi (modestie) : [参る] (aller, venir), [いただく] (manger, recevoir), [申す] (dire, s'appeler), [拝見する] (voir).",
+        ],
+        examples: [
+          { ja: "どうぞ[召し上がってください]。", reading: "どうぞ[めしあがってください]。", romaji: "Douzo [meshiagatte kudasai].", fr: "Servez-vous, je vous en prie." },
+          { ja: "田中と[申します]。", reading: "たなかと[もうします]。", romaji: "Tanaka to [moushimasu].", fr: "Je m'appelle Tanaka." },
+          { ja: "社長は今、会議室に[いらっしゃいます]。", reading: "しゃちょうはいま、かいぎしつに[いらっしゃいます]。", romaji: "Shachou wa ima, kaigishitsu ni [irasshaimasu].", fr: "Le directeur est dans la salle de réunion." },
+        ],
+        tip: "いらっしゃる fait いらっしゃいます (pas いらっしゃります), comme おっしゃいます.",
+      },
+      {
+        title: "Les formes régulières : お～になる, お～する, お～ください",
+        formula: "Respect : [お] + verbe sans ます + [になる]　Modestie : [お] + verbe sans ます + [する]　Demande : [お] + verbe sans ます + [ください]",
+        paragraphs: [
+          "Pour les autres verbes : respect avec [お～になります] (お帰りになります, il rentre), modestie avec [お～します] (お持ちします, je vous le porte).",
+          "Dans les magasins : [お～ください] = « veuillez… » : 少々お待ちください (veuillez patienter un instant).",
+        ],
+        examples: [
+          { ja: "少々[お待ちください]。", reading: "しょうしょう[おまちください]。", romaji: "Shoushou [omachi kudasai].", fr: "Veuillez patienter un instant." },
+          { ja: "荷物を[お持ちします]。", reading: "にもつを[おもちします]。", romaji: "Nimotsu o [omochi shimasu].", fr: "Je vais vous porter vos bagages." },
+          { ja: "先生はもう[お帰りになりました]。", reading: "せんせいはもう[おかえりになりました]。", romaji: "Sensei wa mou [okaeri ni narimashita].", fr: "Le professeur est déjà rentré." },
+        ],
+        tip: "Pour les mots d'origine chinoise, on met souvent [ご] : ご説明します, ご案内します.",
+      },
+    ],
+    vocabulary: [
+      { ja: "いらっしゃる", reading: "いらっしゃる", fr: "être, aller, venir (respect)" },
+      { ja: "召し上がる", reading: "めしあがる", fr: "manger, boire (respect)" },
+      { ja: "参る", reading: "まいる", fr: "aller, venir (modestie)" },
+      { ja: "申す", reading: "もうす", fr: "dire, s'appeler (modestie)" },
+      { ja: "社長", reading: "しゃちょう", fr: "directeur, PDG" },
+      { ja: "食堂", reading: "しょくどう", fr: "cantine, restaurant" },
+      { ja: "場所", reading: "ばしょ", fr: "endroit" },
+      { ja: "地図", reading: "ちず", fr: "carte, plan" },
+    ],
+    kanji: ["主", "公", "図", "地", "堂", "場", "室", "屋", "店", "田", "銀", "駅"],
+    keyPoints: [
+      "Respect ([尊敬語]) pour ce que fait l'autre ; modestie ([謙譲語]) pour ce que je fais.",
+      "Verbes spéciaux : [いらっしゃる / 召し上がる / おっしゃる] ↔ [参る / いただく / 申す].",
+      "Formes régulières : [お～になる] (respect), [お～する] (modestie), [お～ください] (veuillez).",
+    ],
+    exercise: {
+      kind: "lesson-qcm",
+      questions: [
+        { fr: "À quelle heure le professeur viendra-t-il ?", answer: "先生は何時にいらっしゃいますか。", wrong: ["先生は何時に参りますか。", "先生は何時にいらっしゃりますか。"] },
+        { fr: "Je m'appelle Tanaka.", answer: "田中と申します。", wrong: ["田中とおっしゃいます。", "田中と申されます。"] },
+        { fr: "Servez-vous, je vous en prie.", answer: "どうぞ召し上がってください。", wrong: ["どうぞいただいてください。", "どうぞ召し上がりてください。"] },
+        { fr: "C'est moi qui viendrai demain.", answer: "明日、私が参ります。", wrong: ["明日、私がいらっしゃいます。", "明日、私が参られます。"] },
+        { fr: "Veuillez patienter un instant.", answer: "少々お待ちください。", wrong: ["少々お待ちします。", "少々お待ちになります。"] },
+        { fr: "Je vais vous porter vos bagages.", answer: "荷物をお持ちします。", wrong: ["荷物をお持ちになります。", "荷物をお持ちください。"] },
+        { fr: "Le directeur est déjà rentré.", answer: "社長はもうお帰りになりました。", wrong: ["社長はもうお帰りしました。", "社長はもう参りました。"] },
+        { fr: "Qu'a dit le professeur ?", answer: "先生は何とおっしゃいましたか。", wrong: ["先生は何と申しましたか。", "先生は何とおっしゃりましたか。"] },
+        { fr: "J'ai regardé votre photo (modestie).", answer: "お写真を拝見しました。", wrong: ["お写真をご覧になりました。", "お写真を拝見になりました。"] },
+        { fr: "Bon appétit (avant de manger).", answer: "いただきます。", wrong: ["召し上がります。", "いらっしゃいます。"] },
+      ],
+    },
+    goal: 7,
+    writing: {
+      goal: 4,
+      questions: [
+        { fr: "Veuillez patienter.", answers: ["お待ちください。", "おまちください。", "少々お待ちください。", "しょうしょうおまちください。"] },
+        { fr: "Je m'appelle Tanaka.", answers: ["田中と申します。", "たなかともうします。"] },
+        { fr: "Servez-vous.", answers: ["召し上がってください。", "めしあがってください。", "どうぞ召し上がってください。", "どうぞめしあがってください。"] },
+        { fr: "Je vais vous le porter.", answers: ["お持ちします。", "おもちします。"] },
+        { fr: "Bon appétit (avant de manger).", answers: ["いただきます。"] },
+        { fr: "Le professeur est là.", answers: ["先生はいらっしゃいます。", "せんせいはいらっしゃいます。"] },
+      ],
+    },
+  },
+  {
+    id: "n4-bilan",
+    title: "Bilan N4 : un an au Japon",
+    minutes: 15,
+    summary: "Un récit qui réutilise tout le cours N4, avec huit questions de compréhension, avant l'examen blanc.",
+    sections: [
+      {
+        title: "Tu sais déjà lire ça",
+        paragraphs: [
+          "Ce récit reprend tout le cours : ことになる, potentiel, ので, ～てくれる, ～ながら, ようにする, ようになる, passif, ～すぎる, ～てしまう, そうだ, ても, つもり, 敬語… Touche un mot pour voir son sens, écoute le texte, puis réponds aux questions.",
+          "Ensuite, l'**examen blanc N4** (palier) te dira si tu es prêt·e pour le JLPT N4.",
+        ],
+      },
+    ],
+    keyPoints: [
+      "Tu as vu l'essentiel de la grammaire du JLPT N4 et ses 166 kanji.",
+      "Dernière étape : l'examen blanc N4 pour vérifier ton niveau.",
+    ],
+    exercise: {
+      kind: "reading",
+      text: "去年の春、私は日本の会社で働くことになりました。日本に来たばかりのときは、漢字が読めなかったし、電車の乗り方もわからなかったので、大変でした。でも、会社の人たちが親切に教えてくれました。毎朝、駅まで歩きながら、日本語の歌を聞くようにしています。今は、新聞の短い記事が読めるようになりました。先週、社長の家に招待されました。社長の奥さんが料理を作ってくれました。「どうぞ召し上がってください」と言われて、少し食べすぎてしまいました。来月、両親が日本に来るそうです。両親に京都を案内してあげようと思っています。雨が降っても、お寺を見に行くつもりです。",
+      translation:
+        "Au printemps dernier, il a été décidé que je travaillerais dans une entreprise japonaise. Quand je venais d'arriver au Japon, je ne savais pas lire les kanji et je ne savais pas non plus prendre le train : c'était dur. Mais les gens de l'entreprise m'ont gentiment appris. Tous les matins, en marchant jusqu'à la gare, je fais en sorte d'écouter des chansons japonaises. Maintenant, j'arrive à lire les articles courts du journal. La semaine dernière, j'ai été invité·e chez le directeur. Sa femme nous a préparé à manger. On m'a dit « Servez-vous, je vous en prie », et j'ai un peu trop mangé. Le mois prochain, mes parents viennent au Japon, paraît-il. Je pense leur faire visiter Kyoto. Même s'il pleut, j'ai l'intention d'aller voir les temples.",
+      questions: [
+        { fr: "Pourquoi l'auteur est-il venu au Japon ?", answer: "Pour travailler dans une entreprise japonaise", wrong: ["Pour étudier à l'université", "Pour voyager", "Pour retrouver sa famille"] },
+        { fr: "Qu'est-ce qui était difficile au début ?", answer: "Lire les kanji et prendre le train", wrong: ["Trouver un logement", "Parler avec le directeur", "Cuisiner japonais"] },
+        { fr: "Qui l'a aidé ?", answer: "Les gens de l'entreprise", wrong: ["Ses parents", "Un professeur", "Ses voisins"] },
+        { fr: "Que fait-il en marchant jusqu'à la gare ?", answer: "Il écoute des chansons japonaises.", wrong: ["Il lit le journal.", "Il téléphone à ses parents.", "Il apprend des kanji."] },
+        { fr: "Que sait-il faire maintenant ?", answer: "Lire des articles courts du journal", wrong: ["Écrire des romans", "Parler sans aucune erreur", "Lire tous les kanji"] },
+        { fr: "Que s'est-il passé chez le directeur ?", answer: "Il a un peu trop mangé.", wrong: ["Il a fait la cuisine.", "Il s'est perdu.", "Il est arrivé en retard."] },
+        { fr: "Qui vient au Japon le mois prochain ?", answer: "Ses parents", wrong: ["Le directeur", "Sa sœur", "Un ami"] },
+        { fr: "Que compte-t-il faire, même s'il pleut ?", answer: "Aller voir des temples", wrong: ["Rester à l'hôtel", "Aller à la mer", "Faire les courses"] },
+      ],
+    },
+    goal: 6,
+  },
+];

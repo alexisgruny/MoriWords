@@ -518,3 +518,14 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       kanji N5 (test). Page du cours : encadre programme (objectif, lecons,
       kanji, mots), lecons groupees par partie, « Kanji appris » pour un
       compte connecte.
+103   Cours N4 complet, objectif JLPT N4 : 19 lecons en 4 parties au format
+      enrichi (parler naturellement, formes des verbes, relier les idees,
+      nuancer et interagir). 13 nouvelles lecons (style familier et んです,
+      volitive / つもり / 予定, potentiel, transitifs / ている / てある,
+      passif, causatif, やすい / にくい / 方 / 始める, とき / 間 / ところ /
+      ばかり, ので / のに / し / けど, ために / ように / ことにする,
+      あげる / くれる / もらう, でしょう / かもしれない / そうだ / らしい /
+      ようだ, 敬語) ; les 6 anciennes refaites (couleurs, regles, pieges,
+      ecrit) en gardant leurs identifiants (progression conservee). Les
+      lecons couvrent les 166 kanji N4. Tests du format enrichi partages
+      entre N5 et N4 (describe.each).

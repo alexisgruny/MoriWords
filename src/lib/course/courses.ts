@@ -1,5 +1,5 @@
 import { LESSONS, type Lesson } from "@/lib/course/lessons";
-import { N4_LESSONS } from "@/lib/course/n4-lessons";
+import { N4_LESSONS, N4_PARTS } from "@/lib/course/n4-lessons";
 import { N5_LESSONS, N5_PARTS } from "@/lib/course/n5-lessons";
 import type { GrammarLevel } from "@/lib/grammar/points";
 
@@ -46,7 +46,9 @@ export const COURSES: Course[] = [
     id: "n4",
     title: "Cours N4",
     level: "N4",
-    summary: "Expériences, avis, obligations, conditions et habitudes : la grammaire N4 en 6 leçons.",
+    summary: "Tout le programme du JLPT N4 en 19 leçons : style familier, potentiel, passif, causatif, conditions, buts, donner et recevoir, suppositions, politesse… avec exercices écrits et les 166 kanji N4.",
+    parts: N4_PARTS,
+    goal: "Objectif : être capable de passer le JLPT N4 à la fin du cours.",
     basePath: "/lecons/n4",
     lessons: N4_LESSONS,
     examLevel: "N4",
