@@ -8,7 +8,7 @@ import { ALL_LESSON_IDS, COURSES } from "./courses";
 import { JLPT_KANJI } from "@/lib/kanji/kanji";
 import { romajiOf, stripMarks } from "./lessons";
 import { N4_LESSONS } from "./n4-lessons";
-import { N5_LESSONS } from "./n5-lessons";
+import { N5_LESSONS, N5_PARTS } from "./n5-lessons";
 
 describe("cours par niveau", () => {
   it("has unique lesson ids across courses and lessons numbered from 1", () => {
@@ -102,6 +102,13 @@ describe("cours N5 (format enrichi)", () => {
     const kanji = N5_LESSONS.flatMap((lesson) => lesson.kanji ?? []);
     expect(kanji.filter((char) => JLPT_KANJI.find((entry) => entry.kanji === char)?.level !== "N5")).toEqual([]);
     expect(new Set(kanji).size).toBe(kanji.length);
+  });
+
+  it("covers every N5 kanji of the JLPT list, and every lesson belongs to a part", () => {
+    const taught = new Set(N5_LESSONS.flatMap((lesson) => lesson.kanji ?? []));
+    const missing = JLPT_KANJI.filter((entry) => entry.level === "N5" && !taught.has(entry.kanji)).map((entry) => entry.kanji);
+    expect(missing).toEqual([]);
+    expect(N5_PARTS.flatMap((part) => part.lessonIds)).toEqual(N5_LESSONS.map((lesson) => lesson.id));
   });
 
   it("closes every colour mark and keeps marks out of the French translations", () => {

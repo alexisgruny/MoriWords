@@ -506,3 +506,15 @@ Historique des priorites (detail : git show a8675ff:PLAN-MVP.txt)
       converti en kana, kanji ou kana acceptes, ponctuation ignoree). Tests :
       vocabulaire et kanji N5, marques equilibrees, romaji, ecrit
       tapable, orthographe.
+102   Cours N5 complet, objectif JLPT N5 : 16 lecons en 4 parties
+      (fondations, decrire et conjuguer, agir et interagir, comparer /
+      compter / lire). 9 nouvelles lecons (nombres et prix, heure et dates,
+      こそあど et mots interrogatifs, particules en profondeur, adjectifs
+      (passe, negatif, くて/で, なる), formes simples ない/た, まえに /
+      てから / たり, たい / ほしい / ～に行く / が上手, compteurs) ; les 6
+      lecons existantes approfondies (右/左/どこにありますか, enchainer en
+      て, habitudes, ～てはいけません, points cardinaux, ～ましょうか) ;
+      nouveau bilan (texte long, 8 questions). Les lecons couvrent les 79
+      kanji N5 (test). Page du cours : encadre programme (objectif, lecons,
+      kanji, mots), lecons groupees par partie, « Kanji appris » pour un
+      compte connecte.

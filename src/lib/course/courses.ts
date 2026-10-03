@@ -1,6 +1,6 @@
 import { LESSONS, type Lesson } from "@/lib/course/lessons";
 import { N4_LESSONS } from "@/lib/course/n4-lessons";
-import { N5_LESSONS } from "@/lib/course/n5-lessons";
+import { N5_LESSONS, N5_PARTS } from "@/lib/course/n5-lessons";
 import type { GrammarLevel } from "@/lib/grammar/points";
 
 // Cours de l'onglet « Leçons », du plus facile au plus avancé. Le parcours
@@ -16,6 +16,9 @@ export type Course = {
   lessons: Lesson[];
   // Palier à passer une fois le cours fini.
   examLevel: GrammarLevel;
+  // Découpage en parties (sommaire du cours), et objectif affiché en tête.
+  parts?: { title: string; lessonIds: string[] }[];
+  goal?: string;
 };
 
 export const COURSES: Course[] = [
@@ -32,7 +35,9 @@ export const COURSES: Course[] = [
     id: "n5",
     title: "Cours N5",
     level: "N5",
-    summary: "Situer, la forme en て, ～ている, permission, comparaisons et invitations : la grammaire N5 en profondeur, avec exercices écrits et kanji.",
+    summary: "Tout le programme du JLPT N5 en 16 leçons : nombres, heure, particules, adjectifs, formes des verbes, ～ている, permission, comparaisons, compteurs… avec exercices écrits et les 79 kanji N5.",
+    parts: N5_PARTS,
+    goal: "Objectif : être capable de passer le JLPT N5 à la fin du cours.",
     basePath: "/lecons/n5",
     lessons: N5_LESSONS,
     examLevel: "N5",
